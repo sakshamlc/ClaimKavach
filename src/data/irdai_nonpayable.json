@@ -1,0 +1,88 @@
+[
+  {
+    "id": "irdai-nonpay-nursing-005",
+    "itemNumber": 9,
+    "canonicalName": "Nursing Charges (Daily)",
+    "aliases": [
+      "nursing charges (daily)",
+      "nursing charges",
+      "daily nursing charges",
+      "routine nursing care charges",
+      "nursing care"
+    ],
+    "normalizedUnit": "DAY",
+    "isGenerallyNonPayable": false,
+    "payableExceptionRule": "Routine inpatient nursing is an integral part of room rent and inpatient care; it cannot be separately deducted as a 'consumable'. TPA deduction should be disputed — nursing charges are payable under IRDAI guidelines when billed as part of inpatient stay.",
+    "verified": false,
+    "source": {
+      "documentName": "[PLACEHOLDER — VERIFY FROM OFFICIAL GAZETTE] IRDAI Master Circular - Standard Terms and Exclusions in Health Insurance",
+      "clauseOrSchedule": "Annexure-I: List I — Items that are part of Room Rent / Inpatient care",
+      "publishedDate": "2024-05-29",
+      "url": "https://irdai.gov.in/"
+    }
+  },
+  {
+    "id": "irdai-nonpay-cannula-001",
+    "itemNumber": 12,
+    "canonicalName": "IV Cannula and Infusion Syringes for Active Care",
+    "aliases": ["iv cannula", "venflon cannula", "disposable syringe 5ml", "infusion cannula set", "syringes active care"],
+    "normalizedUnit": "UNIT",
+    "isGenerallyNonPayable": true,
+    "payableExceptionRule": "Payable during active intravenous therapy and surgical care when prescribed as essential to treatment (IRDAI Annexure-I List I Section B exception). Should NOT be deducted by TPA.",
+    "verified": false,
+    "source": {
+      "documentName": "[PLACEHOLDER — VERIFY FROM OFFICIAL GAZETTE] IRDAI Master Circular - Standard Terms and Exclusions in Health Insurance",
+      "clauseOrSchedule": "Annexure-I: List of Optional / Non-Payable Items (Item 12)",
+      "publishedDate": "2024-05-29",
+      "url": "https://irdai.gov.in/"
+    }
+  },
+  {
+    "id": "irdai-nonpay-admission-002",
+    "itemNumber": 28,
+    "canonicalName": "Hospital Registration and Admission Administrative Fee",
+    "aliases": ["admission charges", "registration fee", "registration / admission fee", "file charges", "administrative admission charge", "mrd charges"],
+    "normalizedUnit": "UNIT",
+    "isGenerallyNonPayable": true,
+    "payableExceptionRule": "Standard non-payable administrative cost under IRDAI Annexure-I List I. However, hospitals cannot overcharge this if basic room rent or day care package was chosen.",
+    "verified": false,
+    "source": {
+      "documentName": "[PLACEHOLDER — VERIFY FROM OFFICIAL GAZETTE] IRDAI Master Circular - Standard Terms and Exclusions in Health Insurance",
+      "clauseOrSchedule": "Annexure-I: List I Items Specifically Non-Payable (Item 28)",
+      "publishedDate": "2024-05-29",
+      "url": "https://irdai.gov.in/"
+    }
+  },
+  {
+    "id": "irdai-nonpay-syringes-004",
+    "itemNumber": 14,
+    "canonicalName": "Syringes and Routine Ward Consumables",
+    "aliases": ["syringes, pack of 10", "syringes pack", "disposable syringes", "syringes"],
+    "normalizedUnit": "UNIT",
+    "isGenerallyNonPayable": true,
+    "payableExceptionRule": "Syringes and routine consumables billed separately are non-payable by insurers and subject to hospital tariff review under IRDAI guidelines.",
+    "verified": false,
+    "source": {
+      "documentName": "[PLACEHOLDER — VERIFY FROM OFFICIAL GAZETTE] IRDAI Master Circular - Standard Terms and Exclusions in Health Insurance",
+      "clauseOrSchedule": "Annexure-I: List I Items Specifically Non-Payable (Item 14)",
+      "publishedDate": "2024-05-29",
+      "url": "https://irdai.gov.in/"
+    }
+  },
+  {
+    "id": "irdai-nonpay-thermometer-003",
+    "itemNumber": 53,
+    "canonicalName": "Take-Home Personal Digital Thermometer",
+    "aliases": ["digital thermometer", "personal thermometer kit", "patient thermometer"],
+    "normalizedUnit": "UNIT",
+    "isGenerallyNonPayable": true,
+    "payableExceptionRule": "Personal take-home diagnostic convenience device; generally non-payable by insurers unless covered under an active OPD or OPD-addon rider.",
+    "verified": false,
+    "source": {
+      "documentName": "[PLACEHOLDER — VERIFY FROM OFFICIAL GAZETTE] IRDAI Master Circular - Standard Terms and Exclusions in Health Insurance",
+      "clauseOrSchedule": "Annexure-I: List I Personal Comfort and Convenience Items (Item 53)",
+      "publishedDate": "2024-05-29",
+      "url": "https://irdai.gov.in/"
+    }
+  }
+]

@@ -1,0 +1,44 @@
+[
+  {
+    "id": "irdai-bundle-nursing-001",
+    "canonicalName": "Routine Nursing Care Charges",
+    "aliases": ["nursing charges", "nursing charges (daily)", "general nursing care", "ward nursing", "icu nursing fee", "routine nursing"],
+    "bundledIntoPackages": ["GENERAL_WARD", "TWIN_SHARING", "SINGLE_PRIVATE", "ICU"],
+    "rationale": "IRDAI guidelines stipulate that standard in-patient bed rent and ICU room packages are inclusive of routine nursing, vitals monitoring, and ward attending duties.",
+    "verified": false,
+    "source": {
+      "documentName": "[PLACEHOLDER — VERIFY FROM OFFICIAL GAZETTE] IRDAI Master Circular on Health Insurance Standard Operating Procedures",
+      "clauseOrSchedule": "Section 4.2 Room Rent & Nursing Standardization",
+      "publishedDate": "2024-05-29",
+      "url": "https://irdai.gov.in/"
+    }
+  },
+  {
+    "id": "irdai-bundle-monitor-002",
+    "canonicalName": "ICU Multipara / Vitals Monitor Charges",
+    "aliases": ["multipara monitor", "icu multipara monitor charges", "icu monitoring charges", "cardiac monitor per day", "bedside monitor charges"],
+    "bundledIntoPackages": ["ICU", "NICU_PICU"],
+    "rationale": "ICU room tariff includes standard intensive care monitoring apparatus (multipara vitals monitor, pulse oximetry, ECG leads) and should not be billed as an extra per-day line item.",
+    "verified": false,
+    "source": {
+      "documentName": "[PLACEHOLDER — VERIFY FROM OFFICIAL GAZETTE] IRDAI Standardized ICU Component Guidelines",
+      "clauseOrSchedule": "Annexure A - Inclusions in Intensive Care Tariffs",
+      "publishedDate": "2024-05-29",
+      "url": "https://irdai.gov.in/"
+    }
+  },
+  {
+    "id": "irdai-bundle-gloves-swabs-003",
+    "canonicalName": "Routine Examination Gloves and Spirit Swabs",
+    "aliases": ["examination gloves", "examination gloves and swabs (consumables)", "examination gloves and swabs", "latex exam gloves", "alcohol swabs", "cotton swabs routine", "disposable gloves ward"],
+    "bundledIntoPackages": ["GENERAL_WARD", "TWIN_SHARING", "SINGLE_PRIVATE", "ICU", "NICU_PICU", "DAY_CARE"],
+    "rationale": "General examination consumables used routinely by staff during ward rounds and basic checkups are part of standard administrative overhead or room tariff.",
+    "verified": false,
+    "source": {
+      "documentName": "[PLACEHOLDER — VERIFY FROM OFFICIAL GAZETTE] IRDAI Guidelines on Standardization of Exclusions in Health Insurance Contracts",
+      "clauseOrSchedule": "Chapter III - Item Overhead Classifications",
+      "publishedDate": "2024-05-29",
+      "url": "https://irdai.gov.in/"
+    }
+  }
+]

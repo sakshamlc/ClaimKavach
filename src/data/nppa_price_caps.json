@@ -1,0 +1,79 @@
+[
+  {
+    "id": "nppa-stent-des-001",
+    "canonicalName": "Coronary Stent - Drug Eluting Stent (DES)",
+    "aliases": ["coronary stent - drug eluting stent (des), 1 unit", "coronary stent - drug eluting stent (des)", "drug eluting stent", "des stent", "coronary stent des", "everolimus stent", "sirolimus stent"],
+    "category": "IMPLANT_DEVICE",
+    "normalizedUnit": "UNIT",
+    "ceilingPriceInr": 38265,
+    "mandatoryDisclosures": ["Brand Name", "Manufacturer", "Batch / Lot Number", "NPPA Category (DES vs BMS)"],
+    "verified": false,
+    "source": {
+      "documentName": "[PLACEHOLDER — VERIFY FROM OFFICIAL GAZETTE] NPPA DPCO Coronary Stent Ceiling Notification",
+      "clauseOrSchedule": "Schedule-I Medical Devices (Coronary Stents)",
+      "publishedDate": "2025-04-01",
+      "url": "https://nppa.gov.in/"
+    }
+  },
+  {
+    "id": "nppa-stent-bms-002",
+    "canonicalName": "Coronary Stent - Bare Metal Stent (BMS)",
+    "aliases": ["bare metal stent", "bms stent", "coronary stent bms"],
+    "category": "IMPLANT_DEVICE",
+    "normalizedUnit": "UNIT",
+    "ceilingPriceInr": 10500,
+    "mandatoryDisclosures": ["Brand Name", "Manufacturer", "Batch / Lot Number", "NPPA Category (DES vs BMS)"],
+    "verified": false,
+    "source": {
+      "documentName": "[PLACEHOLDER — VERIFY FROM OFFICIAL GAZETTE] NPPA DPCO Coronary Stent BMS Notification",
+      "clauseOrSchedule": "Schedule-I Medical Devices (Bare Metal)",
+      "publishedDate": "2025-04-01",
+      "url": "https://nppa.gov.in/"
+    }
+  },
+  {
+    "id": "nppa-knee-cobalt-003",
+    "canonicalName": "Primary Knee Implant Kit (Cobalt Chrome)",
+    "aliases": [
+      "primary knee implant kit (cobalt chrome)",
+      "primary knee implant kit",
+      "cobalt chrome knee implant",
+      "knee implant kit",
+      "primary knee implant",
+      "total knee replacement system",
+      "tkr implant femoral tibial patellar",
+      "orthopedic knee implant system - primary total knee replacement kit"
+    ],
+    "category": "IMPLANT_DEVICE",
+    "normalizedUnit": "UNIT",
+    "ceilingPriceInr": 54000,
+    "mandatoryDisclosures": [
+      "Component-wise breakup (Femoral, Tibial, Insert, Patellar)",
+      "Brand Name",
+      "Lot / Serial Number"
+    ],
+    "verified": false,
+    "source": {
+      "documentName": "[PLACEHOLDER — VERIFY FROM OFFICIAL GAZETTE] NPPA Knee System Ceiling Order",
+      "clauseOrSchedule": "Order S.O. 2668(E)",
+      "publishedDate": "2024-09-15",
+      "url": "https://nppa.gov.in/"
+    }
+  },
+  {
+    "id": "nppa-paracetamol-iv-004",
+    "canonicalName": "Paracetamol IV Infusion 100ml",
+    "aliases": ["paracetamol iv infusion 100 ml", "paracetamol infusion 100ml", "inj paracetamol 100 ml", "paracetamol iv 1000mg", "pcm iv 100ml"],
+    "category": "MEDICINE",
+    "normalizedUnit": "VIAL",
+    "ceilingPriceInr": 145,
+    "mandatoryDisclosures": ["Batch Number", "Expiry Date", "Price inclusive of GST limit"],
+    "verified": false,
+    "source": {
+      "documentName": "[PLACEHOLDER — VERIFY FROM OFFICIAL GAZETTE] DPCO National List of Essential Medicines (NLEM)",
+      "clauseOrSchedule": "NLEM Schedule I - Analgesics / Antipyretics",
+      "publishedDate": "2024-11-01",
+      "url": "https://nppa.gov.in/"
+    }
+  }
+]
