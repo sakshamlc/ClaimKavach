@@ -1,4 +1,5 @@
 {
+  "root": true,
   "extends": "next/core-web-vitals",
   "overrides": [
     {
@@ -7,9 +8,24 @@
         "no-restricted-imports": [
           "error",
           {
+            "paths": [
+              { "name": "fs", "message": "Node fs is forbidden in Trust Zone." },
+              { "name": "fs/promises", "message": "Node fs/promises is forbidden in Trust Zone." },
+              { "name": "path", "message": "Node path is forbidden in Trust Zone." },
+              { "name": "http", "message": "Node http is forbidden in Trust Zone." },
+              { "name": "https", "message": "Node https is forbidden in Trust Zone." },
+              { "name": "net", "message": "Node net is forbidden in Trust Zone." },
+              { "name": "child_process", "message": "Node child_process is forbidden in Trust Zone." },
+              { "name": "crypto", "message": "Node crypto is forbidden in Trust Zone." },
+              { "name": "os", "message": "Node os is forbidden in Trust Zone." },
+              { "name": "url", "message": "Node url is forbidden in Trust Zone." },
+              { "name": "stream", "message": "Node stream is forbidden in Trust Zone." },
+              { "name": "events", "message": "Node events is forbidden in Trust Zone." }
+            ],
             "patterns": [
               {
                 "group": [
+                  "node:*",
                   "@google/genai",
                   "**/extract/**",
                   "**/api/**",
@@ -36,6 +52,21 @@
             "object": "Math",
             "property": "random",
             "message": "Do not call Math.random() directly in Trust Zone. Rules must be deterministic."
+          },
+          {
+            "object": "performance",
+            "property": "now",
+            "message": "Do not call performance.now() in Trust Zone."
+          },
+          {
+            "object": "crypto",
+            "property": "randomUUID",
+            "message": "Do not call crypto.randomUUID() in Trust Zone."
+          },
+          {
+            "object": "crypto",
+            "property": "getRandomValues",
+            "message": "Do not call crypto.getRandomValues() in Trust Zone."
           }
         ],
         "no-restricted-globals": [
@@ -51,6 +82,21 @@
           {
             "name": "WebSocket",
             "message": "Trust Zone must not open WebSockets."
+          },
+          {
+            "name": "Date",
+            "message": "Do not call Date() directly in Trust Zone."
+          }
+        ],
+        "no-restricted-syntax": [
+          "error",
+          {
+            "selector": "NewExpression[callee.name='Date']",
+            "message": "Do not instantiate new Date() in Trust Zone. Clocks must be injected."
+          },
+          {
+            "selector": "MemberExpression[object.name='process'][property.name='env']",
+            "message": "Do not access process.env in Trust Zone."
           }
         ]
       }

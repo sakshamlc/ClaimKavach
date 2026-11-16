@@ -97,16 +97,34 @@ export interface MedicalBill {
 }
 
 /**
- * Strict provenance schema for regulatory citations.
+ * Regulatory citation for findings backed by statutory gazettes or circulars.
  */
 export interface RegulatoryCitation {
+  kind: 'REGULATORY';
   instrument: string;    // e.g. "NPPA S.O. 1335(E)", "IRDAI Master Circular 2024"
   section?: string;       // e.g. "Annexure-I List II Item 12", "Para 4(c)"
-  url: string;            // Official source URL
+  url: string;            // Official source URL (required for regulatory citations)
   effectiveDate: string;  // YYYY-MM-DD
   verified: boolean;      // False for synthetic seed/demo data
   version?: string;
 }
+
+/**
+ * Arithmetic citation for findings derived directly from calculation on the bill.
+ */
+export interface ArithmeticCitation {
+  kind: 'ARITHMETIC';
+  instrument: string;    // e.g. "Bill Arithmetic Reconciliation", "Quantity Rate Product"
+  section?: string;       // e.g. "Line Item Math", "Grand Total Summation"
+  effectiveDate?: string; // Optional
+  verified: true;         // Pure arithmetic rules are inherently verified on the bill
+  version?: string;
+}
+
+/**
+ * Discriminated union of citation kinds required on every finding.
+ */
+export type Citation = RegulatoryCitation | ArithmeticCitation;
 
 /**
  * Bilingual explanation structure for patient communication.
@@ -125,14 +143,24 @@ export interface AuditFinding {
   itemId: string;                   // Primary associated line item ID
   itemIds?: string[];               // All associated item IDs if grouping (e.g. duplicate pairs)
   verdict: Verdict;
-  expected: number | string;        // Statutory ceiling or expected amount
-  actual: number | string;          // Actual billed amount
-  amount: number;                   // Questioned / overcharge amount in paise
-  citation?: RegulatoryCitation;    // Official statutory reference
+  expected?: number;                // Expected amount in integer paise (optional, no strings)
+  actual?: number;                  // Actual billed amount in integer paise (optional, no strings)
+  amount: number;                   // Questioned / overcharge amount in integer paise
+  citation: Citation;               // REQUIRED on every finding (discriminated kind)
   explanation: BilingualText;       // Explanations in English and Hindi
   suggestedAction: string;          // Action step for dispute notice
   title?: string;                   // Short title for UI cards
-  isDemoData?: boolean;             // True if derived from unverified reference data
+}
+
+/**
+ * Helper to check whether a finding is based on unverified/demo reference data.
+ * Pure function derived from citation.verified.
+ */
+export function isDemoDataFinding(finding: AuditFinding): boolean {
+  if (finding.citation.kind === 'REGULATORY') {
+    return finding.citation.verified === false;
+  }
+  return false;
 }
 
 /**
@@ -157,6 +185,7 @@ export interface ReportCoverage {
 
 /**
  * Complete immutable audit report emitted by the Trust Zone.
+ * Pure functional output (presentation timestamps such as generatedAt belong to UI layer).
  */
 export interface AuditReport {
   billId: string;
@@ -165,5 +194,4 @@ export interface AuditReport {
   findings: AuditFinding[];
   dataVersions: Record<string, string>; // e.g. { nppa: "2024.1", irdai: "2024.1" }
   notCheckedItems?: LineItem[];         // Line items without applicable rules
-  generatedAt: string;                  // Injected ISO timestamp
 }

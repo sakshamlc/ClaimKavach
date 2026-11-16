@@ -4,11 +4,22 @@
  * All financial amounts are strictly represented and calculated in integer paise.
  * ₹1.00 = 100 paise.
  *
- * Design Guarantees:
- * 1. String-based parsing with ZERO float multiplication (eliminates IEEE 754 drift).
- * 2. Integer-only round-half-up rounding policy for division and fractional quantities.
- * 3. Strict bounds checking: rejects NaN, Infinity, and amounts exceeding Number.MAX_SAFE_INTEGER.
- * 4. Support for fractional quantities (e.g. 1.5 days, 0.5 hours) with integer-ratio scaling.
+ * Design Guarantees & Specification Policies:
+ * 1. String-based parsing with ZERO float multiplication:
+ *    - "12.345" -> 3 decimal digits; 3rd digit (5) rounds half-up to 1235 paise (₹12.35).
+ *    - "12.5"   -> 1 decimal digit; expanded to 50 paise -> 1250 paise (₹12.50).
+ *    - ".50"    -> leading dot with no integer part -> 50 paise (₹0.50).
+ *    - "(100.00)" -> accounting parentheses syntax indicating negative -> -10000 paise (-₹100.00).
+ *    - "1e3"    -> scientific notation in currency strings is rejected with CurrencyError.
+ *    - "" / null / "   " / "N/A" -> returns 0 paise.
+ * 2. Integer-only round-half-up policy:
+ *    - Ties (0.5) round away from zero (+0.5 -> +1, -0.5 -> -1).
+ * 3. Fractional quantity handling:
+ *    - Quantities like 1.5 days or 0.25 hours are converted to exact integer ratios
+ *      (e.g. 1.5 -> 15/10, 0.25 -> 25/100) and scaled with roundHalfUp(unitPaise * num, den).
+ *      No float multiplication is performed.
+ * 4. Bounds checking:
+ *    - Rejects NaN, Infinity, and values exceeding Number.MAX_SAFE_INTEGER.
  */
 
 export class CurrencyError extends Error {
@@ -45,14 +56,13 @@ export function roundHalfUp(numerator: number, denominator: number): number {
   const absNum = Math.abs(numerator);
   const absDen = Math.abs(denominator);
 
-  // For positive: Math.floor((absNum + absDen / 2) / absDen)
-  const quotient = Math.floor((absNum + Math.floor(absDen / 2)) / absDen);
+  // Integer division with round-half-up: Math.floor((2 * absNum + absDen) / (2 * absDen))
+  const quotient = Math.floor((2 * absNum + absDen) / (2 * absDen));
   return isNegative ? -quotient : quotient;
 }
 
 /**
- * Parses a rupee currency string (e.g. "1,23,456.50", "₹ 500", "-Rs. 120.75")
- * directly into integer paise WITHOUT float multiplication.
+ * Parses a rupee currency string directly into integer paise WITHOUT float multiplication.
  */
 export function parseCurrencyToPaise(input: string | number | null | undefined): number {
   if (input === null || input === undefined) return 0;
@@ -69,31 +79,52 @@ export function parseCurrencyToPaise(input: string | number | null | undefined):
   const raw = String(input).trim();
   if (raw === '' || raw.toUpperCase() === 'N/A') return 0;
 
-  // Regex to extract optional negative sign, currency symbols, rupee digits, and optional decimal paise
-  const regex = /^(-)?\s*(?:Rs\.?|INR|₹)?\s*([0-9,]+)(?:\.([0-9]*))?$/i;
-  const match = raw.match(regex);
-
-  if (!match) {
-    // If not matching standard currency, try extracting first numeric token
-    const fallbackMatch = raw.match(/(-)?([0-9,]+)(?:\.([0-9]*))?/);
-    if (!fallbackMatch) return 0;
-    return parseCurrencyToPaiseParts(fallbackMatch[1] === '-', fallbackMatch[2], fallbackMatch[3]);
+  // Reject scientific notation in string currency inputs (e.g. "1e3", "2.5e4")
+  if (/[eE]/.test(raw)) {
+    throw new CurrencyError(`Scientific notation is not permitted in currency strings: "${raw}"`);
   }
 
-  const isNegative = match[1] === '-';
-  const rupeeStr = match[2];
-  const decimalStr = match[3] || '';
+  // Check for accounting parentheses indicating negative numbers: (100.00) or (₹ 100.00)
+  let isNegative = false;
+  let clean = raw;
+  if (clean.startsWith('(') && clean.endsWith(')')) {
+    isNegative = true;
+    clean = clean.slice(1, -1).trim();
+  } else if (clean.startsWith('-')) {
+    isNegative = true;
+    clean = clean.slice(1).trim();
+  }
+
+  // Strip currency prefixes (Rs., INR, ₹)
+  clean = clean.replace(/^(?:Rs\.?|INR|₹)\s*/i, '').trim();
+
+  // Match: optional integer digits with commas, followed by optional dot and decimal digits
+  // Allows ".50" (leading dot with no integer part) or "500." or "500.50"
+  const regex = /^([0-9,]*)(?:\.([0-9]*))?$/;
+  const match = clean.match(regex);
+
+  if (!match) {
+    throw new CurrencyError(`Malformed currency string: "${raw}"`);
+  }
+
+  const rupeeStr = match[1] || '';
+  const decimalStr = match[2] || '';
+
+  if (rupeeStr === '' && decimalStr === '') {
+    return 0;
+  }
 
   return parseCurrencyToPaiseParts(isNegative, rupeeStr, decimalStr);
 }
 
 function parseCurrencyToPaiseParts(isNegative: boolean, rupeeStr: string, decimalStr: string): number {
   const cleanRupees = rupeeStr.replace(/,/g, '');
-  if (cleanRupees === '') return 0;
-
-  const rupees = parseInt(cleanRupees, 10);
-  if (isNaN(rupees) || !Number.isSafeInteger(rupees)) {
-    throw new CurrencyError(`Rupee amount is not a safe integer: ${cleanRupees}`);
+  let rupees = 0;
+  if (cleanRupees !== '') {
+    rupees = parseInt(cleanRupees, 10);
+    if (isNaN(rupees) || !Number.isSafeInteger(rupees)) {
+      throw new CurrencyError(`Rupee amount is not a safe integer: ${cleanRupees}`);
+    }
   }
 
   // Parse decimal portion with exact round-half-up on sub-paise fractions
@@ -105,7 +136,7 @@ function parseCurrencyToPaiseParts(isNegative: boolean, rupeeStr: string, decima
   } else if (decimalStr.length === 2) {
     paise = parseInt(decimalStr, 10);
   } else {
-    // More than 2 decimal digits: round half-up on the 3rd digit
+    // 3 or more decimal digits (e.g. "12.345"): round half-up on the 3rd digit
     const firstTwo = parseInt(decimalStr.substring(0, 2), 10);
     const thirdDigit = parseInt(decimalStr.charAt(2), 10);
     paise = thirdDigit >= 5 ? firstTwo + 1 : firstTwo;
@@ -196,33 +227,37 @@ export function subtractPaise(a: number, b: number): number {
  * Multiplies unit price in paise by quantity.
  * Handles fractional quantities (e.g. 1.5 days, 0.25 units) with exact integer-ratio scaling
  * and integer-only round-half-up rounding.
+ *
+ * Example: 1.5 is represented as 15 / 10.
+ * Calculation: roundHalfUp(unitPaise * 15, 10). Zero float multiplication.
  */
-export function multiplyPaiseByQuantity(unitPaise: number, quantity: number): number {
+export function multiplyPaiseByQuantity(unitPaise: number, quantity: number | string): number {
   assertSafePaise(unitPaise);
-  if (typeof quantity !== 'number' || isNaN(quantity) || !isFinite(quantity)) {
+  const qty = typeof quantity === 'string' ? parseFloat(quantity) : quantity;
+  if (typeof qty !== 'number' || isNaN(qty) || !isFinite(qty)) {
     throw new CurrencyError(`Invalid quantity: ${quantity}`);
   }
-  if (quantity === 0 || unitPaise === 0) return 0;
+  if (qty === 0 || unitPaise === 0) return 0;
 
   // If quantity is an integer, direct integer multiplication
-  if (Number.isInteger(quantity)) {
-    const res = unitPaise * quantity;
+  if (Number.isInteger(qty)) {
+    const res = unitPaise * qty;
     if (!Number.isSafeInteger(res)) {
       throw new CurrencyError('Multiplication result exceeds Number.MAX_SAFE_INTEGER.');
     }
     return res;
   }
 
-  // Fractional quantity: convert decimal string to integer ratio to prevent float multiplication
-  const qtyStr = quantity.toString();
+  // Fractional quantity: scale from decimal string representation to integer ratio
+  const qtyStr = typeof quantity === 'string' ? quantity.trim() : qty.toString();
   const decimalIdx = qtyStr.indexOf('.');
   if (decimalIdx === -1) {
-    return Math.round(unitPaise * quantity);
+    return Math.round(unitPaise * qty);
   }
 
   const decimals = qtyStr.length - decimalIdx - 1;
   const denominator = Math.pow(10, decimals);
-  const numerator = Math.round(quantity * denominator);
+  const numerator = Math.round(qty * denominator);
 
   return roundHalfUp(unitPaise * numerator, denominator);
 }

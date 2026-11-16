@@ -7,7 +7,14 @@ import {
   subtractPaise,
   multiplyPaiseByQuantity,
 } from '../../src/lib/audit/currency';
-import { Verdict, ReportTotals, ReportCoverage, AuditFinding, AuditReport } from '../../src/lib/audit/types';
+import {
+  Verdict,
+  ReportTotals,
+  ReportCoverage,
+  AuditFinding,
+  AuditReport,
+  isDemoDataFinding,
+} from '../../src/lib/audit/types';
 
 describe('Trust Zone Pure Determinism Verification', () => {
   it('guarantees identical output across 100 consecutive runs of monetary calculation', () => {
@@ -63,8 +70,8 @@ describe('Trust Zone Pure Determinism Verification', () => {
     expect(totals.fair).toBe(6500000); // ₹65,000.00
     expect(addPaise(totals.fair, totals.confirmed, totals.likely)).toBe(totals.billed);
 
-    // Verify finding structure
-    const sampleFinding: AuditFinding = {
+    // Verify finding with kind: 'ARITHMETIC' (no URL)
+    const arithmeticFinding: AuditFinding = {
       ruleId: 'R-MATH-01',
       itemId: 'ITEM-001',
       verdict: 'CONFIRMED_OVERCHARGE',
@@ -72,10 +79,9 @@ describe('Trust Zone Pure Determinism Verification', () => {
       actual: 35000,
       amount: 5000,
       citation: {
-        instrument: 'Hospital Tariff Agreement',
-        section: 'Itemized Schedule',
-        url: 'https://example.gov.in',
-        effectiveDate: '2024-04-01',
+        kind: 'ARITHMETIC',
+        instrument: 'Bill Line Arithmetic',
+        section: 'Quantity Rate Multiplication',
         verified: true,
       },
       explanation: {
@@ -85,9 +91,45 @@ describe('Trust Zone Pure Determinism Verification', () => {
       suggestedAction: 'Request bill reconciliation with correct unit rate.',
     };
 
-    expect(sampleFinding.amount).toBe(5000);
-    expect(sampleFinding.explanation.en).toBeTruthy();
-    expect(sampleFinding.explanation.hi).toBeTruthy();
+    expect(arithmeticFinding.amount).toBe(5000);
+    expect(arithmeticFinding.citation.kind).toBe('ARITHMETIC');
+    expect(isDemoDataFinding(arithmeticFinding)).toBe(false);
+
+    // Verify finding with kind: 'REGULATORY' (verified: false -> demo data)
+    const demoFinding: AuditFinding = {
+      ruleId: 'R-NPPA-01',
+      itemId: 'ITEM-002',
+      verdict: 'LIKELY_ISSUE',
+      expected: 3826500,
+      actual: 5500000,
+      amount: 1673500,
+      citation: {
+        kind: 'REGULATORY',
+        instrument: 'NPPA Notification S.O. 1335(E)',
+        url: 'https://nppaindia.nic.in',
+        effectiveDate: '2024-04-01',
+        verified: false, // Demo data
+      },
+      explanation: {
+        en: 'Billed amount exceeds synthetic ceiling benchmark.',
+        hi: 'बिल की राशि सांकेतिक सीमा से अधिक है।',
+      },
+      suggestedAction: 'Verify against gazetted notification.',
+    };
+
+    expect(isDemoDataFinding(demoFinding)).toBe(true);
+
+    // Verify AuditReport has totals, coverage, findings, dataVersions and NO generatedAt
+    const report: AuditReport = {
+      billId: 'BILL-123',
+      totals,
+      coverage,
+      findings: [arithmeticFinding, demoFinding],
+      dataVersions: { nppa: '2024.1', irdai: '2024.1' },
+    };
+
+    expect(report.billId).toBe('BILL-123');
+    expect('generatedAt' in report).toBe(false);
   });
 
   it('verifies Verdict enum coverage completeness', () => {

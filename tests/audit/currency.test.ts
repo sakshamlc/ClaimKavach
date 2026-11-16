@@ -14,7 +14,45 @@ import {
 } from '../../src/lib/audit/currency';
 
 describe('Trust Zone Currency & Integer Paise Arithmetic', () => {
-  describe('1. String-Based Parsing with ZERO Float Multiplication', () => {
+  describe('1. Policy Specification Parsing Tests', () => {
+    it('parses "12.345" with 3rd digit round-half-up to 1235 paise (₹12.35)', () => {
+      expect(parseCurrencyToPaise('12.345')).toBe(1235);
+      expect(fromPaise(parseCurrencyToPaise('12.345'))).toBe(12.35);
+    });
+
+    it('parses "12.5" by expanding 1 decimal place to 50 paise -> 1250 paise (₹12.50)', () => {
+      expect(parseCurrencyToPaise('12.5')).toBe(1250);
+      expect(fromPaise(parseCurrencyToPaise('12.5'))).toBe(12.5);
+    });
+
+    it('parses ".50" with leading dot and no integer part -> 50 paise (₹0.50)', () => {
+      expect(parseCurrencyToPaise('.50')).toBe(50);
+      expect(fromPaise(parseCurrencyToPaise('.50'))).toBe(0.5);
+    });
+
+    it('rejects scientific notation strings like "1e3" with CurrencyError', () => {
+      expect(() => parseCurrencyToPaise('1e3')).toThrow(CurrencyError);
+      expect(() => parseCurrencyToPaise('2.5e4')).toThrow(CurrencyError);
+      expect(() => parseCurrencyToPaise('1E6')).toThrow(CurrencyError);
+    });
+
+    it('parses accounting parentheses "(100.00)" as negative amount -> -10000 paise (-₹100.00)', () => {
+      expect(parseCurrencyToPaise('(100.00)')).toBe(-10000);
+      expect(parseCurrencyToPaise('(₹ 100.00)')).toBe(-10000);
+      expect(parseCurrencyToPaise('(Rs. 1,450.50)')).toBe(-145050);
+      expect(fromPaise(parseCurrencyToPaise('(100.00)'))).toBe(-100);
+    });
+
+    it('parses empty strings and whitespace as 0 paise', () => {
+      expect(parseCurrencyToPaise('')).toBe(0);
+      expect(parseCurrencyToPaise('   ')).toBe(0);
+      expect(parseCurrencyToPaise(null)).toBe(0);
+      expect(parseCurrencyToPaise(undefined)).toBe(0);
+      expect(parseCurrencyToPaise('N/A')).toBe(0);
+    });
+  });
+
+  describe('2. String-Based Parsing with ZERO Float Multiplication', () => {
     it('parses formatted Indian currency strings with no float drift', () => {
       // 1,23,456.50 should parse to 12345650 paise exactly
       expect(parseCurrencyToPaise('1,23,456.50')).toBe(12345650);
@@ -22,27 +60,12 @@ describe('Trust Zone Currency & Integer Paise Arithmetic', () => {
       expect(parseCurrencyToPaise('Rs. 1,23,456.50')).toBe(12345650);
       expect(parseCurrencyToPaise('INR 99,99,999.99')).toBe(999999999);
       expect(parseCurrencyToPaise('500')).toBe(50000);
-      expect(parseCurrencyToPaise('500.5')).toBe(50050);
       expect(parseCurrencyToPaise('500.05')).toBe(50005);
       expect(parseCurrencyToPaise('-Rs. 1,450.75')).toBe(-145075);
     });
-
-    it('handles decimal fractions with integer round-half-up on sub-paise values', () => {
-      // 3 decimal places: .505 -> 51 paise, .504 -> 50 paise
-      expect(parseCurrencyToPaise('100.505')).toBe(10051);
-      expect(parseCurrencyToPaise('100.504')).toBe(10050);
-    });
-
-    it('handles empty and dirty strings gracefully', () => {
-      expect(parseCurrencyToPaise(null)).toBe(0);
-      expect(parseCurrencyToPaise(undefined)).toBe(0);
-      expect(parseCurrencyToPaise('')).toBe(0);
-      expect(parseCurrencyToPaise('   ')).toBe(0);
-      expect(parseCurrencyToPaise('N/A')).toBe(0);
-    });
   });
 
-  describe('2. Integer Round-Half-Up Policy', () => {
+  describe('3. Integer Round-Half-Up Policy', () => {
     it('rounds exact halves away from zero', () => {
       // 1 / 2 = 0.5 -> 1
       expect(roundHalfUp(1, 2)).toBe(1);
@@ -65,18 +88,21 @@ describe('Trust Zone Currency & Integer Paise Arithmetic', () => {
     });
   });
 
-  describe('3. Fractional Quantity Handling', () => {
-    it('scales fractional quantities (e.g. 1.5 days, 0.25 units) with exact integer ratio', () => {
-      // 1.5 days of room rent at ₹5,600.00 (560000 paise) = ₹8,400.00 (840000 paise)
+  describe('4. Fractional Quantity Handling (Scaled via Decimal String, Zero Float Math)', () => {
+    it('scales fractional quantities (1.5 days, 0.25 units) using exact integer ratio', () => {
+      // 1.5 days of room rent at ₹5,600.00 (560000 paise)
+      // Quantity "1.5" -> numerator 15, denominator 10 -> roundHalfUp(560000 * 15, 10) = 840000 paise
       const roomRate = toPaise(5600);
       expect(multiplyPaiseByQuantity(roomRate, 1.5)).toBe(840000);
+      expect(multiplyPaiseByQuantity(roomRate, '1.5')).toBe(840000);
       expect(fromPaise(multiplyPaiseByQuantity(roomRate, 1.5))).toBe(8400);
 
-      // 0.25 hours of anesthesia at ₹10,000.00 (1000000 paise) = ₹2,500.00 (250000 paise)
+      // 0.25 hours of anesthesia at ₹10,000.00 (1000000 paise) -> 250000 paise
       const anesthesiaRate = toPaise(10000);
       expect(multiplyPaiseByQuantity(anesthesiaRate, 0.25)).toBe(250000);
+      expect(multiplyPaiseByQuantity(anesthesiaRate, '0.25')).toBe(250000);
 
-      // Fractional sub-paise rounds half-up: ₹10.33 (1033 paise) * 1.5 = 1549.5 -> 1550 paise
+      // Sub-paise rounds half-up: ₹10.33 (1033 paise) * 1.5 = 1549.5 -> 1550 paise
       expect(multiplyPaiseByQuantity(1033, 1.5)).toBe(1550);
     });
 
@@ -86,7 +112,7 @@ describe('Trust Zone Currency & Integer Paise Arithmetic', () => {
     });
   });
 
-  describe('4. Rejection of NaN, Infinity, and Unsafe Integers', () => {
+  describe('5. Rejection of NaN, Infinity, and Unsafe Integers', () => {
     it('throws CurrencyError on NaN or Infinity in paise assertions', () => {
       expect(() => assertSafePaise(NaN)).toThrow(CurrencyError);
       expect(() => assertSafePaise(Infinity)).toThrow(CurrencyError);
@@ -108,7 +134,7 @@ describe('Trust Zone Currency & Integer Paise Arithmetic', () => {
     });
   });
 
-  describe('5. Formatting and Arithmetic Integrity', () => {
+  describe('6. Formatting and Arithmetic Integrity', () => {
     it('formats into Indian Rupee notation (lakhs & crores)', () => {
       expect(formatINR(0)).toBe('₹0.00');
       expect(formatINR(50050)).toBe('₹500.50');
