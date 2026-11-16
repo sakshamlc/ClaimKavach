@@ -1,0 +1,169 @@
+/**
+ * ClaimKavach — Trust Zone Type System
+ *
+ * Strict TypeScript definitions for medical bill auditing, regulatory citations,
+ * confidence capping, and dispute generation.
+ *
+ * All financial amounts are integer paise.
+ */
+
+/**
+ * The 5 standard audit verdicts required by the ClaimKavach specification.
+ */
+export type Verdict =
+  | 'CONFIRMED_OVERCHARGE'
+  | 'LIKELY_ISSUE'
+  | 'NEEDS_REVIEW'
+  | 'VALID_EXCLUSION'
+  | 'NOT_CHECKED';
+
+/**
+ * Medical bill line item categories.
+ */
+export type ItemCategory =
+  | 'room_rent'
+  | 'icu'
+  | 'nursing'
+  | 'pharmacy'
+  | 'implant'
+  | 'consumable'
+  | 'doctor_visit'
+  | 'investigation'
+  | 'procedure'
+  | 'admin_fee'
+  | 'other';
+
+/**
+ * Represents a single line item on a hospital bill.
+ * All amounts in integer paise.
+ */
+export interface LineItem {
+  id: string;
+  description: string;
+  category: ItemCategory;
+  quantity: number;
+  unitRatePaise: number;
+  totalBilledPaise: number;
+  date?: string;            // YYYY-MM-DD
+  mrpPaise?: number;        // Printed MRP if specified on packaging/bill
+  deductedPaise?: number;   // Amount deducted by insurer/TPA if reviewing settlement sheet
+  deductionReason?: string; // TPA deduction clause/code
+  notes?: string;
+}
+
+/**
+ * Hospital metadata parsed from bill header.
+ */
+export interface HospitalMetadata {
+  name: string;
+  city?: string;
+  state?: string;
+  registrationNumber?: string;
+  isNabhAccredited?: boolean;
+}
+
+/**
+ * Patient admission and stay details.
+ */
+export interface PatientStayInfo {
+  admissionDate: string;        // YYYY-MM-DD
+  dischargeDate: string;        // YYYY-MM-DD
+  lengthOfStayNights: number;   // Inpatient nights
+  roomType?: string;            // e.g. Single Private, Twin Sharing, General Ward, ICU
+}
+
+/**
+ * Optional TPA / Health Insurance Policy context for deduction audits.
+ */
+export interface PolicyContext {
+  sumInsuredPaise?: number;
+  roomRentLimitPaise?: number;  // e.g. 1% of Sum Insured per day
+  hasProportionateDeductionClause?: boolean;
+  tpaName?: string;
+  claimNumber?: string;
+}
+
+/**
+ * Complete Medical Bill domain model passed into the Trust Zone audit engine.
+ */
+export interface MedicalBill {
+  id: string;
+  hospital: HospitalMetadata;
+  stay: PatientStayInfo;
+  items: LineItem[];
+  totalBilledPaise: number;
+  policyContext?: PolicyContext;
+  isSynthetic?: boolean;
+}
+
+/**
+ * Strict provenance schema for regulatory citations.
+ */
+export interface RegulatoryCitation {
+  instrument: string;    // e.g. "NPPA S.O. 1335(E)", "IRDAI Master Circular 2024"
+  section?: string;       // e.g. "Annexure-I List II Item 12", "Para 4(c)"
+  url: string;            // Official source URL
+  effectiveDate: string;  // YYYY-MM-DD
+  verified: boolean;      // False for synthetic seed/demo data
+  version?: string;
+}
+
+/**
+ * Bilingual explanation structure for patient communication.
+ */
+export interface BilingualText {
+  en: string;
+  hi: string;
+}
+
+/**
+ * An individual audit finding identified by a deterministic rule.
+ * Conforms strictly to target specification.
+ */
+export interface AuditFinding {
+  ruleId: string;                   // e.g. 'R-MATH-01', 'R-NPPA-01', 'R-ANX-01'
+  itemId: string;                   // Primary associated line item ID
+  itemIds?: string[];               // All associated item IDs if grouping (e.g. duplicate pairs)
+  verdict: Verdict;
+  expected: number | string;        // Statutory ceiling or expected amount
+  actual: number | string;          // Actual billed amount
+  amount: number;                   // Questioned / overcharge amount in paise
+  citation?: RegulatoryCitation;    // Official statutory reference
+  explanation: BilingualText;       // Explanations in English and Hindi
+  suggestedAction: string;          // Action step for dispute notice
+  title?: string;                   // Short title for UI cards
+  isDemoData?: boolean;             // True if derived from unverified reference data
+}
+
+/**
+ * Financial breakdown totals across the 5 unmerged report metric cards.
+ * Amounts in integer paise. Never combine tiers into a single figure.
+ */
+export interface ReportTotals {
+  billed: number;      // Total billed amount
+  fair: number;        // Fair amount: billed - (confirmed + likely)
+  confirmed: number;   // Statutory ceilings + arithmetic errors
+  likely: number;      // Duplicates, bundling, Annexure-I discrepancies
+  needsReview: number; // Disclosures / specifications required
+}
+
+/**
+ * Coverage metrics tracking verified vs unverified items.
+ */
+export interface ReportCoverage {
+  checked: number;     // Number of line items checked against rules
+  total: number;       // Total number of line items on bill
+}
+
+/**
+ * Complete immutable audit report emitted by the Trust Zone.
+ */
+export interface AuditReport {
+  billId: string;
+  totals: ReportTotals;
+  coverage: ReportCoverage;
+  findings: AuditFinding[];
+  dataVersions: Record<string, string>; // e.g. { nppa: "2024.1", irdai: "2024.1" }
+  notCheckedItems?: LineItem[];         // Line items without applicable rules
+  generatedAt: string;                  // Injected ISO timestamp
+}

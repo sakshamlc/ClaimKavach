@@ -12,7 +12,10 @@ const cspHeader = `
   frame-ancestors 'none';
 `.replace(/\s{2,}/g, ' ').trim();
 
+const isOffline = process.env.OFFLINE_BUILD === '1';
+
 const nextConfig = {
+  ...(isOffline ? { distDir: '.next_build', optimizeFonts: false } : {}),
   async headers() {
     return [
       {

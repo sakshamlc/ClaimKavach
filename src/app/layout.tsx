@@ -17,8 +17,8 @@ const notoSansDevanagari = Noto_Sans_Devanagari({
 });
 
 export const metadata: Metadata = {
-  title: 'PechanSetu — Document Mismatch Pre-Flight Check',
-  description: 'Find the mismatch before the portal rejects you. Free, private, stateless.',
+  title: 'ClaimKavach — Hospital Bill & Insurance Audit',
+  description: 'Audit your hospital bill and insurance deductions. Free, private, stateless.',
 };
 
 export default function RootLayout({

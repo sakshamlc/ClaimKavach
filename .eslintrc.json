@@ -1,3 +1,59 @@
 {
-  "extends": "next/core-web-vitals"
+  "extends": "next/core-web-vitals",
+  "overrides": [
+    {
+      "files": ["src/lib/audit/**/*.ts"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@google/genai",
+                  "**/extract/**",
+                  "**/api/**",
+                  "**/ai/**",
+                  "react",
+                  "next",
+                  "next/*",
+                  "zustand",
+                  "**/store"
+                ],
+                "message": "Trust Zone (src/lib/audit/**) must remain isolated from AI Zone, API endpoints, React, and UI state."
+              }
+            ]
+          }
+        ],
+        "no-restricted-properties": [
+          "error",
+          {
+            "object": "Date",
+            "property": "now",
+            "message": "Do not call Date.now() directly in Trust Zone. Clocks must be injected."
+          },
+          {
+            "object": "Math",
+            "property": "random",
+            "message": "Do not call Math.random() directly in Trust Zone. Rules must be deterministic."
+          }
+        ],
+        "no-restricted-globals": [
+          "error",
+          {
+            "name": "fetch",
+            "message": "Trust Zone must not make network requests."
+          },
+          {
+            "name": "XMLHttpRequest",
+            "message": "Trust Zone must not make network requests."
+          },
+          {
+            "name": "WebSocket",
+            "message": "Trust Zone must not open WebSockets."
+          }
+        ]
+      }
+    }
+  ]
 }
