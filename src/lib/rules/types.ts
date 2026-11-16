@@ -64,6 +64,7 @@ export interface FixStep {
   whereKey: string;
   stepKeys: string[];
   documentsToCarryKeys: string[];
+  optionalDocumentsKeys?: string[];
   lifetimeLimitNoteKey?: string;
   exceptionPathNoteKey?: string;
   effortRank: number;             // 1 = easiest
@@ -110,6 +111,7 @@ export interface CorrectionCostEntry {
   exceptionHandlingText: string | null;
   stepKeys: string[];
   documentsToCarryKeys: string[];
+  optionalDocumentsKeys?: string[];
   source: string;
   lastVerified: string;
   verified: boolean;

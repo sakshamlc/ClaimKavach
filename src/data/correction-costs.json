@@ -16,7 +16,9 @@
     ],
     "documentsToCarryKeys": [
       "carry_aadhaar_original",
-      "carry_bank_passbook",
+      "carry_bank_passbook"
+    ],
+    "optionalDocumentsKeys": [
       "carry_passport_photos",
       "carry_pan_card"
     ],

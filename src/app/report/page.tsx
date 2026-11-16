@@ -11,6 +11,7 @@ import { useTranslation } from '@/lib/i18n';
 import { useAppStore } from '@/lib/store';
 import { DocType } from '@/lib/rules/types';
 import { analyze } from '@/lib/rules/analyze';
+import { generateSummaryText, getFixStepTitle } from '@/lib/summary';
 import {
   CheckCircle2,
   AlertTriangle,
@@ -99,40 +100,14 @@ export default function ReportPage() {
 
   // Copy plain text summary for WhatsApp (no sensitive ID digits)
   const handleCopySummary = () => {
-    let summaryText = `*PechanSetu - Document Check Summary*\n`;
-    summaryText += `Status: ${statusType === 'ready' ? t('status_ready_banner') : t(`status_${statusType}`)}\n\n`;
-
-    if (findings.length > 0) {
-      summaryText += `*Issues Found:*\n`;
-      findings.forEach((f, idx) => {
-        summaryText += `${idx + 1}. ${t(f.titleKey)} (${f.severity.toUpperCase()})\n`;
-      });
-
-      // DOB swap hint where applicable
-      const swapFinding = findings.find((f) => f.titleKey === 'finding_dob_swap_title');
-      if (swapFinding) {
-        summaryText += `\n*Note on Date of Birth:* The day and month appear reversed between documents (e.g. DD/MM vs MM/DD). Fix on your school/board certificate or Aadhaar.\n`;
-      }
-
-      summaryText += `\n*Recommended Fix Steps:*\n`;
-      fixPlan.forEach((step, idx) => {
-        summaryText += `${idx + 1}. ${t(`doc_${step.targetDoc}`)}: ${t(step.whereKey)}\n`;
-        if (step.documentsToCarryKeys && step.documentsToCarryKeys.length > 0) {
-          const carryList = step.documentsToCarryKeys.map((k) => t(k)).join(', ');
-          summaryText += `   *Documents to carry:* ${carryList}\n`;
-        }
-        if (step.lifetimeLimitNoteKey) {
-          const rawNote = t(step.lifetimeLimitNoteKey);
-          const cleanNote = rawNote.replace(/^(Important|Notice|महत्वपूर्ण|महत्त्वाचे|सूचना):\s*/i, '');
-          summaryText += `   *Important:* ${cleanNote}\n`;
-        }
-      });
-    } else {
-      summaryText += `${t('status_ready_banner')}\n${t('status_ready_desc')}\n`;
-    }
-
-    summaryText += `\n${t('disclaimer')}`;
-
+    const summaryText = generateSummaryText(
+      {
+        status: statusType,
+        findings,
+        fixPlan,
+      },
+      t
+    );
     navigator.clipboard.writeText(summaryText);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
@@ -309,7 +284,7 @@ export default function ReportPage() {
                       #{idx + 1}
                     </span>
                     <span className="text-sm font-bold text-text-main">
-                      {t('fixStepChange')} {t(`doc_${step.targetDoc}`)}
+                      {getFixStepTitle(step, t)}
                     </span>
                   </div>
 
@@ -320,6 +295,17 @@ export default function ReportPage() {
                     {step.needsVerification && <VerifyBadge />}
                   </div>
                 </div>
+
+                {/* For finding line */}
+                {(() => {
+                  const matchingFinding = findings.find((f) => f.id === step.findingId);
+                  if (!matchingFinding) return null;
+                  return (
+                    <div className="text-xs text-muted mb-3 font-medium">
+                      <span className="font-semibold text-text-main">{t('forFinding')}</span> {t(matchingFinding.titleKey)}
+                    </div>
+                  );
+                })()}
 
                 {/* Where to go */}
                 <div className="flex items-center gap-2 text-xs text-text-main mb-3 font-semibold">
@@ -370,33 +356,56 @@ export default function ReportPage() {
                 </div>
 
                 {/* Documents to Carry Checklist */}
-                {step.documentsToCarryKeys.length > 0 && (
+                {(step.documentsToCarryKeys.length > 0 || (step.optionalDocumentsKeys && step.optionalDocumentsKeys.length > 0)) && (
                   <div className="mb-5 p-3.5 bg-background rounded-xl border border-border">
-                    <span className="text-xs font-bold text-text-main block mb-2 flex items-center gap-1.5">
-                      <FileCheck className="w-4 h-4 text-primary" />
-                      <span>{t('fixStepCarry')}</span>
-                    </span>
-                    <div className="space-y-1.5">
-                      {step.documentsToCarryKeys.map((cKey) => {
-                        const isChecked = !!checkedCarryDocs[cKey];
-                        return (
-                          <label
-                            key={cKey}
-                            className="flex items-center gap-2 text-xs text-text-main cursor-pointer hover:text-primary transition-colors min-h-[32px]"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={() => toggleCheckDoc(cKey)}
-                              className="w-4 h-4 text-primary rounded border-slate-300 focus:ring-primary cursor-pointer"
-                            />
-                            <span className={isChecked ? 'line-through text-muted' : ''}>
-                              {t(cKey)}
-                            </span>
-                          </label>
-                        );
-                      })}
-                    </div>
+                    {step.documentsToCarryKeys.length > 0 && (
+                      <>
+                        <span className="text-xs font-bold text-text-main block mb-2 flex items-center gap-1.5">
+                          <FileCheck className="w-4 h-4 text-primary" />
+                          <span>{t('fixStepCarry')}</span>
+                        </span>
+                        <div className="space-y-1.5">
+                          {step.documentsToCarryKeys.map((cKey) => {
+                            const isChecked = !!checkedCarryDocs[cKey];
+                            return (
+                              <label
+                                key={cKey}
+                                className="flex items-center gap-2 text-xs text-text-main cursor-pointer hover:text-primary transition-colors min-h-[32px]"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={() => toggleCheckDoc(cKey)}
+                                  className="w-4 h-4 text-primary rounded border-slate-300 focus:ring-primary cursor-pointer"
+                                />
+                                <span className={isChecked ? 'line-through text-muted' : ''}>
+                                  {t(cKey)}
+                                </span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </>
+                    )}
+
+                    {step.optionalDocumentsKeys && step.optionalDocumentsKeys.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-border/60">
+                        <div className="flex items-center justify-between gap-1.5 mb-2">
+                          <span className="text-xs font-semibold text-text-main">
+                            {t('branchMayAlsoAskFor')}
+                          </span>
+                          <VerifyBadge />
+                        </div>
+                        <div className="space-y-1">
+                          {step.optionalDocumentsKeys.map((oKey) => (
+                            <div key={oKey} className="text-xs text-muted flex items-center gap-2">
+                              <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
+                              <span>{t(oKey)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
