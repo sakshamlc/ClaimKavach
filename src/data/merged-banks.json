@@ -1,0 +1,74 @@
+[
+  {
+    "oldPrefix": "SYNB",
+    "oldBankName": "Syndicate Bank",
+    "mergedIntoBank": "Canara Bank",
+    "mergedIntoPrefix": "CNRB",
+    "source": "Public bank customer notifications on bank mergers (Subject to official portal verification)",
+    "lastVerified": "2024-01-01",
+    "verified": false
+  },
+  {
+    "oldPrefix": "ALLA",
+    "oldBankName": "Allahabad Bank",
+    "mergedIntoBank": "Indian Bank",
+    "mergedIntoPrefix": "IDIB",
+    "source": "Public bank customer notifications on bank mergers (Subject to official portal verification)",
+    "lastVerified": "2024-01-01",
+    "verified": false
+  },
+  {
+    "oldPrefix": "CORP",
+    "oldBankName": "Corporation Bank",
+    "mergedIntoBank": "Union Bank of India",
+    "mergedIntoPrefix": "UBIN",
+    "source": "Public bank customer notifications on bank mergers (Subject to official portal verification)",
+    "lastVerified": "2024-01-01",
+    "verified": false
+  },
+  {
+    "oldPrefix": "VIJB",
+    "oldBankName": "Vijaya Bank",
+    "mergedIntoBank": "Bank of Baroda",
+    "mergedIntoPrefix": "BARB",
+    "source": "Public bank customer notifications on bank mergers (Subject to official portal verification)",
+    "lastVerified": "2024-01-01",
+    "verified": false
+  },
+  {
+    "oldPrefix": "BKDN",
+    "oldBankName": "Dena Bank",
+    "mergedIntoBank": "Bank of Baroda",
+    "mergedIntoPrefix": "BARB",
+    "source": "Public bank customer notifications on bank mergers (Subject to official portal verification)",
+    "lastVerified": "2024-01-01",
+    "verified": false
+  },
+  {
+    "oldPrefix": "ORBC",
+    "oldBankName": "Oriental Bank of Commerce",
+    "mergedIntoBank": "Punjab National Bank",
+    "mergedIntoPrefix": "PUNB",
+    "source": "Public bank customer notifications on bank mergers (Subject to official portal verification)",
+    "lastVerified": "2024-01-01",
+    "verified": false
+  },
+  {
+    "oldPrefix": "UTBI",
+    "oldBankName": "United Bank of India",
+    "mergedIntoBank": "Punjab National Bank",
+    "mergedIntoPrefix": "PUNB",
+    "source": "Public bank customer notifications on bank mergers (Subject to official portal verification)",
+    "lastVerified": "2024-01-01",
+    "verified": false
+  },
+  {
+    "oldPrefix": "ANDB",
+    "oldBankName": "Andhra Bank",
+    "mergedIntoBank": "Union Bank of India",
+    "mergedIntoPrefix": "UBIN",
+    "source": "Public bank customer notifications on bank mergers (Subject to official portal verification)",
+    "lastVerified": "2024-01-01",
+    "verified": false
+  }
+]

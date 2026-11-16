@@ -1,0 +1,12 @@
+{
+  "docType": "pan",
+  "detectedDocType": "pan",
+  "fields": {
+    "fullName": { "value": "Ramesh Kumar", "confidence": 0.97 },
+    "fatherOrSpouseName": { "value": "Laxman Kumar", "confidence": 0.91 },
+    "dob": { "value": "05/03/1982", "confidence": 0.96 },
+    "dobIso": { "value": "1982-03-05", "confidence": 0.96 },
+    "panNumber": { "value": "ABCDE1234F", "confidence": 0.99 }
+  },
+  "overallConfidence": 0.97
+}

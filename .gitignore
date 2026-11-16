@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+/.pnp
+.pnp.js
+
+# Next.js build output
+.next/
+out/
+build/
+dist/
+
+# Production and local environment variables
+.env
+.env.*
+!.env.example
+*.local
+
+# Debug and runtime logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Testing & Reports
+coverage/
+playwright-report/
+test-results/
+blob-report/
+
+# TypeScript build info
+*.tsbuildinfo
+
+# OS metadata
+.DS_Store
+Thumbs.db
+*.pem
+
+# IDE & Editor folders
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Vercel
+.vercel
+
+# Agent & artifact scratch folders
+.gemini/
+scratch/

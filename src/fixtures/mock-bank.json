@@ -1,0 +1,11 @@
+{
+  "docType": "bank",
+  "detectedDocType": "bank",
+  "fields": {
+    "accountHolderName": { "value": "Kumar Ramesh", "confidence": 0.96 },
+    "accountNumberLast4": { "value": "4567", "confidence": 0.95 },
+    "ifsc": { "value": "SBIN0001234", "confidence": 0.98 },
+    "bankName": { "value": "State Bank of India", "confidence": 0.97 }
+  },
+  "overallConfidence": 0.96
+}

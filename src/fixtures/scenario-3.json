@@ -1,0 +1,43 @@
+{
+  "scenarioId": "scenario_3",
+  "name": "Bank KYC Invalid IFSC + Initial Abbreviation (R. Deshmukh vs Ramesh Deshmukh)",
+  "goalId": "bank_kyc",
+  "documents": {
+    "aadhaar": {
+      "docType": "aadhaar",
+      "detectedDocType": "aadhaar",
+      "fields": {
+        "fullName": { "value": "Ramesh Deshmukh", "confidence": 0.98 },
+        "dob": { "value": "15/08/1956", "confidence": 0.97 },
+        "dobIso": { "value": "1956-08-15", "confidence": 0.97 },
+        "gender": { "value": "M", "confidence": 0.99 },
+        "aadhaarRedacted": { "value": "[Aadhaar Present - Redacted]", "confidence": 0.98 }
+      },
+      "overallConfidence": 0.98
+    },
+    "pan": {
+      "docType": "pan",
+      "detectedDocType": "pan",
+      "fields": {
+        "panNumber": { "value": "ABCPD1234F", "confidence": 0.99 },
+        "fullName": { "value": "Ramesh Deshmukh", "confidence": 0.97 },
+        "dob": { "value": "15/08/1956", "confidence": 0.98 },
+        "dobIso": { "value": "1956-08-15", "confidence": 0.98 }
+      },
+      "overallConfidence": 0.98
+    },
+    "bank": {
+      "docType": "bank",
+      "detectedDocType": "bank",
+      "fields": {
+        "accountHolderName": { "value": "R. Deshmukh", "confidence": 0.94 },
+        "accountNumberLast4": { "value": "8901", "confidence": 0.96 },
+        "ifsc": { "value": "SBIN1000123", "confidence": 0.95 },
+        "bankName": { "value": "State Bank of India", "confidence": 0.97 }
+      },
+      "overallConfidence": 0.95
+    }
+  },
+  "confirmedFields": [],
+  "correctVersionChoice": {}
+}

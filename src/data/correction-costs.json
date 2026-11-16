@@ -1,0 +1,100 @@
+[
+  {
+    "doc": "bank",
+    "cost": 1,
+    "effortRank": 1,
+    "effortLabelKey": "effort_bank",
+    "whereKey": "where_bank_branch",
+    "feeText": "Free / Nominal Bank Charge",
+    "lifetimeLimitText": null,
+    "exceptionHandlingText": null,
+    "stepKeys": [
+      "step_bank_visit_branch",
+      "step_bank_submit_kyc_form",
+      "step_bank_show_aadhaar_original",
+      "step_bank_request_passbook_update"
+    ],
+    "documentsToCarryKeys": [
+      "carry_aadhaar_original",
+      "carry_bank_passbook",
+      "carry_passport_photos",
+      "carry_pan_card"
+    ],
+    "source": "Commercial bank KYC guidelines (Branch-level procedure varies by bank)",
+    "lastVerified": "2024-01-01",
+    "verified": false
+  },
+  {
+    "doc": "pan",
+    "cost": 2,
+    "effortRank": 2,
+    "effortLabelKey": "effort_pan_online",
+    "whereKey": "where_pan_portal",
+    "feeText": "~Rs. 110 (approx online fee)",
+    "lifetimeLimitText": null,
+    "exceptionHandlingText": null,
+    "stepKeys": [
+      "step_pan_open_portal",
+      "step_pan_fill_change_form",
+      "step_pan_upload_aadhaar_proof",
+      "step_pan_pay_and_submit"
+    ],
+    "documentsToCarryKeys": [
+      "carry_aadhaar_linked_mobile",
+      "carry_existing_pan_copy",
+      "carry_proof_of_identity"
+    ],
+    "source": "Protean / UTIITSL public PAN services portal",
+    "lastVerified": "2024-01-01",
+    "verified": false
+  },
+  {
+    "doc": "aadhaar",
+    "cost": 4,
+    "effortRank": 4,
+    "effortLabelKey": "effort_aadhaar_centre",
+    "whereKey": "where_aadhaar_centre",
+    "feeText": "Rs. 75 Demographic Update Fee",
+    "lifetimeLimitText": "UIDAI Lifetime Limit: Name max 2 updates, DOB max 1 update, Gender max 1 update.",
+    "exceptionHandlingText": "If lifetime cap is reached, submit Gazette / Proof via UIDAI Regional Office or call 1947.",
+    "stepKeys": [
+      "step_aadhaar_book_appointment",
+      "step_aadhaar_visit_centre",
+      "step_aadhaar_biometric_auth",
+      "step_aadhaar_receive_urn"
+    ],
+    "documentsToCarryKeys": [
+      "carry_proof_of_identity",
+      "carry_proof_of_dob",
+      "carry_existing_aadhaar_copy"
+    ],
+    "source": "UIDAI Official FAQ on Enrolment and Update - Update Limits (uidai.gov.in)",
+    "lastVerified": "2024-01-01",
+    "verified": true
+  },
+  {
+    "doc": "certificate",
+    "cost": 5,
+    "effortRank": 5,
+    "effortLabelKey": "effort_certificate_board",
+    "whereKey": "where_education_board",
+    "feeText": "Board / University prescribed fee",
+    "lifetimeLimitText": null,
+    "exceptionHandlingText": null,
+    "stepKeys": [
+      "step_cert_apply_to_school",
+      "step_cert_affidavit_gazette",
+      "step_cert_submit_board_office",
+      "step_cert_collect_duplicate"
+    ],
+    "documentsToCarryKeys": [
+      "carry_original_marksheet",
+      "carry_school_leaving_cert",
+      "carry_affidavit_magistrate",
+      "carry_newspaper_publication"
+    ],
+    "source": "School / Education Board public guidelines (Procedures vary by board)",
+    "lastVerified": "2024-01-01",
+    "verified": false
+  }
+]
