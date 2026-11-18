@@ -15,19 +15,20 @@ import {
 
 describe('Trust Zone Currency & Integer Paise Arithmetic', () => {
   describe('1. Policy Specification Parsing Tests', () => {
-    it('parses "12.345" with 3rd digit round-half-up to 1235 paise (₹12.35)', () => {
-      expect(parseCurrencyToPaise('12.345')).toBe(1235);
-      expect(fromPaise(parseCurrencyToPaise('12.345'))).toBe(12.35);
+    it('rejects "12.345" with more than 2 decimal places with CurrencyError', () => {
+      expect(() => parseCurrencyToPaise('12.345')).toThrow(CurrencyError);
+      expect(() => parseCurrencyToPaise('100.505')).toThrow(CurrencyError);
+      expect(() => parseCurrencyToPaise(12.345)).toThrow(CurrencyError);
     });
 
     it('parses "12.5" by expanding 1 decimal place to 50 paise -> 1250 paise (₹12.50)', () => {
       expect(parseCurrencyToPaise('12.5')).toBe(1250);
-      expect(fromPaise(parseCurrencyToPaise('12.5'))).toBe(12.5);
+      expect(fromPaise(parseCurrencyToPaise('12.5')!)).toBe(12.5);
     });
 
     it('parses ".50" with leading dot and no integer part -> 50 paise (₹0.50)', () => {
       expect(parseCurrencyToPaise('.50')).toBe(50);
-      expect(fromPaise(parseCurrencyToPaise('.50'))).toBe(0.5);
+      expect(fromPaise(parseCurrencyToPaise('.50')!)).toBe(0.5);
     });
 
     it('rejects scientific notation strings like "1e3" with CurrencyError', () => {
@@ -40,15 +41,17 @@ describe('Trust Zone Currency & Integer Paise Arithmetic', () => {
       expect(parseCurrencyToPaise('(100.00)')).toBe(-10000);
       expect(parseCurrencyToPaise('(₹ 100.00)')).toBe(-10000);
       expect(parseCurrencyToPaise('(Rs. 1,450.50)')).toBe(-145050);
-      expect(fromPaise(parseCurrencyToPaise('(100.00)'))).toBe(-100);
+      expect(fromPaise(parseCurrencyToPaise('(100.00)')!)).toBe(-100);
     });
 
-    it('parses empty strings and whitespace as 0 paise', () => {
-      expect(parseCurrencyToPaise('')).toBe(0);
-      expect(parseCurrencyToPaise('   ')).toBe(0);
-      expect(parseCurrencyToPaise(null)).toBe(0);
-      expect(parseCurrencyToPaise(undefined)).toBe(0);
-      expect(parseCurrencyToPaise('N/A')).toBe(0);
+    it('returns NULL for empty strings, whitespace, null, undefined, or "N/A" (treated as NOT_CHECKED, never 0)', () => {
+      expect(parseCurrencyToPaise('')).toBeNull();
+      expect(parseCurrencyToPaise('   ')).toBeNull();
+      expect(parseCurrencyToPaise(null)).toBeNull();
+      expect(parseCurrencyToPaise(undefined)).toBeNull();
+      expect(parseCurrencyToPaise('N/A')).toBeNull();
+      expect(parseCurrencyToPaise('NULL')).toBeNull();
+      expect(parseCurrencyToPaise('-')).toBeNull();
     });
   });
 
@@ -92,13 +95,13 @@ describe('Trust Zone Currency & Integer Paise Arithmetic', () => {
     it('scales fractional quantities (1.5 days, 0.25 units) using exact integer ratio', () => {
       // 1.5 days of room rent at ₹5,600.00 (560000 paise)
       // Quantity "1.5" -> numerator 15, denominator 10 -> roundHalfUp(560000 * 15, 10) = 840000 paise
-      const roomRate = toPaise(5600);
+      const roomRate = toPaise(5600)!;
       expect(multiplyPaiseByQuantity(roomRate, 1.5)).toBe(840000);
       expect(multiplyPaiseByQuantity(roomRate, '1.5')).toBe(840000);
       expect(fromPaise(multiplyPaiseByQuantity(roomRate, 1.5))).toBe(8400);
 
       // 0.25 hours of anesthesia at ₹10,000.00 (1000000 paise) -> 250000 paise
-      const anesthesiaRate = toPaise(10000);
+      const anesthesiaRate = toPaise(10000)!;
       expect(multiplyPaiseByQuantity(anesthesiaRate, 0.25)).toBe(250000);
       expect(multiplyPaiseByQuantity(anesthesiaRate, '0.25')).toBe(250000);
 
@@ -145,21 +148,21 @@ describe('Trust Zone Currency & Integer Paise Arithmetic', () => {
     });
 
     it('performs pure integer addition and subtraction', () => {
-      const sum = addPaise(toPaise(100.5), toPaise(200.25), toPaise(300.25));
+      const sum = addPaise(toPaise(100.5)!, toPaise(200.25)!, toPaise(300.25)!);
       expect(sum).toBe(60100);
       expect(fromPaise(sum)).toBe(601.0);
 
-      const diff = subtractPaise(toPaise(1000), toPaise(250.75));
+      const diff = subtractPaise(toPaise(1000)!, toPaise(250.75)!);
       expect(diff).toBe(74925);
     });
 
     it('calculates percentages in integer paise', () => {
       // 18% GST on ₹5,000.00
-      expect(calculatePercentagePaise(toPaise(5000), 18)).toBe(90000);
+      expect(calculatePercentagePaise(toPaise(5000)!, 18)).toBe(90000);
       // 1% of ₹5,00,000
-      expect(calculatePercentagePaise(toPaise(500000), 1)).toBe(500000);
+      expect(calculatePercentagePaise(toPaise(500000)!, 1)).toBe(500000);
       // Decimal percentage: 2.5% on ₹1,000.00 = ₹25.00
-      expect(calculatePercentagePaise(toPaise(1000), 2.5)).toBe(2500);
+      expect(calculatePercentagePaise(toPaise(1000)!, 2.5)).toBe(2500);
     });
   });
 });

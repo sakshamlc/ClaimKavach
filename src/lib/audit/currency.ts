@@ -6,12 +6,12 @@
  *
  * Design Guarantees & Specification Policies:
  * 1. String-based parsing with ZERO float multiplication:
- *    - "12.345" -> 3 decimal digits; 3rd digit (5) rounds half-up to 1235 paise (₹12.35).
  *    - "12.5"   -> 1 decimal digit; expanded to 50 paise -> 1250 paise (₹12.50).
  *    - ".50"    -> leading dot with no integer part -> 50 paise (₹0.50).
  *    - "(100.00)" -> accounting parentheses syntax indicating negative -> -10000 paise (-₹100.00).
+ *    - "12.345" -> more than 2 decimal places is rejected with CurrencyError (sub-paise fractions not allowed on bills).
  *    - "1e3"    -> scientific notation in currency strings is rejected with CurrencyError.
- *    - "" / null / "   " / "N/A" -> returns 0 paise.
+ *    - "" / null / "   " / "N/A" -> returns NULL (missing/unbilled; rules treat as NOT_CHECKED, NEVER as 0).
  * 2. Integer-only round-half-up policy:
  *    - Ties (0.5) round away from zero (+0.5 -> +1, -0.5 -> -1).
  * 3. Fractional quantity handling:
@@ -63,9 +63,11 @@ export function roundHalfUp(numerator: number, denominator: number): number {
 
 /**
  * Parses a rupee currency string directly into integer paise WITHOUT float multiplication.
+ * Returns null for missing, empty, or unparseable non-numeric values like "N/A".
+ * Throws CurrencyError for malformed strings, scientific notation, or > 2 decimal places.
  */
-export function parseCurrencyToPaise(input: string | number | null | undefined): number {
-  if (input === null || input === undefined) return 0;
+export function parseCurrencyToPaise(input: string | number | null | undefined): number | null {
+  if (input === null || input === undefined) return null;
   if (typeof input === 'number') {
     if (isNaN(input) || !isFinite(input)) {
       throw new CurrencyError(`Invalid numeric input: ${input}`);
@@ -73,11 +75,18 @@ export function parseCurrencyToPaise(input: string | number | null | undefined):
     if (Math.abs(input) * 100 > Number.MAX_SAFE_INTEGER) {
       throw new CurrencyError(`Amount exceeds MAX_SAFE_INTEGER: ${input}`);
     }
+    const numStr = input.toString();
+    const dotIdx = numStr.indexOf('.');
+    if (dotIdx !== -1 && numStr.length - dotIdx - 1 > 2) {
+      throw new CurrencyError(`Currency amount cannot have more than 2 decimal places, got: ${input}`);
+    }
     return Math.round(input * 100);
   }
 
   const raw = String(input).trim();
-  if (raw === '' || raw.toUpperCase() === 'N/A') return 0;
+  if (raw === '' || raw.toUpperCase() === 'N/A' || raw.toUpperCase() === 'NULL' || raw === '-') {
+    return null;
+  }
 
   // Reject scientific notation in string currency inputs (e.g. "1e3", "2.5e4")
   if (/[eE]/.test(raw)) {
@@ -99,7 +108,6 @@ export function parseCurrencyToPaise(input: string | number | null | undefined):
   clean = clean.replace(/^(?:Rs\.?|INR|₹)\s*/i, '').trim();
 
   // Match: optional integer digits with commas, followed by optional dot and decimal digits
-  // Allows ".50" (leading dot with no integer part) or "500." or "500.50"
   const regex = /^([0-9,]*)(?:\.([0-9]*))?$/;
   const match = clean.match(regex);
 
@@ -111,7 +119,14 @@ export function parseCurrencyToPaise(input: string | number | null | undefined):
   const decimalStr = match[2] || '';
 
   if (rupeeStr === '' && decimalStr === '') {
-    return 0;
+    return null;
+  }
+
+  // Reject more than 2 decimal digits (sub-paise fractions not allowed on bills)
+  if (decimalStr.length > 2) {
+    throw new CurrencyError(
+      `Currency amount cannot have more than 2 decimal places, got: "${raw}"`
+    );
   }
 
   return parseCurrencyToPaiseParts(isNegative, rupeeStr, decimalStr);
@@ -127,19 +142,12 @@ function parseCurrencyToPaiseParts(isNegative: boolean, rupeeStr: string, decima
     }
   }
 
-  // Parse decimal portion with exact round-half-up on sub-paise fractions
+  // Parse decimal portion
   let paise = 0;
-  if (decimalStr.length === 0) {
-    paise = 0;
-  } else if (decimalStr.length === 1) {
+  if (decimalStr.length === 1) {
     paise = parseInt(decimalStr, 10) * 10;
   } else if (decimalStr.length === 2) {
     paise = parseInt(decimalStr, 10);
-  } else {
-    // 3 or more decimal digits (e.g. "12.345"): round half-up on the 3rd digit
-    const firstTwo = parseInt(decimalStr.substring(0, 2), 10);
-    const thirdDigit = parseInt(decimalStr.charAt(2), 10);
-    paise = thirdDigit >= 5 ? firstTwo + 1 : firstTwo;
   }
 
   const totalPaise = rupees * 100 + paise;
@@ -152,8 +160,9 @@ function parseCurrencyToPaiseParts(isNegative: boolean, rupeeStr: string, decima
 
 /**
  * Converts a rupee amount (number or string) to integer paise.
+ * Returns null if the input is null, undefined, empty, or "N/A".
  */
-export function toPaise(rupees: number | string): number {
+export function toPaise(rupees: number | string | null | undefined): number | null {
   return parseCurrencyToPaise(rupees);
 }
 

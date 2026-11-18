@@ -1,0 +1,36 @@
+[
+  {
+    "id": "DEMO-DRUG-01",
+    "name": "DEMO Drug Alpha 100mg",
+    "normalizedName": "demo drug alpha 100mg",
+    "ceilingPaise": 10000,
+    "unit": "1 Tablet",
+    "effectiveDate": "2024-01-01",
+    "validUntil": null,
+    "instrumentNumber": null,
+    "instrumentDate": null,
+    "gstTreatment": "EXCLUDED",
+    "source": "DEMO DATA (Unverified Placeholder)",
+    "sourceUrl": "URL unverified, locate and record the real one",
+    "version": "DEMO.1",
+    "verified": false,
+    "sourceRef": "TODO"
+  },
+  {
+    "id": "DEMO-DRUG-02",
+    "name": "DEMO Drug Beta 500mg",
+    "normalizedName": "demo drug beta 500mg",
+    "ceilingPaise": 20000,
+    "unit": "1 Tablet",
+    "effectiveDate": "2024-01-01",
+    "validUntil": null,
+    "instrumentNumber": null,
+    "instrumentDate": null,
+    "gstTreatment": "EXCLUDED",
+    "source": "DEMO DATA (Unverified Placeholder)",
+    "sourceUrl": "URL unverified, locate and record the real one",
+    "version": "DEMO.1",
+    "verified": false,
+    "sourceRef": "TODO"
+  }
+]

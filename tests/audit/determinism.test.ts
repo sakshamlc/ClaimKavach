@@ -27,7 +27,7 @@ describe('Trust Zone Pure Determinism Verification', () => {
 
     function calculateTotal() {
       const lineTotals = rawBill.map((item) =>
-        multiplyPaiseByQuantity(toPaise(item.unit), item.qty)
+        multiplyPaiseByQuantity(toPaise(item.unit)!, item.qty)
       );
       return addPaise(...lineTotals);
     }
@@ -43,10 +43,10 @@ describe('Trust Zone Pure Determinism Verification', () => {
 
   it('guarantees exact mathematical integrity of unmerged summary totals', () => {
     // Total Billed = Fair Amount + Confirmed Overcharge + Likely Issue
-    const billed = toPaise(100000); // ₹1,00,000
-    const confirmed = toPaise(15000); // ₹15,000
-    const likely = toPaise(20000); // ₹20,000
-    const needsReview = toPaise(10000); // ₹10,000
+    const billed = toPaise(100000)!; // ₹1,00,000
+    const confirmed = toPaise(15000)!; // ₹15,000
+    const likely = toPaise(20000)!; // ₹20,000
+    const needsReview = toPaise(10000)!; // ₹10,000
 
     const fair = subtractPaise(billed, addPaise(confirmed, likely));
 
@@ -105,8 +105,8 @@ describe('Trust Zone Pure Determinism Verification', () => {
       amount: 1673500,
       citation: {
         kind: 'REGULATORY',
-        instrument: 'NPPA Notification S.O. 1335(E)',
-        url: 'https://nppaindia.nic.in',
+        instrument: 'NPPA Drug Ceiling Schedule',
+        url: 'https://example.gov.in/ceilings.pdf',
         effectiveDate: '2024-04-01',
         verified: false, // Demo data
       },

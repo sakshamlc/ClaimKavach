@@ -15,8 +15,7 @@ interface LintResult {
 describe('ESLint Programmatic Rule Enforcement on Trust Zone Fixture', () => {
   const eslint = new ESLint();
 
-  it('asserts that all Trust Zone isolation rules fire on violating code', async () => {
-    const violatingSnippet = `
+  const violatingSnippet = `
 // 1. Forbidden imports
 import fs from 'fs';
 import path from 'path';
@@ -46,6 +45,7 @@ export function badFunction() {
 }
 `;
 
+  it('asserts that all Trust Zone isolation rules fire on violating code inside src/lib/audit/', async () => {
     // Simulated file path inside src/lib/audit to trigger the ESLint override
     const filePath = path.resolve(process.cwd(), 'src/lib/audit/violatingTestFixture.ts');
 
@@ -75,5 +75,24 @@ export function badFunction() {
     expect(descriptions.some((d: string) => d.includes('WebSocket'))).toBe(true);
     expect(descriptions.some((d: string) => d.includes('Node fs is forbidden'))).toBe(true);
     expect(descriptions.some((d: string) => d.includes('Trust Zone (src/lib/audit/**) must remain isolated'))).toBe(true);
+  });
+
+  it('negative test: confirms the same code under src/lib/other/ does NOT trigger Trust Zone rules', async () => {
+    // File outside src/lib/audit/
+    const filePath = path.resolve(process.cwd(), 'src/lib/other/normalCode.ts');
+
+    const rawResults = await eslint.lintText(violatingSnippet, { filePath });
+    const results = rawResults as unknown as LintResult[];
+    const messages: LintMessage[] = results[0]?.messages || [];
+
+    const ruleIds: string[] = messages.map((m: LintMessage) => m.ruleId);
+
+    // Trust Zone specific override rules must NOT be present
+    expect(ruleIds).not.toContain('no-restricted-properties');
+    expect(ruleIds).not.toContain('no-restricted-globals');
+    expect(ruleIds).not.toContain('no-restricted-syntax');
+
+    const descriptions: string[] = messages.map((m: LintMessage) => m.message);
+    expect(descriptions.some((d: string) => d.includes('Trust Zone (src/lib/audit/**)'))).toBe(false);
   });
 });

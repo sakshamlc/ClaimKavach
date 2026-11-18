@@ -34,20 +34,26 @@ export type ItemCategory =
   | 'other';
 
 /**
+ * GST treatment declared for regulatory reference records.
+ */
+export type GstTreatment = 'EXCLUDED' | 'INCLUDED' | 'UNKNOWN';
+
+/**
  * Represents a single line item on a hospital bill.
  * All amounts in integer paise.
+ * Money and quantity fields allow null when unpriced or uncounted.
  */
 export interface LineItem {
   id: string;
   description: string;
   category: ItemCategory;
-  quantity: number;
-  unitRatePaise: number;
-  totalBilledPaise: number;
-  date?: string;            // YYYY-MM-DD
-  mrpPaise?: number;        // Printed MRP if specified on packaging/bill
-  deductedPaise?: number;   // Amount deducted by insurer/TPA if reviewing settlement sheet
-  deductionReason?: string; // TPA deduction clause/code
+  quantity: number | null;
+  unitRatePaise: number | null;
+  totalBilledPaise: number | null;
+  date?: string | null;            // YYYY-MM-DD
+  mrpPaise?: number | null;        // Printed MRP if specified on packaging/bill
+  deductedPaise?: number | null;   // Amount deducted by insurer/TPA if reviewing settlement sheet
+  deductionReason?: string;        // TPA deduction clause/code
   notes?: string;
 }
 
@@ -88,6 +94,7 @@ export interface PolicyContext {
  */
 export interface MedicalBill {
   id: string;
+  billDate?: string | null;     // YYYY-MM-DD (bill invoice/settlement date)
   hospital: HospitalMetadata;
   stay: PatientStayInfo;
   items: LineItem[];
@@ -101,12 +108,17 @@ export interface MedicalBill {
  */
 export interface RegulatoryCitation {
   kind: 'REGULATORY';
-  instrument: string;    // e.g. "NPPA S.O. 1335(E)", "IRDAI Master Circular 2024"
-  section?: string;       // e.g. "Annexure-I List II Item 12", "Para 4(c)"
-  url: string;            // Official source URL (required for regulatory citations)
-  effectiveDate: string;  // YYYY-MM-DD
-  verified: boolean;      // False for synthetic seed/demo data
+  instrument: string;           // e.g. "NPPA Drug Ceiling Schedule", "IRDAI Master Circular"
+  section?: string;             // e.g. "Annexure-I List II Item 12", "Para 4(c)"
+  url: string;                  // Official source URL
+  effectiveDate: string;        // YYYY-MM-DD
+  validUntil?: string | null;   // YYYY-MM-DD (null if indefinite or unexpired)
+  instrumentNumber?: string | null; // e.g. "S.O. 1335(E)" as printed, never from memory
+  instrumentDate?: string | null;   // YYYY-MM-DD as printed in document
+  gstTreatment?: GstTreatment;  // "EXCLUDED" | "INCLUDED" | "UNKNOWN"
+  verified: boolean;            // False for synthetic seed/demo data
   version?: string;
+  sourceRef?: string;           // e.g. "Page 4, Table A, Item 12"
 }
 
 /**
