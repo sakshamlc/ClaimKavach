@@ -217,12 +217,14 @@ describe('Phase 3 Unit Tests: Pure Audit Rules', () => {
       name: 'DEMO Retail Drug 100mg',
       normalizedName: 'demo retail drug 100mg',
       priceType: 'RETAIL',
+      ceilingPaise: undefined,
+      pricePaise: 10000,
       manufacturer: 'M/s Akums Drugs & Pharmaceuticals Ltd. / M/s Emcure Pharmaceuticals Ltd.',
       source: 'NPPA Retail Price Order',
       sourceRef: 'Page 8, Sl. No. 1',
     };
 
-    it('positive: flags overcharge when name, strength, dosageForm and priceUnit match', () => {
+    it('positive: flags overcharge when name, strength, dosageForm and priceUnit match (GST excluded)', () => {
       const item: LineItem = {
         id: 'MED-01',
         description: 'DEMO Drug Alpha 100mg Tablet',
@@ -230,15 +232,87 @@ describe('Phase 3 Unit Tests: Pure Audit Rules', () => {
         quantity: 10,
         unitRatePaise: 15000,
         totalBilledPaise: 150000,
+        billedPriceIncludesGst: false, // Explicitly excludes GST
       };
       const finding = evaluateNppaCeilingRule(item, demoRecord, true);
       expect(finding).not.toBeNull();
       expect(finding?.ruleId).toBe('R-NPPA-01');
       expect(finding?.verdict).toBe('CONFIRMED_OVERCHARGE');
-      expect(finding?.amount).toBe(50000);
-      expect(finding?.explanation.en).toContain('GST treatment in reference record: EXCLUDED');
-      // Must NOT contain remembered legal claims
+      expect(finding?.amount).toBe(50000); // (15000 - 10000) * 10 = 50000
+      expect(finding?.explanation.en).toContain('directly compared to GST-exclusive regulatory benchmark');
       expect(finding?.explanation.en).not.toContain('cannot add margin except');
+    });
+
+    it('GST handling: unstated billedPriceIncludesGst (null) caps potential overcharge at NEEDS_REVIEW', () => {
+      const itemNullGst: LineItem = {
+        id: 'MED-NULL-GST',
+        description: 'DEMO Drug Alpha 100mg Tablet',
+        category: 'pharmacy',
+        quantity: 10,
+        unitRatePaise: 15000,
+        totalBilledPaise: 150000,
+        billedPriceIncludesGst: null, // Unstated
+      };
+      const finding = evaluateNppaCeilingRule(itemNullGst, demoRecord, true);
+      expect(finding).not.toBeNull();
+      expect(finding?.verdict).toBe('NEEDS_REVIEW');
+      expect(finding?.explanation.en).toContain('GST status of billed unit rate is unstated');
+    });
+
+    it('GST handling: billedPriceIncludesGst true without gstRatePct caps at NEEDS_REVIEW', () => {
+      const itemNoRate: LineItem = {
+        id: 'MED-NO-RATE',
+        description: 'DEMO Drug Alpha 100mg Tablet',
+        category: 'pharmacy',
+        quantity: 10,
+        unitRatePaise: 15000,
+        totalBilledPaise: 150000,
+        billedPriceIncludesGst: true,
+        gstRatePct: null, // Missing rate
+      };
+      const finding = evaluateNppaCeilingRule(itemNoRate, demoRecord, true);
+      expect(finding).not.toBeNull();
+      expect(finding?.verdict).toBe('NEEDS_REVIEW');
+      expect(finding?.explanation.en).toContain('cannot compute pre-tax rate without rate. Specify GST percentage');
+    });
+
+    it('GST handling: billedPriceIncludesGst true with gstRatePct incorporates GST into benchmark', () => {
+      // Ceiling is 10000 (Rs 100). 5% GST on ceiling gives 10500 paise (Rs 105).
+      // Billed rate is 12000 paise (Rs 120).
+      // Overcharge per unit = 12000 - 10500 = 1500 paise. Total (qty 5) = 7500 paise.
+      const itemWithGst: LineItem = {
+        id: 'MED-WITH-GST',
+        description: 'DEMO Drug Alpha 100mg Tablet',
+        category: 'pharmacy',
+        quantity: 5,
+        unitRatePaise: 12000,
+        totalBilledPaise: 60000,
+        billedPriceIncludesGst: true,
+        gstRatePct: 5,
+      };
+      const finding = evaluateNppaCeilingRule(itemWithGst, demoRecord, true);
+      expect(finding).not.toBeNull();
+      expect(finding?.verdict).toBe('CONFIRMED_OVERCHARGE');
+      expect(finding?.amount).toBe(7500); // (12000 - 10500) * 5
+      expect(finding?.explanation.en).toContain('Billed price includes GST at 5%');
+      expect(finding?.explanation.en).toContain('inclusive of 5% GST');
+    });
+
+    it('A5 Amount check: NPPA finding amount = (billed unit price - ceiling) x qty in integer paise', () => {
+      const itemCalc: LineItem = {
+        id: 'MED-CALC',
+        description: 'DEMO Drug Alpha 100mg Tablet',
+        category: 'pharmacy',
+        quantity: 7,
+        unitRatePaise: 13500, // 135.00
+        totalBilledPaise: 94500,
+        billedPriceIncludesGst: false,
+      };
+      // Ceiling is 10000 paise. Overcharge = (13500 - 10000) * 7 = 3500 * 7 = 24500 paise.
+      const finding = evaluateNppaCeilingRule(itemCalc, demoRecord, true);
+      expect(finding).not.toBeNull();
+      expect(finding?.amount).toBe(24500);
+      expect(Number.isInteger(finding?.amount)).toBe(true);
     });
 
     it('specification mismatch test: "DEMO Drug Alpha 500mg" must not match the 100mg record', () => {
@@ -276,6 +350,7 @@ describe('Phase 3 Unit Tests: Pure Audit Rules', () => {
         quantity: 10,
         unitRatePaise: 15000,
         totalBilledPaise: 150000,
+        billedPriceIncludesGst: false,
       };
       const finding = evaluateNppaCeilingRule(itemNameOnly, demoRecord, true);
       expect(finding).not.toBeNull();
@@ -291,6 +366,7 @@ describe('Phase 3 Unit Tests: Pure Audit Rules', () => {
         quantity: 10,
         unitRatePaise: 15000,
         totalBilledPaise: 150000,
+        billedPriceIncludesGst: false,
       };
       const finding = evaluateNppaCeilingRule(itemWrongMfr, retailDemoRecord, true);
       expect(finding).not.toBeNull();
@@ -307,6 +383,7 @@ describe('Phase 3 Unit Tests: Pure Audit Rules', () => {
         quantity: 10,
         unitRatePaise: 15000,
         totalBilledPaise: 150000,
+        billedPriceIncludesGst: false,
       };
       // Even with isExactMatch = true, RETAIL records can NEVER produce CONFIRMED_OVERCHARGE
       const finding = evaluateNppaCeilingRule(itemMatchingMfr, retailDemoRecord, true);

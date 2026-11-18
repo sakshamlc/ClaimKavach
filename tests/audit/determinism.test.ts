@@ -48,11 +48,13 @@ describe('Trust Zone Pure Determinism Verification', () => {
     const likely = toPaise(20000)!; // ₹20,000
     const needsReview = toPaise(10000)!; // ₹10,000
 
-    const fair = subtractPaise(billed, addPaise(confirmed, likely));
+    const fair = subtractPaise(billed, confirmed);
+    const ifLikelyUpheld = subtractPaise(fair, likely);
 
     const totals: ReportTotals = {
       billed,
       fair,
+      ifLikelyUpheld,
       confirmed,
       likely,
       needsReview,
@@ -68,8 +70,9 @@ describe('Trust Zone Pure Determinism Verification', () => {
     expect(totals.confirmed).toBe(1500000);
     expect(totals.likely).toBe(2000000);
     expect(totals.needsReview).toBe(1000000);
-    expect(totals.fair).toBe(6500000); // ₹65,000.00
-    expect(addPaise(totals.fair, totals.confirmed, totals.likely)).toBe(totals.billed);
+    expect(totals.fair).toBe(8500000); // ₹85,000.00 (Fair = Billed - Confirmed)
+    expect(totals.ifLikelyUpheld).toBe(6500000); // ₹65,000.00 (ifLikelyUpheld = Fair - Likely)
+    expect(addPaise(totals.fair, totals.confirmed)).toBe(totals.billed);
 
     // Verify finding with kind: 'ARITHMETIC' (no URL)
     const arithmeticFinding: AuditFinding = {

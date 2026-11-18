@@ -59,6 +59,8 @@ export interface LineItem {
   confidence?: number | null;      // Extraction confidence score (0 to 1)
   userEdited?: boolean;            // Flagged true if user verified or corrected this line item
   verified?: boolean;              // Flagged true if line item is validated by human reviewer
+  billedPriceIncludesGst?: boolean | null; // User/document indication whether unitRatePaise includes GST (null if unstated)
+  gstRatePct?: number | null;      // Stated or user-provided GST rate percentage (e.g. 5, 12)
   notes?: string;
 }
 
@@ -106,6 +108,8 @@ export interface MedicalBill {
   totalBilledPaise: number;
   policyContext?: PolicyContext;
   hasUnextractedDiscountOrTax?: boolean; // Set true if bill contains discount/tax columns that were not extracted
+  billedPriceIncludesGst?: boolean | null; // Bill-level indication whether item prices include GST
+  gstRatePct?: number | null;   // Bill-level GST percentage
   isSynthetic?: boolean;
 }
 
@@ -205,11 +209,13 @@ export function getReferenceDataBadge(finding: AuditFinding): string | null {
  * Financial breakdown totals across the 5 unmerged report metric cards.
  * Amounts in integer paise. Never combine tiers into a single figure.
  *
- * Fair Amount Definition:
- * - Fair Amount = billed - (confirmed + likely).
- * - What is subtracted:
+ * Fair Amount & Reconciliation Principles:
+ * - Fair Amount = Billed - Confirmed only.
+ * - ifLikelyUpheld = Fair - Likely = Billed - Confirmed - Likely.
+ * - What is subtracted from Fair Amount:
  *     1. confirmed: Statutory ceiling breaches and verified arithmetic errors.
- *     2. likely: Suspected duplicate items, bundling discrepancies, and unbundled services.
+ * - What is accounted for in ifLikelyUpheld:
+ *     1. likely: Suspected duplicate items, bundling discrepancies, unverified ceiling findings.
  * - What is NOT subtracted:
  *     1. needsReview: Disclosures, unit ambiguities, policy-dependent proportionate deductions.
  *        These items require manual policy/chart verification before any financial adjustment.
@@ -217,11 +223,12 @@ export function getReferenceDataBadge(finding: AuditFinding): string | null {
  *        These are valid patient out-of-pocket liabilities and remain in the patient payable balance.
  */
 export interface ReportTotals {
-  billed: number;      // Total billed amount
-  fair: number;        // Fair amount: billed - (confirmed + likely)
-  confirmed: number;   // Statutory ceilings + verified arithmetic errors
-  likely: number;      // Duplicates, bundling, Annexure-I discrepancies
-  needsReview: number; // Disclosures / specifications required (not subtracted from fair)
+  billed: number;         // Total billed amount
+  fair: number;           // Fair amount: billed - confirmed only
+  ifLikelyUpheld: number; // Scenario total if likely issues are upheld: fair - likely
+  confirmed: number;      // Statutory ceilings + verified arithmetic errors
+  likely: number;         // Duplicates, bundling, Annexure-I discrepancies
+  needsReview: number;    // Disclosures / specifications required (not subtracted from fair)
 }
 
 /**

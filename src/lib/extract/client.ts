@@ -1,7 +1,17 @@
 import { GoogleGenAI } from '@google/genai';
 import { DocType } from '../rules/types';
-import { SYSTEM_INSTRUCTION, getExtractionPrompt, GEMINI_RESPONSE_SCHEMA } from './prompt';
+import {
+  SYSTEM_INSTRUCTION,
+  getExtractionPrompt,
+  GEMINI_RESPONSE_SCHEMA,
+  MEDICAL_BILL_PROMPT,
+  GEMINI_MEDICAL_BILL_RESPONSE_SCHEMA,
+} from './prompt';
 import { extractedDocumentSchema, ExtractedDocumentSchemaType } from './schema';
+import {
+  ExtractedMedicalDocumentSchema,
+  type ExtractedMedicalDocument,
+} from './medicalBillSchema';
 
 /**
  * Validates magic bytes of an uploaded file buffer.
@@ -200,3 +210,73 @@ export async function extractWithGemini(
 
   throw lastError || new Error('Extraction failed schema validation twice');
 }
+
+/**
+ * Calls Google Gemini for medical bill and TPA settlement extraction
+ * using GEMINI_MODEL (temperature 0), strictly following the prompt and JSON schema.
+ */
+export async function extractMedicalBillWithGemini(
+  buffer: Buffer,
+  mimeType: string,
+  apiKey?: string
+): Promise<ExtractedMedicalDocument> {
+  const key = apiKey || process.env.GEMINI_API_KEY;
+  if (!key) {
+    throw new Error('GEMINI_API_KEY is not configured');
+  }
+
+  const modelName = process.env.GEMINI_MODEL || 'gemini-1.5-pro';
+  const ai = new GoogleGenAI({ apiKey: key });
+
+  const base64Data = buffer.toString('base64');
+
+  let attempts = 0;
+  let lastError: Error | null = null;
+
+  while (attempts < 2) {
+    attempts++;
+    try {
+      const response = await ai.models.generateContent({
+        model: modelName,
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              {
+                inlineData: {
+                  mimeType,
+                  data: base64Data,
+                },
+              },
+              {
+                text: MEDICAL_BILL_PROMPT,
+              },
+            ],
+          },
+        ],
+        config: {
+          systemInstruction: SYSTEM_INSTRUCTION,
+          temperature: 0,
+          responseMimeType: 'application/json',
+          responseSchema: GEMINI_MEDICAL_BILL_RESPONSE_SCHEMA,
+        },
+      });
+
+      const responseText = response.text;
+      if (!responseText) {
+        throw new Error('Empty response from Gemini');
+      }
+
+      const parsedJson = JSON.parse(responseText);
+      const validated = ExtractedMedicalDocumentSchema.parse(parsedJson);
+
+      return validated;
+    } catch (err: any) {
+      lastError = err;
+      if (attempts >= 2) break;
+    }
+  }
+
+  throw lastError || new Error('Medical bill extraction failed schema validation');
+}
+

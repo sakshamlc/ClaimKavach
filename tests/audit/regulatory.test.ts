@@ -278,9 +278,11 @@ describe('Phase 2 Regulatory Loaders, Zod Validation & Integrity Guards', () => 
         expect(rec.ingredients.length).toBeGreaterThan(0);
         if (rec.sourceFile === 'Drugceiling1.pdf') {
           expect(rec.priceType).toBe('RETAIL');
+          expect(rec.pricePaise).toBeGreaterThan(0);
           expect(rec.manufacturer).toBeTruthy();
         } else {
           expect(rec.priceType).toBe('CEILING');
+          expect(rec.ceilingPaise).toBeGreaterThan(0);
           expect(rec.manufacturer).toBeNull();
         }
       }

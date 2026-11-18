@@ -1,0 +1,73 @@
+{
+  "isSynthetic": true,
+  "label": "SYNTHETIC SAMPLE 2 - Room Bundling and TPA Deduction Settlement",
+  "documentType": "combined",
+  "bill": {
+    "hospitalName": "Synthetic City Healthcare Hospital",
+    "billDate": "2026-06-10",
+    "admissionDate": "2026-06-07",
+    "dischargeDate": "2026-06-10",
+    "lengthOfStayNights": 3,
+    "roomType": "Single Private AC Room",
+    "hasDiscountOrTaxColumns": false,
+    "billedPriceIncludesGst": false,
+    "gstRatePct": null,
+    "items": [
+      {
+        "name": "Single Private Room Rent",
+        "category": "room_rent",
+        "quantity": "3",
+        "unitPrice": "5000.00",
+        "amount": "15000.00",
+        "discount": "0.00",
+        "tax": "0.00",
+        "date": "2026-06-08",
+        "confidence": 0.98,
+        "notes": "3 nights accommodation"
+      },
+      {
+        "name": "Routine Nursing Charges",
+        "category": "nursing",
+        "quantity": "3",
+        "unitPrice": "1000.00",
+        "amount": "3000.00",
+        "discount": "0.00",
+        "tax": "0.00",
+        "date": "2026-06-08",
+        "confidence": 0.95,
+        "notes": "Daily nursing care"
+      },
+      {
+        "name": "Digital Thermometer",
+        "category": "consumable",
+        "quantity": "1",
+        "unitPrice": "350.00",
+        "amount": "350.00",
+        "discount": "0.00",
+        "tax": "0.00",
+        "date": "2026-06-07",
+        "confidence": 0.97,
+        "notes": "Patient admission kit item"
+      }
+    ],
+    "statedTotal": "18350.00"
+  },
+  "settlement": {
+    "tpaName": "Synthetic Health TPA Services Ltd",
+    "claimNumber": "CLM-2026-009812",
+    "sumInsured": "500000.00",
+    "roomRentLimit": "5000.00",
+    "coPayAmount": "0.00",
+    "roomRentProportionateDeduction": "0.00",
+    "deductions": [
+      {
+        "itemName": "Digital Thermometer",
+        "billedAmount": "350.00",
+        "deductedAmount": "350.00",
+        "reason": "Non-payable consumable under Annexure-I item list",
+        "category": "consumable"
+      }
+    ]
+  },
+  "overallConfidence": 0.97
+}

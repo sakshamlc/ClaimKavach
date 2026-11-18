@@ -15,24 +15,28 @@ ClaimKavach enforces unmerged financial reporting. Tiers of audit findings are n
 | **Confirmed Overcharge** | Legally and mathematically undeniable overcharges. | Billed unit rate above verified statutory price ceiling (`verified: true`), printed MRP violation, or bill arithmetic error on high-confidence/verified lines. |
 | **Likely Issue** | High-probability discrepancies requiring hospital reconciliation. | Unbundled charges likely subsumed in room/ICU bed tariff, duplicate lines, or unverified reference ceiling findings (`verified: false`). |
 | **Needs Review** | Items requiring policy, clinical, or unit-of-issue clarification. | Billing unit ambiguities, expired regulatory ceiling orders, proportionate deductions depending on policy wording, or optional insurance covers. |
-| **Fair Amount** | Adjusted reasonable amount payable. | Derived deterministically via the formula below. |
+| **Fair Amount** | Adjusted reasonable amount payable deducting confirmed overcharges only. | Derived deterministically via the formula below. |
+| **If Likely Upheld** | Conservative settlement amount if all likely hospital billing discrepancies are upheld upon reconciliation. | Derived deterministically via the formula below. |
 
 ---
 
 ## 2. Fair Amount Definition & Accounting Principles
 
-### Formula:
-$$\text{Fair Amount} = \text{Total Billed} - (\text{Confirmed Overcharge} + \text{Likely Issue})$$
+### Formulas:
+$$\text{Fair Amount} = \text{Total Billed} - \text{Confirmed Overcharge}$$
+$$\text{If Likely Upheld} = \text{Fair Amount} - \text{Likely Issue} = \text{Total Billed} - (\text{Confirmed Overcharge} + \text{Likely Issue})$$
 
-### What IS Subtracted:
+### What IS Subtracted from Fair Amount:
 1. **`Confirmed Overcharge`**:
    - Arithmetic calculation errors ($qty \times rate \neq billed$).
    - Charges in excess of verified statutory price ceilings (NPPA Drug Schedules, gazetted stent/knee device ceilings).
    - Charges in excess of the manufacturer's printed Maximum Retail Price (MRP).
-2. **`Likely Issue`**:
+
+### What IS Accounted for in If Likely Upheld:
+1. **`Likely Issue`**:
    - Duplicate line item billings.
    - Separate charges for routine nursing, resident doctor duty, or standard monitoring that are bundled into the room/ICU daily bed tariff.
-   - Price ceiling discrepancies backed by unverified seed data (`verified: false`).
+   - Price ceiling discrepancies backed by unverified reference data (`verified: false`).
 
 ### What is NOT Subtracted:
 1. **`Needs Review`**:

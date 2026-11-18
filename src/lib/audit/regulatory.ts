@@ -151,9 +151,11 @@ export type Ingredient = z.infer<typeof IngredientSchema>;
 /**
  * NPPA Scheduled Drug Ceiling Schema
  * Enhanced with dosageForm, structured ingredients, rawComposition, priceType, manufacturer, and priceUnit.
+ * PriceType-aware: RETAIL records store pricePaise (retail price benchmark), CEILING records store ceilingPaise.
  */
 export const NppaCeilingRecordSchema = BaseRegulatoryRecordSchema.extend({
-  ceilingPaise: z.number().int().positive('ceilingPaise must be a positive integer'),
+  ceilingPaise: z.number().int().positive('ceilingPaise must be a positive integer').optional(),
+  pricePaise: z.number().int().positive('pricePaise must be a positive integer').optional(),
   unit: z.string().min(1, 'unit is required (e.g. 1 Tablet, 1 Vial)'),
   dosageForm: z.string().min(1, 'dosageForm is required (e.g. Tablet, Capsule, Injection)'),
   strength: z.string().min(1, 'strength is required (e.g. 100mg, 500mg)'),
@@ -162,9 +164,27 @@ export const NppaCeilingRecordSchema = BaseRegulatoryRecordSchema.extend({
   manufacturer: z.string().nullable().default(null),
   rawComposition: z.string().default(''),
   ingredients: z.array(IngredientSchema).default([]),
-});
+}).refine(
+  (data) => (data.priceType === 'RETAIL' ? data.pricePaise !== undefined || data.ceilingPaise !== undefined : data.ceilingPaise !== undefined),
+  { message: 'RETAIL records must define pricePaise; CEILING records must define ceilingPaise' }
+);
 
 export type NppaCeilingRecord = z.infer<typeof NppaCeilingRecordSchema>;
+
+/**
+ * Pure helper to read the relevant regulatory price amount in paise.
+ * For RETAIL records, returns pricePaise (retail price benchmark).
+ * For CEILING records, returns ceilingPaise.
+ */
+export function getRecordPricePaise(record: NppaCeilingRecord | ImplantCeilingRecord): number {
+  if ('pricePaise' in record && record.pricePaise !== undefined && record.pricePaise !== null) {
+    return record.pricePaise;
+  }
+  if ('ceilingPaise' in record && record.ceilingPaise !== undefined && record.ceilingPaise !== null) {
+    return record.ceilingPaise;
+  }
+  throw new Error(`Record ${record.id} has neither pricePaise nor ceilingPaise`);
+}
 
 /**
  * Medical Devices & Implants Ceiling Schema (Stents, Knee Implants, Pacemakers)

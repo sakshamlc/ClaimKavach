@@ -48,6 +48,7 @@ describe('Phase 3 Audit Engine: Determinism, Golden-File Synthetic Bills & Centr
         unitRatePaise: 15000,
         totalBilledPaise: 150000,
         date: '2024-06-12',
+        billedPriceIncludesGst: false,
         confidence: 0.98,
       },
       {
@@ -207,6 +208,8 @@ describe('Phase 3 Audit Engine: Determinism, Golden-File Synthetic Bills & Centr
       expect(report.totals.billed).toBe(250000);
       expect(report.totals.confirmed).toBe(20000); // Arithmetic (10000) + MRP (10000) confirmed
       expect(report.totals.likely).toBe(50000); // DEMO drug capped at likely
+      expect(report.totals.fair).toBe(230000); // Billed - confirmed (250000 - 20000)
+      expect(report.totals.ifLikelyUpheld).toBe(180000); // Fair - likely (230000 - 50000)
 
       // Check R-MATH-01 is confirmed
       const mathFinding = report.findings.find((f) => f.ruleId === 'R-MATH-01');
@@ -248,7 +251,8 @@ describe('Phase 3 Audit Engine: Determinism, Golden-File Synthetic Bills & Centr
       // Valid exclusions do NOT reduce fair amount or inflate confirmed/likely
       expect(report.totals.confirmed).toBe(0);
       expect(report.totals.likely).toBe(100000);
-      expect(report.totals.fair).toBe(825000); // 925000 - 100000
+      expect(report.totals.fair).toBe(925000); // Billed - confirmed (925000 - 0)
+      expect(report.totals.ifLikelyUpheld).toBe(825000); // Fair - likely (925000 - 100000)
     });
 
     it('Golden Bill 3 (Clean Bill): results in zero confirmed and zero likely issues', () => {
@@ -259,6 +263,7 @@ describe('Phase 3 Audit Engine: Determinism, Golden-File Synthetic Bills & Centr
       expect(report.totals.confirmed).toBe(0);
       expect(report.totals.likely).toBe(0);
       expect(report.totals.fair).toBe(200000);
+      expect(report.totals.ifLikelyUpheld).toBe(200000);
       expect(report.findings.length).toBe(0);
       expect(report.coverage.arithmeticChecked).toBe(2);
       expect(report.coverage.regulatoryChecked).toBe(1);
@@ -372,6 +377,7 @@ describe('Phase 3 Audit Engine: Determinism, Golden-File Synthetic Bills & Centr
             unitRatePaise: 800, // 8.00 vs ceiling 5.46 (546 paise)
             totalBilledPaise: 8000,
             date: '2026-05-10',
+            billedPriceIncludesGst: false,
           },
         ],
         totalBilledPaise: 8000,
@@ -396,6 +402,7 @@ describe('Phase 3 Audit Engine: Determinism, Golden-File Synthetic Bills & Centr
           dischargeDate: '2026-05-15',
           lengthOfStayNights: 5,
         },
+        billedPriceIncludesGst: false,
         items: [
           {
             id: 'PHARM-01',
@@ -487,6 +494,7 @@ describe('Phase 3 Audit Engine: Determinism, Golden-File Synthetic Bills & Centr
         id: 'SYNTHETIC-STENT-BILL',
         isSynthetic: true,
         billDate: '2026-05-15',
+        billedPriceIncludesGst: false,
         hospital: { name: 'Metro Cardiac Care' },
         stay: {
           admissionDate: '2026-05-14',
@@ -563,6 +571,35 @@ describe('Phase 3 Audit Engine: Determinism, Golden-File Synthetic Bills & Centr
       expect(getReferenceDataBadge(verifiedFinding!)).toBeNull();
       expect(verifiedReport.totals.confirmed).toBe(4500000 - 3918603);
       expect(verifiedReport.totals.likely).toBe(0);
+    });
+
+    it('A8 Date Test: a stent bill dated before 2026-04-01 yields NEEDS_REVIEW', () => {
+      const earlyStentBill: MedicalBill = {
+        id: 'EARLY-STENT-BILL',
+        isSynthetic: true,
+        billDate: '2026-03-15', // Prior to 2026-04-01 effectiveDate
+        billedPriceIncludesGst: false,
+        hospital: { name: 'Metro Hospital' },
+        stay: { admissionDate: '2026-03-14', dischargeDate: '2026-03-15', lengthOfStayNights: 1 },
+        items: [
+          {
+            id: 'STENT-EARLY',
+            description: 'Bare Metal Stents',
+            category: 'implant',
+            quantity: 1,
+            unitRatePaise: 1500000,
+            totalBilledPaise: 1500000,
+            date: '2026-03-15',
+          },
+        ],
+        totalBilledPaise: 1500000,
+      };
+
+      const report = runAudit(earlyStentBill);
+      const stentFinding = report.findings.find((f) => f.itemId === 'STENT-EARLY');
+      expect(stentFinding).toBeDefined();
+      expect(stentFinding?.verdict).toBe('NEEDS_REVIEW');
+      expect(stentFinding?.explanation.en).toContain('prior to regulatory effectiveDate');
     });
   });
 });

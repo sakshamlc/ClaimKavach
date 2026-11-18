@@ -140,7 +140,10 @@ export function runAudit(
           checkedRegulatoryItemIds.add(item.id);
         }
 
-        const ceilingFinding = evaluateNppaCeilingRule(item, match.record, match.isExact);
+        const ceilingFinding = evaluateNppaCeilingRule(item, match.record, match.isExact, {
+          billedPriceIncludesGst: item.billedPriceIncludesGst !== undefined ? item.billedPriceIncludesGst : bill.billedPriceIncludesGst,
+          gstRatePct: item.gstRatePct !== undefined ? item.gstRatePct : bill.gstRatePct,
+        });
         if (ceilingFinding) {
           rawFindings.push({
             finding: ceilingFinding,
@@ -157,7 +160,10 @@ export function runAudit(
       const match = findBestMatch(item.description, implantCeilings, 0.65);
       if (match.record) {
         checkedRegulatoryItemIds.add(item.id);
-        const implantFinding = evaluateNppaCeilingRule(item, match.record, match.isExact);
+        const implantFinding = evaluateNppaCeilingRule(item, match.record, match.isExact, {
+          billedPriceIncludesGst: item.billedPriceIncludesGst !== undefined ? item.billedPriceIncludesGst : bill.billedPriceIncludesGst,
+          gstRatePct: item.gstRatePct !== undefined ? item.gstRatePct : bill.gstRatePct,
+        });
         if (implantFinding) {
           rawFindings.push({
             finding: implantFinding,
@@ -254,14 +260,9 @@ export function runAudit(
   }
 
   // 6. Calculate unmerged totals
-  // Fair Amount Definition & Accounting Principles:
-  // Fair Amount = Billed - (Confirmed Overcharge + Likely Issue)
-  // Subtracted:
-  //   - Confirmed Overcharge: Statutory price ceiling breaches and verified arithmetic errors.
-  //   - Likely Issue: Bundling discrepancies, duplicate items, unverified ceiling findings.
-  // Not Subtracted:
-  //   - Needs Review: Disclosures, unit ambiguities, policy-dependent proportionate deductions.
-  //   - Valid Exclusion: Legitimate non-payable items (patient out-of-pocket liabilities).
+  // Fair Amount & Reconciliation Principles:
+  // Fair Amount = Billed - Confirmed only.
+  // ifLikelyUpheld = Fair - Likely = Billed - Confirmed - Likely.
   let confirmedTotal = 0;
   let likelyTotal = 0;
   let needsReviewTotal = 0;
@@ -276,12 +277,13 @@ export function runAudit(
     }
   }
 
-  const questionedDeductions = addPaise(confirmedTotal, likelyTotal);
-  const fairAmount = subtractPaise(bill.totalBilledPaise, questionedDeductions);
+  const fairAmount = subtractPaise(bill.totalBilledPaise, confirmedTotal);
+  const ifLikelyUpheld = subtractPaise(fairAmount, likelyTotal);
 
   const totals: ReportTotals = {
     billed: bill.totalBilledPaise,
     fair: fairAmount < 0 ? 0 : fairAmount,
+    ifLikelyUpheld: ifLikelyUpheld < 0 ? 0 : ifLikelyUpheld,
     confirmed: confirmedTotal,
     likely: likelyTotal,
     needsReview: needsReviewTotal,

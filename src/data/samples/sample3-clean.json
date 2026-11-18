@@ -1,0 +1,57 @@
+{
+  "isSynthetic": true,
+  "label": "SYNTHETIC SAMPLE 3 - Clean Medical Bill Without Overcharges",
+  "documentType": "hospital_bill",
+  "bill": {
+    "hospitalName": "Synthetic Community Clinic & Hospital",
+    "billDate": "2026-07-02",
+    "admissionDate": "2026-07-01",
+    "dischargeDate": "2026-07-02",
+    "lengthOfStayNights": 1,
+    "roomType": "General Ward",
+    "hasDiscountOrTaxColumns": false,
+    "billedPriceIncludesGst": false,
+    "gstRatePct": null,
+    "items": [
+      {
+        "name": "General Ward Bed Charges",
+        "category": "room_rent",
+        "quantity": "1",
+        "unitPrice": "1500.00",
+        "amount": "1500.00",
+        "discount": "0.00",
+        "tax": "0.00",
+        "date": "2026-07-01",
+        "confidence": 0.99,
+        "notes": "1 night admission"
+      },
+      {
+        "name": "Consultant Physician Visit",
+        "category": "doctor_visit",
+        "quantity": "1",
+        "unitPrice": "800.00",
+        "amount": "800.00",
+        "discount": "0.00",
+        "tax": "0.00",
+        "date": "2026-07-01",
+        "confidence": 0.98,
+        "notes": "Daily rounds consultation"
+      },
+      {
+        "name": "Complete Blood Count (CBC)",
+        "category": "investigation",
+        "quantity": "1",
+        "unitPrice": "400.00",
+        "amount": "400.00",
+        "discount": "0.00",
+        "tax": "0.00",
+        "date": "2026-07-01",
+        "confidence": 0.99,
+        "notes": "Laboratory investigation"
+      }
+    ],
+    "statedTotal": "2700.00"
+  },
+  "settlement": null,
+  "overallConfidence": 0.99
+}
