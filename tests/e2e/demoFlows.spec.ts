@@ -4,7 +4,7 @@ test.use({
   viewport: { width: 375, height: 667 }, // Mobile-first 375px baseline
 });
 
-test.describe('PechanSetu — End-to-End Demo Scenarios (375px mobile viewport)', () => {
+test.describe('ClaimKavach — End-to-End Demo Scenarios (375px mobile viewport)', () => {
   test('Scenario 1: PM-Kisan Name Order Swap Flow (English)', async ({ page }) => {
     // 1. Visit landing page
     await page.goto('/demo');

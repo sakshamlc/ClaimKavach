@@ -49,7 +49,7 @@ Total Billed Amount: ${totalBilled}
 
 I am writing to formally request an itemized review and clarification regarding specific charges billed on the final hospital invoice referenced above.
 
-Upon review against notified price ceilings published in official gazette notifications:
+Upon review against notified price ceilings published in official regulatory notifications:
 
 1. Regulatory Price Benchmark Review:
 ${
@@ -77,7 +77,7 @@ ${
 
 Under applicable statutory notifications, scheduled items may not be billed above the notified price ceiling plus applicable taxes.
 
-Kindly issue a revised, corrected final bill and arrange for the refund or adjustment of excess charges amounting to ${confirmedOvercharge !== '₹0.00' ? confirmedOvercharge : likelyOvercharge} within 7 working days.
+Kindly issue a revised, corrected final bill and arrange for the refund or adjustment of excess charges amounting to ${confirmedOvercharge !== '₹0.00' ? confirmedOvercharge : likelyOvercharge} within [Number of Days] working days.
 
 Thank you.
 
@@ -184,7 +184,7 @@ Insurance Company: [Name of Insurer]
 Policy Number: [Policy Number]
 Claim Number: [Claim Number]
 Date of Representation to Insurer GRO: [Date Representation Sent]
-Date of Rejection / Expiry of 30 days: [Date]
+Date of Rejection / Expiry of representation period: [Date]
 
 Respected Ombudsman,
 
@@ -195,7 +195,7 @@ The complainant holds health insurance policy No. [Policy Number] issued by [Nam
 The insurer settled only [Settled Amount] and disallowed [Disputed Amount]. The deductions made by the insurer / TPA appear inconsistent with applicable health insurance terms and standard guidelines.
 
 3. Prior Representation to Insurer:
-The complainant represented this matter to the Grievance Redressal Officer (GRO) of the insurer on [Date]. More than 30 days have elapsed without satisfactory resolution, or the representation was repudiated without adequate justification.
+The complainant represented this matter to the Grievance Redressal Officer (GRO) of the insurer on [Date]. The representation period has elapsed without satisfactory resolution, or the representation was repudiated without adequate justification.
 
 4. Relief Sought:
 I request an award directing the insurer to pay the unpaid claim balance of [Disputed Amount] along with any applicable interest in accordance with grievance redressal norms.
@@ -303,6 +303,9 @@ export function DisputePack({ bill, report }: DisputePackProps) {
         <p className="leading-relaxed">
           {t.verifyBeforeSendingText}
         </p>
+        <div className="text-[11px] font-semibold text-amber-900 pt-1">
+          links to check before sending (unverified):
+        </div>
         <div className="flex flex-wrap items-center gap-4 pt-1 font-semibold text-amber-900">
           <a
             href="https://irdai.gov.in"

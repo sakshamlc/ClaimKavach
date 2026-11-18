@@ -1,4 +1,4 @@
-# PechanSetu — Technical Requirements Document (02-trd.md)
+# ClaimKavach — Technical Requirements Document (02-trd.md)
 
 ## 2.1 Stack
 

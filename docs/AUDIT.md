@@ -1,4 +1,4 @@
-# PechanSetu — Document Audit (AUDIT.md)
+# ClaimKavach — Document Audit (AUDIT.md)
 
 > This audit was performed against the extracted content of `MismatchFix-Build-Pack-for-Antigravity-v3.docx` before any code was written. All deviations from the documents are logged here and in ASSUMPTIONS.md.
 
@@ -6,7 +6,7 @@
 
 ## (a) 10-Line Product Summary
 
-PechanSetu is a **stateless, privacy-first web app** that helps Indian residents identify and fix cross-document field mismatches (name order, patronymic omissions, transliteration variants, date-of-birth discrepancies, PAN format issues, and merged-bank IFSCs) **before** they submit a government or banking application and get rejected.
+ClaimKavach is a **stateless, privacy-first web app** that helps Indian residents identify and fix cross-document field mismatches (name order, patronymic omissions, transliteration variants, date-of-birth discrepancies, PAN format issues, and merged-bank IFSCs) **before** they submit a government or banking application and get rejected.
 
 The user picks one of four goal profiles (PM-Kisan payment, scholarship, PAN-Aadhaar link, bank KYC), uploads up to four Indian identity/bank documents (Aadhaar, PAN, bank passbook, school certificate), reviews and corrects the AI-extracted fields, and receives a deterministic report ranking mismatches by severity. Each finding comes with a ranked fix plan (cheapest first), UIDAI lifetime-update-cap warnings, documents-to-carry checklists, and printable sample request letters in English, Hindi, and Marathi.
 
@@ -45,7 +45,7 @@ Google Gemini is used **only** for OCR extraction inside a single server route; 
 | A-9 | **Zustand version**: Not specified. | Use Zustand v5 (latest stable as of Nov 2026). |
 | A-10 | **EXTRACT_MOCK fixture for Scenario 3**: Bank passbook has name 'R. Deshmukh' (single initial). | Mock fixture for `bank` docType in Scenario 3 returns `accountHolderName: { value: 'R. Deshmukh', confidence: 0.94 }`. |
 | A-11 | **shadcn/ui CLI init**: The workspace has no shadcn setup. | Run `npx shadcn@latest init` with defaults and add required components. |
-| A-12 | **Package name**: Package name is set to `pechansetu`. | Rename `name` in package.json to `pechansetu`. |
+| A-12 | **Package name**: Package name is set to `ClaimKavach`. | Rename `name` in package.json to `ClaimKavach`. |
 | A-13 | **Playwright config**: Not present in existing repo's package.json. | Add `@playwright/test` and configure for Chromium at 375px viewport. |
 
 ---

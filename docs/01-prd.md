@@ -1,6 +1,6 @@
-# PechanSetu — Product Requirements Document (01-prd.md)
+# ClaimKavach — Product Requirements Document (01-prd.md)
 
-> **Product name:** PechanSetu.  
+> **Product name:** ClaimKavach.  
 > **Tagline:** "Find the mismatch before the portal rejects you."  
 > **Mission:** Pre-flight check and fix guide for document-mismatch rejections in Indian government and banking applications.
 
@@ -8,7 +8,7 @@
 
 ## 1.1 Overview
 
-PechanSetu tells a person exactly which field differs between their documents, how serious it is for their goal, and the cheapest, lowest-risk way to fix it (protecting scarce lifetime Aadhaar updates when a bank or PAN record can be updated instead), **before** they apply and get rejected.
+ClaimKavach tells a person exactly which field differs between their documents, how serious it is for their goal, and the cheapest, lowest-risk way to fix it (protecting scarce lifetime Aadhaar updates when a bank or PAN record can be updated instead), **before** they apply and get rejected.
 
 ## 1.2 Problem
 

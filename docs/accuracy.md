@@ -1,7 +1,7 @@
-# PechanSetu — Document Extraction Accuracy Audit (docs/accuracy.md)
+# ClaimKavach — Document Extraction Accuracy Audit (docs/accuracy.md)
 
 > **Important Disclosure on Test Methodology:**
-> In accordance with PechanSetu's honest verification policy and non-negotiable rules, **this extraction audit was evaluated against synthetic benchmark fixtures** (`mock-aadhaar.json`, `mock-pan.json`, `mock-bank.json`, `mock-certificate.json`, `scenario-1.json`, `scenario-2.json`, `scenario-3.json`) in mock mode (`EXTRACT_MOCK=1`) without live API calls during automated local CI test runs. No empirical claim of 95%+ field accuracy on real user camera photos is made, because real-world OCR performance is subject to optical distortions, poor lighting, regional fonts, and passbook print wear. This document details the benchmark schema design, model configuration, per-field validation results, and the safety mechanisms in place.
+> In accordance with ClaimKavach's honest verification policy and non-negotiable rules, **this extraction audit was evaluated against synthetic benchmark fixtures** (`mock-aadhaar.json`, `mock-pan.json`, `mock-bank.json`, `mock-certificate.json`, `scenario-1.json`, `scenario-2.json`, `scenario-3.json`) in mock mode (`EXTRACT_MOCK=1`) without live API calls during automated local CI test runs. No empirical claim of 95%+ field accuracy on real user camera photos is made, because real-world OCR performance is subject to optical distortions, poor lighting, regional fonts, and passbook print wear. This document details the benchmark schema design, model configuration, per-field validation results, and the safety mechanisms in place.
 
 ---
 
@@ -41,7 +41,7 @@ Below are the per-field schema validation results from the 10 reference document
 
 ## 3. Mandatory Safety Guardrail: Screen S5 Human-in-the-Loop Confidence Gate
 
-Because OCR models can misread low-contrast characters (e.g., mistaking `8` for `0`, or misinterpreting faded ink on rural bank passbooks), PechanSetu strictly decouples extraction from judgment:
+Because OCR models can misread low-contrast characters (e.g., mistaking `8` for `0`, or misinterpreting faded ink on rural bank passbooks), ClaimKavach strictly decouples extraction from judgment:
 
 1. **Extraction Confidence Scoring:**
    - Gemini returns an optical confidence score ($0.0 \dots 1.0$) for each extracted field.

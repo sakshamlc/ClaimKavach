@@ -1,10 +1,10 @@
-# PechanSetu — Implementation Plan (06-implementation-plan.md)
+# ClaimKavach — Implementation Plan (06-implementation-plan.md)
 
 > **Total budget:** 36–40 hours. Each phase ends with a strict verification gate: do not start the next phase until the gate passes.
 
 ## Phase 0: Project Setup (1 hour)
 
-1. Rename package to `pechansetu` in package.json
+1. Rename package to `ClaimKavach` in package.json
 2. Install: Next.js (App Router, TypeScript strict), Tailwind CSS, shadcn/ui, Zod, Vitest, Playwright, Zustand, @google/genai, next-intl
 3. Create folder structure from Document 2.3
 4. Write all six specification files into /docs/

@@ -10,6 +10,8 @@ import {
   generateBimaBharosaText,
   generateOmbudsmanLetter,
 } from '../../src/components/claim/DisputePack';
+import { claimTranslations } from '../../src/lib/claimI18n';
+import type { AuditReport } from '../../src/lib/audit/types';
 import sample1Data from '../../src/data/samples/sample1-stent.json';
 import sample2Data from '../../src/data/samples/sample2-bundling-tpa.json';
 import sample3Data from '../../src/data/samples/sample3-clean.json';
@@ -149,17 +151,32 @@ describe('Phase 5 & 6: ClaimKavach UI Logic, Store & Dispute Verification', () =
       /निश्चितपणे/i,
     ];
 
-    const UNGROUNDED_LEGAL_CITATIONS = [
-      /\bRule\s+\d+/i,
-      /\bSection\s+\d+/i,
-      /\bPara\s+\d+/i,
-      /\bRegulations?,\s*\d{4}\b/i,
-      /\bRules?,\s*\d{4}\b/i,
-      /\bOrder,\s*\d{4}\b/i,
-      /Drugs \(Prices Control\) Order/i,
-      /Ombudsman Rules/i,
-      /Protection of Policyholders/i,
-    ];
+    const BROAD_LEGAL_TERMS_REGEX = /(?:\b(Rule|Section|Para|Regulations?|Act|Order|DPCO|Gazette)\b|\bS\.O\.)/i;
+
+    function stripFindingAndCitationData(text: string, report: AuditReport): string {
+      let cleaned = text;
+      for (const f of report.findings) {
+        if (f.citation.instrument) {
+          cleaned = cleaned.replaceAll(f.citation.instrument, '');
+        }
+        if (f.citation.kind === 'REGULATORY' && f.citation.instrumentNumber) {
+          cleaned = cleaned.replaceAll(f.citation.instrumentNumber, '');
+        }
+        if (f.citation.kind === 'REGULATORY' && f.citation.sourceRef) {
+          cleaned = cleaned.replaceAll(f.citation.sourceRef, '');
+        }
+        if (f.title) {
+          cleaned = cleaned.replaceAll(f.title, '');
+        }
+        if (f.explanation?.en) {
+          cleaned = cleaned.replaceAll(f.explanation.en, '');
+        }
+        if (f.explanation?.hi) {
+          cleaned = cleaned.replaceAll(f.explanation.hi, '');
+        }
+      }
+      return cleaned;
+    }
 
     it('ensures all rendered dispute drafts contain zero banned phrases', () => {
       for (const sample of ['sample1', 'sample2'] as const) {
@@ -182,7 +199,7 @@ describe('Phase 5 & 6: ClaimKavach UI Logic, Store & Dispute Verification', () =
       }
     });
 
-    it('ensures dispute templates contain zero ungrounded "Rule " or "Section " or remembered legal citations', () => {
+    it('ensures dispute templates contain zero ungrounded citations: Rule, Section, Para, Regulation(s), Act, Order, DPCO, Gazette, S.O. unless from citation data', () => {
       for (const sample of ['sample1', 'sample2', 'sample3'] as const) {
         useClaimStore.getState().loadSample(sample);
         const report = useClaimStore.getState().executeAudit()!;
@@ -191,14 +208,50 @@ describe('Phase 5 & 6: ClaimKavach UI Logic, Store & Dispute Verification', () =
         const drafts = generateAllDisputeDrafts(bill, report);
 
         for (const draft of drafts) {
-          for (const pattern of UNGROUNDED_LEGAL_CITATIONS) {
-            const matches = pattern.test(draft.text);
-            expect(
-              matches,
-              `Ungrounded citation matching ${pattern} found in ${draft.label} for ${sample}`
-            ).toBe(false);
-          }
+          const strippedBoilerplate = stripFindingAndCitationData(draft.text, report);
+          const match = strippedBoilerplate.match(BROAD_LEGAL_TERMS_REGEX);
+          expect(
+            match,
+            `Ungrounded legal term "${match?.[0]}" found in template boilerplate of ${draft.label} for ${sample}`
+          ).toBeNull();
         }
+      }
+    });
+
+    it('scanner negative test: catches injected ungrounded legal citations if present in boilerplate', () => {
+      const injectedCases = [
+        'Under Rule 6 of IRDAI grievance norms',
+        'As per Section 45 of the Insurance Act',
+        'Refer to Para 4 of the guidelines',
+        'Subject to Regulation 12 of the Policyholder Regulations',
+        'Issued under DPCO 2013 order',
+        'Notified in Gazette notification',
+        'Pursuant to S.O. 1234(E)',
+      ];
+
+      for (const testStr of injectedCases) {
+        const match = testStr.match(BROAD_LEGAL_TERMS_REGEX);
+        expect(match, `Expected scanner to catch citation in: "${testStr}"`).not.toBeNull();
+      }
+    });
+  });
+
+  describe('5. I18N Translation Parity and Completeness', () => {
+    it('asserts every key in claimI18n exists in both English and Hindi and that no value is empty', () => {
+      const enKeys = Object.keys(claimTranslations.en).sort();
+      const hiKeys = Object.keys(claimTranslations.hi).sort();
+
+      expect(enKeys).toEqual(hiKeys);
+      expect(enKeys.length).toBeGreaterThan(0);
+
+      for (const key of enKeys as Array<keyof typeof claimTranslations.en>) {
+        const enVal = claimTranslations.en[key];
+        const hiVal = claimTranslations.hi[key];
+
+        expect(typeof enVal).toBe('string');
+        expect(typeof hiVal).toBe('string');
+        expect(enVal.trim().length, `English key "${key}" is empty`).toBeGreaterThan(0);
+        expect(hiVal.trim().length, `Hindi key "${key}" is empty`).toBeGreaterThan(0);
       }
     });
   });

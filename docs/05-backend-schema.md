@@ -1,4 +1,4 @@
-# PechanSetu — Backend Schema Document (05-backend-schema.md)
+# ClaimKavach — Backend Schema Document (05-backend-schema.md)
 
 ## 5.1 Core Types (TypeScript / Zod)
 

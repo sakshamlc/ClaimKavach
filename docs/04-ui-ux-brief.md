@@ -1,4 +1,4 @@
-# PechanSetu — UI/UX Design Brief (04-ui-ux-brief.md)
+# ClaimKavach — UI/UX Design Brief (04-ui-ux-brief.md)
 
 ## 4.1 Design Principles
 

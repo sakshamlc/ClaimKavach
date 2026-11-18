@@ -1,4 +1,4 @@
-# PechanSetu — Assumptions (ASSUMPTIONS.md)
+# ClaimKavach — Assumptions (ASSUMPTIONS.md)
 
 > Every assumption here was recorded before code was written. If a document was subsequently updated or an official source was checked, the assumption is annotated.
 
@@ -48,7 +48,7 @@
 
 **ASSUMPTION-ARCH-04**: S7 screen number is absent from the build pack screen inventory (jumps S6 -> S8). This is intentional; no S7 screen is built.
 
-**ASSUMPTION-ARCH-05**: PechanSetu is built as a complete greenfield product for Indian identity document matching. Existing source files (`src/components/`, `src/lib/`, `src/data/`, `src/app/`) have been completely tailored to PechanSetu.
+**ASSUMPTION-ARCH-05**: ClaimKavach is built as a complete greenfield product for Indian identity document matching. Existing source files (`src/components/`, `src/lib/`, `src/data/`, `src/app/`) have been completely tailored to ClaimKavach.
 
 ---
 
@@ -74,6 +74,6 @@
 
 ## Package
 
-**ASSUMPTION-PKG-01**: Package `name` in package.json is set to `pechansetu`.
+**ASSUMPTION-PKG-01**: Package `name` in package.json is set to `ClaimKavach`.
 
 **ASSUMPTION-PKG-02**: `@google/genai` v1.x (latest stable) is used for the Gemini API client. The structured output (`responseSchema`) API is confirmed available in this version.
