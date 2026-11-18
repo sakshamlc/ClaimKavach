@@ -3,6 +3,7 @@ import type { MedicalBill, LineItem, AuditReport } from '@/lib/audit/types';
 import { runAudit } from '@/lib/audit/engine';
 import { toMedicalBill } from '@/lib/extract/toMedicalBill';
 import { toPaise } from '@/lib/audit/currency';
+import type { ClaimLanguage } from '@/lib/claimI18n';
 
 // Import synthetic samples
 import sample1Data from '@/data/samples/sample1-stent.json';
@@ -18,6 +19,10 @@ export interface PolicyInputs {
 }
 
 export interface ClaimState {
+  // Language (English / Hindi)
+  language: ClaimLanguage;
+  setLanguage: (lang: ClaimLanguage) => void;
+
   // Consent
   consentAccepted: boolean;
   setConsentAccepted: (accepted: boolean) => void;
@@ -26,6 +31,11 @@ export interface ClaimState {
   bill: MedicalBill | null;
   fileName: string | null;
   selectedSampleKey: 'sample1' | 'sample2' | 'sample3' | null;
+
+  // Optional TPA settlement upload
+  tpaSettlement: any | null;
+  tpaFileName: string | null;
+  setTpaSettlement: (tpa: any | null, fileName?: string) => void;
 
   // Policy options
   policyInputs: PolicyInputs;
@@ -61,12 +71,45 @@ const initialPolicyInputs: PolicyInputs = {
 };
 
 export const useClaimStore = create<ClaimState>((set, get) => ({
+  language: 'en',
+  setLanguage: (lang) => set({ language: lang }),
+
   consentAccepted: false,
   setConsentAccepted: (accepted) => set({ consentAccepted: accepted }),
 
   bill: null,
   fileName: null,
   selectedSampleKey: null,
+
+  tpaSettlement: null,
+  tpaFileName: null,
+  setTpaSettlement: (tpa, fileName) => {
+    set({
+      tpaSettlement: tpa,
+      tpaFileName: fileName || null,
+    });
+
+    // If an active bill exists and TPA settlement provides deduction line items, match by item name
+    const current = get().bill;
+    if (current && tpa && Array.isArray(tpa.items)) {
+      const updatedItems = current.items.map((item) => {
+        const matched = tpa.items.find(
+          (ti: any) =>
+            ti.description &&
+            item.description.toLowerCase().includes(ti.description.toLowerCase().slice(0, 8))
+        );
+        if (matched && (matched.deductedPaise || matched.disallowedPaise)) {
+          return {
+            ...item,
+            deductedPaise: matched.deductedPaise || matched.disallowedPaise,
+            deductionReason: matched.deductionReason || matched.reason || item.deductionReason,
+          };
+        }
+        return item;
+      });
+      set({ bill: { ...current, items: updatedItems } });
+    }
+  },
 
   policyInputs: initialPolicyInputs,
   setPolicyInputs: (inputs) =>
@@ -105,42 +148,46 @@ export const useClaimStore = create<ClaimState>((set, get) => ({
       label = 'sample3-clean.json';
     }
 
-    if (!rawData) return;
-
-    const mappedBill = toMedicalBill(rawData);
-    set({
-      bill: mappedBill,
-      fileName: label,
-      selectedSampleKey: key,
-      billedPriceIncludesGst: mappedBill.billedPriceIncludesGst ?? null,
-      gstRatePct: mappedBill.gstRatePct ?? null,
-      report: null,
-      reportTimestamp: null,
-    });
+    if (rawData) {
+      const domainBill = toMedicalBill(rawData);
+      set({
+        bill: domainBill,
+        fileName: label,
+        selectedSampleKey: key,
+        report: null,
+        reportTimestamp: null,
+        policyInputs: {
+          sumInsuredRupees: 500000,
+          roomRentLimitRupees: 5000,
+          copayPercent: 10,
+          roomDays: domainBill.stay.lengthOfStayNights || 3,
+          billedRoomRateRupees: 6000,
+        },
+      });
+    }
   },
 
   updateBillDate: (date) => {
     const current = get().bill;
     if (!current) return;
     set({
-      bill: { ...current, billDate: date },
+      bill: {
+        ...current,
+        billDate: date,
+      },
     });
   },
 
   updateLineItem: (id, updates) => {
     const current = get().bill;
     if (!current) return;
-
-    const newItems = current.items.map((item) => {
-      if (item.id === id) {
-        const updated = { ...item, ...updates, userEdited: true };
-        return updated;
-      }
-      return item;
-    });
-
     set({
-      bill: { ...current, items: newItems },
+      bill: {
+        ...current,
+        items: current.items.map((item) =>
+          item.id === id ? { ...item, ...updates } : item
+        ),
+      },
     });
   },
 
@@ -197,6 +244,9 @@ export const useClaimStore = create<ClaimState>((set, get) => ({
         sumInsuredPaise: policy.sumInsuredRupees ? toPaise(policy.sumInsuredRupees) ?? undefined : undefined,
         roomRentLimitPaise: policy.roomRentLimitRupees ? toPaise(policy.roomRentLimitRupees) ?? undefined : undefined,
         hasProportionateDeductionClause: !!policy.roomRentLimitRupees,
+        copayPercent: policy.copayPercent ?? undefined,
+        roomDays: policy.roomDays ?? undefined,
+        billedRoomRatePaise: policy.billedRoomRateRupees ? toPaise(policy.billedRoomRateRupees) ?? undefined : undefined,
       },
     };
 
@@ -216,6 +266,8 @@ export const useClaimStore = create<ClaimState>((set, get) => ({
       consentAccepted: false,
       bill: null,
       fileName: null,
+      tpaSettlement: null,
+      tpaFileName: null,
       selectedSampleKey: null,
       policyInputs: initialPolicyInputs,
       billedPriceIncludesGst: null,

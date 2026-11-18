@@ -1,29 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DocType } from '@/lib/rules/types';
-import { docTypeSchema, extractedDocumentSchema } from '@/lib/extract/schema';
 import {
   verifyMagicBytes,
-  extractWithGemini,
   extractMedicalBillWithGemini,
-  sanitizeAadhaarDigits,
 } from '@/lib/extract/client';
 import { ExtractedMedicalDocumentSchema } from '@/lib/extract/medicalBillSchema';
-
-import mockAadhaar from '@/fixtures/mock-aadhaar.json';
-import mockPan from '@/fixtures/mock-pan.json';
-import mockBank from '@/fixtures/mock-bank.json';
-import mockCertificate from '@/fixtures/mock-certificate.json';
 
 import sample1Stent from '@/data/samples/sample1-stent.json';
 import sample2Bundling from '@/data/samples/sample2-bundling-tpa.json';
 import sample3Clean from '@/data/samples/sample3-clean.json';
-
-const mockMap: Record<DocType, any> = {
-  aadhaar: mockAadhaar,
-  pan: mockPan,
-  bank: mockBank,
-  certificate: mockCertificate,
-};
 
 const medicalSampleMap: Record<string, any> = {
   '1': sample1Stent,
@@ -84,7 +68,7 @@ export async function POST(req: NextRequest) {
     // 2. Parse Multipart Form Data (No body logging for privacy and determinism)
     const formData = await req.formData();
     const file = formData.get('file') as File | null;
-    const docTypeRaw = formData.get('docType') as string | null;
+    const docTypeRaw = (formData.get('docType') || formData.get('documentType')) as string | null;
     const sampleId = (formData.get('sampleId') as string | null) || req.headers.get('x-mock-sample') || '1';
 
     if (!file || !docTypeRaw) {
@@ -140,42 +124,22 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const isMedicalBill =
-      docTypeRaw === 'medical_bill' ||
-      docTypeRaw === 'hospital_bill' ||
-      docTypeRaw === 'tpa_settlement' ||
-      docTypeRaw === 'medical';
-
     // 5. EXTRACT_MOCK=1 support (allowed ONLY in non-production environments)
     const isMockAllowed =
       process.env.EXTRACT_MOCK === '1' && process.env.NODE_ENV !== 'production';
 
     if (isMockAllowed) {
-      if (isMedicalBill) {
-        const sample = medicalSampleMap[sampleId] || sample1Stent;
-        const validated = ExtractedMedicalDocumentSchema.parse(sample);
-        return NextResponse.json(validated, {
-          headers: {
-            'x-is-mock': '1',
-            'Cache-Control': 'no-store',
-          },
-        });
-      }
-
-      // Legacy doc type mock
-      const docTypeParsed = docTypeSchema.safeParse(docTypeRaw);
-      if (docTypeParsed.success) {
-        const canned = mockMap[docTypeParsed.data];
-        if (canned) {
-          const validated = extractedDocumentSchema.parse(canned);
-          return NextResponse.json(sanitizeAadhaarDigits(validated), {
-            headers: {
-              'x-is-mock': '1',
-              'Cache-Control': 'no-store',
-            },
-          });
-        }
-      }
+      const sample =
+        docTypeRaw === 'tpa_settlement'
+          ? sample2Bundling
+          : medicalSampleMap[sampleId] || sample1Stent;
+      const validated = ExtractedMedicalDocumentSchema.parse(sample);
+      return NextResponse.json(validated, {
+        headers: {
+          'x-is-mock': '1',
+          'Cache-Control': 'no-store',
+        },
+      });
     }
 
     // 6. Config Validation: GEMINI_MODEL must be explicitly set outside mock mode
@@ -197,31 +161,7 @@ export async function POST(req: NextRequest) {
     // 7. Upstream Gemini Call
     const clientKey = req.headers.get('x-gemini-key') || undefined;
     try {
-      if (isMedicalBill) {
-        const extracted = await extractMedicalBillWithGemini(buffer, detectedMime, clientKey);
-        return NextResponse.json(extracted, {
-          headers: { 'Cache-Control': 'no-store' },
-        });
-      }
-
-      // Validate legacy docType
-      const docTypeParsed = docTypeSchema.safeParse(docTypeRaw);
-      if (!docTypeParsed.success) {
-        return NextResponse.json(
-          {
-            error: {
-              code: 'BAD_TYPE',
-              message: `Invalid docType "${docTypeRaw}". Expected: medical_bill, aadhaar, pan, bank, or certificate.`,
-            },
-          },
-          {
-            status: 400,
-            headers: { 'Cache-Control': 'no-store' },
-          }
-        );
-      }
-
-      const extracted = await extractWithGemini(buffer, detectedMime, docTypeParsed.data, clientKey);
+      const extracted = await extractMedicalBillWithGemini(buffer, detectedMime, clientKey);
       return NextResponse.json(extracted, {
         headers: { 'Cache-Control': 'no-store' },
       });

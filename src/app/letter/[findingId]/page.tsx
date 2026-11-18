@@ -1,18 +1,11 @@
-import LetterClient from './LetterClient';
+import { redirect } from 'next/navigation';
 
 export function generateStaticParams() {
-  return [
-    { findingId: 'f-name-order' },
-    { findingId: 'f-dbt' },
-    { findingId: 'f-dob-swap' },
-    { findingId: 'f-ifsc' },
-    { findingId: 'f-name-patronymic' },
-    { findingId: 'f-missing-token' },
-  ];
+  return [];
 }
 
 export const dynamicParams = true;
 
-export default function LetterPage() {
-  return <LetterClient />;
+export default function LetterRedirect() {
+  redirect('/report');
 }

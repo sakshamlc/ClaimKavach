@@ -52,6 +52,9 @@ export interface LineItem {
   totalBilledPaise: number | null;
   date?: string | null;            // YYYY-MM-DD
   mrpPaise?: number | null;        // Printed MRP if specified on packaging/bill
+  brand?: string | null;           // Brand name if printed
+  manufacturer?: string | null;    // Manufacturer if printed / verified
+  marketer?: string | null;        // Marketer if printed / verified
   deductedPaise?: number | null;   // Amount deducted by insurer/TPA if reviewing settlement sheet
   deductionReason?: string;        // TPA deduction clause/code
   discountPaise?: number | null;   // Extracted item-level discount in paise
@@ -94,6 +97,9 @@ export interface PolicyContext {
   hasProportionateDeductionClause?: boolean;
   tpaName?: string;
   claimNumber?: string;
+  copayPercent?: number;
+  roomDays?: number;
+  billedRoomRatePaise?: number;
 }
 
 /**

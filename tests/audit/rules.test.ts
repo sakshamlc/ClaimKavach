@@ -466,6 +466,42 @@ describe('Phase 3 Unit Tests: Pure Audit Rules', () => {
       expect(finding?.title).toBe('Manufacturer-Specific Retail Price Review');
     });
 
+    it('retail priceType: matches correctly using structured line item fields (item.manufacturer and item.marketer)', () => {
+      const itemStructured: LineItem = {
+        id: 'MED-RETAIL-STRUCT',
+        description: 'DEMO Retail Drug 100mg Tablet',
+        category: 'pharmacy',
+        quantity: 10,
+        unitRatePaise: 15000,
+        totalBilledPaise: 150000,
+        billedPriceIncludesGst: false,
+        manufacturer: 'Akums Drugs & Pharmaceuticals Ltd',
+        marketer: 'Emcure Pharmaceuticals Ltd',
+      };
+      const finding = evaluateNppaCeilingRule(itemStructured, retailDemoRecord, true);
+      expect(finding).not.toBeNull();
+      expect(finding?.verdict).toBe('LIKELY_ISSUE');
+      expect(finding?.amount).toBe(50000);
+    });
+
+    it('retail priceType: yields NEEDS_REVIEW when structured manufacturer mismatches despite marketer matching', () => {
+      const itemMfrMismatch: LineItem = {
+        id: 'MED-RETAIL-STRUCT-MISMATCH',
+        description: 'DEMO Retail Drug 100mg Tablet',
+        category: 'pharmacy',
+        quantity: 10,
+        unitRatePaise: 15000,
+        totalBilledPaise: 150000,
+        billedPriceIncludesGst: false,
+        manufacturer: 'Different Pharma Ltd',
+        marketer: 'Emcure Pharmaceuticals Ltd',
+      };
+      const finding = evaluateNppaCeilingRule(itemMfrMismatch, retailDemoRecord, true);
+      expect(finding).not.toBeNull();
+      expect(finding?.verdict).toBe('NEEDS_REVIEW');
+      expect(finding?.title).toBe('Manufacturer-Specific Retail Price Review');
+    });
+
     it('unit mismatch test: unconfirmed billing unit yields NEEDS_REVIEW', () => {
       const itemStripUnit: LineItem = {
         id: 'MED-STRIP',

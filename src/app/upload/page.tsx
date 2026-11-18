@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation';
 import { Header } from '@/components/claim/Header';
 import { Footer } from '@/components/claim/Footer';
 import { useClaimStore } from '@/store/claimStore';
+import { claimTranslations } from '@/lib/claimI18n';
+import { processPdfOrImage } from '@/lib/pdfBatcher';
+import { toMedicalBill } from '@/lib/extract/toMedicalBill';
 import {
   Upload,
   FileText,
@@ -18,6 +21,8 @@ import {
   Percent,
   Receipt,
   FileCheck,
+  Calendar,
+  Layers,
 } from 'lucide-react';
 
 export default function UploadPage() {
@@ -27,6 +32,12 @@ export default function UploadPage() {
   const loadSample = useClaimStore((state) => state.loadSample);
   const selectedSampleKey = useClaimStore((state) => state.selectedSampleKey);
   const bill = useClaimStore((state) => state.bill);
+  const language = useClaimStore((state) => state.language);
+  const tpaSettlement = useClaimStore((state) => state.tpaSettlement);
+  const tpaFileName = useClaimStore((state) => state.tpaFileName);
+  const setTpaSettlement = useClaimStore((state) => state.setTpaSettlement);
+
+  const t = claimTranslations[language] || claimTranslations.en;
 
   // Policy options local state
   const policyInputs = useClaimStore((state) => state.policyInputs);
@@ -38,46 +49,61 @@ export default function UploadPage() {
   const setGstOptions = useClaimStore((state) => state.setGstOptions);
 
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [tpaError, setTpaError] = useState<string | null>(null);
+  const [isProcessingBill, setIsProcessingBill] = useState(false);
+  const [isProcessingTpa, setIsProcessingTpa] = useState(false);
+  const [progressStatus, setProgressStatus] = useState<string | null>(null);
 
   const handleSelectSample = (key: 'sample1' | 'sample2' | 'sample3') => {
     loadSample(key);
     setUploadError(null);
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBillUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setIsProcessing(true);
+    setIsProcessingBill(true);
     setUploadError(null);
+    setProgressStatus('Reading document...');
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('documentType', 'hospital_bill');
-
-      const res = await fetch('/api/extract', {
-        method: 'POST',
-        body: formData,
+      const extractedData = await processPdfOrImage(file, {
+        docType: 'hospital_bill',
+        onProgress: (_step, _total, status) => setProgressStatus(status),
       });
 
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || `Upload extraction failed (${res.status})`);
-      }
-
-      const extractedData = await res.json();
-      const { toMedicalBill } = await import('@/lib/extract/toMedicalBill');
       const domainBill = toMedicalBill(extractedData);
       setBill(domainBill, file.name);
+      setProgressStatus(null);
     } catch (err: any) {
       console.error('File extraction error:', err);
       setUploadError(
         err.message || 'Failed to extract bill. You can try one of our 3 synthetic sample bills.'
       );
     } finally {
-      setIsProcessing(false);
+      setIsProcessingBill(false);
+      setProgressStatus(null);
+    }
+  };
+
+  const handleTpaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsProcessingTpa(true);
+    setTpaError(null);
+
+    try {
+      const extractedData = await processPdfOrImage(file, {
+        docType: 'tpa_settlement',
+      });
+      setTpaSettlement(extractedData, file.name);
+    } catch (err: any) {
+      console.error('TPA extraction error:', err);
+      setTpaError(err.message || 'Failed to process TPA settlement sheet.');
+    } finally {
+      setIsProcessingTpa(false);
     }
   };
 
@@ -96,10 +122,10 @@ export default function UploadPage() {
       <main className="flex-1 max-w-4xl mx-auto px-4 py-8 w-full space-y-8">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Step 1: Provide Hospital Bill & Policy Details
+            {t.uploadTitle}
           </h1>
           <p className="text-sm text-slate-600 mt-1">
-            Choose one of our 3 pre-configured synthetic sample bills or upload your own hospital invoice PDF.
+            {t.uploadSubtitle}
           </p>
         </div>
 
@@ -109,16 +135,16 @@ export default function UploadPage() {
             <div className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-amber-600" />
               <h2 className="text-base font-bold text-slate-900">
-                1-Click Synthetic Sample Bills
+                {t.samplesSectionTitle}
               </h2>
             </div>
             <span className="text-[11px] font-bold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
-              Zero Upload Required
+              {t.samplesZeroUpload}
             </span>
           </div>
 
           <p className="text-xs text-muted leading-relaxed">
-            Click any scenario to load a fully structured synthetic fixture with zero real patient data.
+            {t.samplesDesc}
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -141,9 +167,9 @@ export default function UploadPage() {
                     <CheckCircle2 className="w-4 h-4 text-primary" />
                   )}
                 </div>
-                <h3 className="text-sm font-bold text-slate-900">Coronary Stent Bill</h3>
+                <h3 className="text-sm font-bold text-slate-900">{t.sample1Title}</h3>
                 <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">
-                  Angioplasty DES stent billed at ₹45,000 above the ₹39,186.03 NPPA statutory ceiling.
+                  {t.sample1Desc}
                 </p>
               </div>
               <span className="text-[10px] font-mono text-slate-500 pt-2 border-t border-slate-100">
@@ -170,9 +196,9 @@ export default function UploadPage() {
                     <CheckCircle2 className="w-4 h-4 text-primary" />
                   )}
                 </div>
-                <h3 className="text-sm font-bold text-slate-900">Bundling & TPA Deductions</h3>
+                <h3 className="text-sm font-bold text-slate-900">{t.sample2Title}</h3>
                 <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">
-                  Separate billing of nursing & gowns, plus arbitrary TPA non-payable deduction disputes.
+                  {t.sample2Desc}
                 </p>
               </div>
               <span className="text-[10px] font-mono text-slate-500 pt-2 border-t border-slate-100">
@@ -199,9 +225,9 @@ export default function UploadPage() {
                     <CheckCircle2 className="w-4 h-4 text-primary" />
                   )}
                 </div>
-                <h3 className="text-sm font-bold text-slate-900">Clean Medical Bill</h3>
+                <h3 className="text-sm font-bold text-slate-900">{t.sample3Title}</h3>
                 <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">
-                  Fully compliant inpatient bill with zero statutory ceiling overcharges or math errors.
+                  {t.sample3Desc}
                 </p>
               </div>
               <span className="text-[10px] font-mono text-slate-500 pt-2 border-t border-slate-100">
@@ -216,7 +242,7 @@ export default function UploadPage() {
           <div className="flex items-center gap-2">
             <Upload className="w-5 h-5 text-primary" />
             <h2 className="text-base font-bold text-slate-900">
-              Or Upload Hospital Bill (PDF or Photo)
+              {t.uploadBillTitle}
             </h2>
           </div>
 
@@ -225,9 +251,9 @@ export default function UploadPage() {
               type="file"
               id="bill-upload"
               accept=".pdf,image/*"
-              onChange={handleFileUpload}
+              onChange={handleBillUpload}
               className="hidden"
-              disabled={isProcessing}
+              disabled={isProcessingBill}
             />
             <label
               htmlFor="bill-upload"
@@ -237,10 +263,10 @@ export default function UploadPage() {
                 <FileText className="w-6 h-6" />
               </div>
               <span className="text-sm font-bold text-primary">
-                {isProcessing ? 'Reading document text...' : 'Click to select bill or drag file here'}
+                {isProcessingBill ? progressStatus || 'Reading document text...' : t.uploadBillBoxLabel}
               </span>
               <span className="text-xs text-muted">
-                Accepts itemized hospital bill (PDF or camera photo). Processed in memory only.
+                {t.uploadBillBoxSub}
               </span>
             </label>
           </div>
@@ -256,23 +282,74 @@ export default function UploadPage() {
             <div className="flex items-center gap-2 text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 p-3 rounded-lg">
               <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
               <span>
-                Loaded bill with <strong>{bill.items.length} line items</strong>. Hospital: {bill.hospital.name}.
+                Loaded bill with <strong>{bill.items.length} line items</strong>. Hospital: {bill.hospital.name || 'Hospital'}.
               </span>
             </div>
           )}
         </div>
 
-        {/* Section 3: GST Configuration */}
+        {/* Section 3: Optional TPA Settlement Sheet Upload */}
+        <div className="bg-surface rounded-2xl border border-border p-6 shadow-xs space-y-4">
+          <div className="flex items-center gap-2">
+            <Layers className="w-5 h-5 text-indigo-600" />
+            <h2 className="text-base font-bold text-slate-900">
+              {t.uploadTpaTitle}
+            </h2>
+          </div>
+
+          <div className="border-2 border-dashed border-slate-200 rounded-xl p-5 text-center hover:bg-slate-50/50 transition-colors">
+            <input
+              type="file"
+              id="tpa-upload"
+              accept=".pdf,image/*"
+              onChange={handleTpaUpload}
+              className="hidden"
+              disabled={isProcessingTpa}
+            />
+            <label
+              htmlFor="tpa-upload"
+              className="cursor-pointer flex flex-col items-center justify-center space-y-2"
+            >
+              <div className="w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                <FileCheck className="w-5 h-5" />
+              </div>
+              <span className="text-xs font-bold text-indigo-700">
+                {isProcessingTpa ? 'Reading TPA settlement...' : t.uploadTpaBoxLabel}
+              </span>
+              <span className="text-[11px] text-muted">
+                {t.uploadTpaBoxSub}
+              </span>
+            </label>
+          </div>
+
+          {tpaError && (
+            <div className="flex items-center gap-2 text-xs text-rose-700 bg-rose-50 border border-rose-200 p-3 rounded-lg">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{tpaError}</span>
+            </div>
+          )}
+
+          {tpaFileName && (
+            <div className="flex items-center gap-2 text-xs text-indigo-800 bg-indigo-50 border border-indigo-200 p-2.5 rounded-lg">
+              <CheckCircle2 className="w-4 h-4 shrink-0 text-indigo-600" />
+              <span>
+                TPA settlement loaded: <strong>{tpaFileName}</strong>. Deductions mapped into audit context.
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Section 4: GST Configuration */}
         <div className="bg-surface rounded-2xl border border-border p-6 shadow-xs space-y-4">
           <div className="flex items-center gap-2">
             <Receipt className="w-5 h-5 text-indigo-600" />
             <h2 className="text-base font-bold text-slate-900">
-              Tax & GST Inclusion Setting
+              {t.gstSectionTitle}
             </h2>
           </div>
 
           <p className="text-xs text-muted leading-relaxed">
-            Statutory NPPA ceilings are published pre-tax (excluding GST). Indicate whether your bill rates include GST so the audit engine can make an accurate statutory comparison without false flags.
+            {t.gstSectionDesc}
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -291,9 +368,9 @@ export default function UploadPage() {
                 className="mt-0.5 text-primary"
               />
               <div>
-                <span className="block font-semibold">Excludes GST</span>
+                <span className="block font-semibold">{t.gstExcludes}</span>
                 <span className="text-[11px] text-muted font-normal">
-                  Hospital rates billed as pre-tax base rate
+                  {t.gstExcludesSub}
                 </span>
               </div>
             </label>
@@ -313,9 +390,9 @@ export default function UploadPage() {
                 className="mt-0.5 text-primary"
               />
               <div>
-                <span className="block font-semibold">Includes GST</span>
+                <span className="block font-semibold">{t.gstIncludes}</span>
                 <span className="text-[11px] text-muted font-normal">
-                  Unit rates are inclusive of tax
+                  {t.gstIncludesSub}
                 </span>
               </div>
             </label>
@@ -335,9 +412,9 @@ export default function UploadPage() {
                 className="mt-0.5 text-primary"
               />
               <div>
-                <span className="block font-semibold">Not Stated / Unknown</span>
+                <span className="block font-semibold">{t.gstUnknown}</span>
                 <span className="text-[11px] text-muted font-normal">
-                  Caps findings at NEEDS_REVIEW
+                  {t.gstUnknownSub}
                 </span>
               </div>
             </label>
@@ -345,7 +422,7 @@ export default function UploadPage() {
 
           {billedPriceIncludesGst === true && (
             <div className="pt-2 flex items-center gap-3 text-xs">
-              <span className="text-slate-700 font-semibold">Stated GST Rate (%):</span>
+              <span className="text-slate-700 font-semibold">{t.gstRateLabel}</span>
               <input
                 type="number"
                 min="0"
@@ -357,29 +434,29 @@ export default function UploadPage() {
                 placeholder="5"
               />
               <span className="text-[11px] text-muted">
-                Typical GST for medicines: 5% or 12%; Stents: 5%.
+                {t.gstRateNote}
               </span>
             </div>
           )}
         </div>
 
-        {/* Section 4: Optional Policy Context */}
+        {/* Section 5: Policy Context Form (Sum Insured, Room Limit, Copay, Room Days, Room Rate) */}
         <div className="bg-surface rounded-2xl border border-border p-6 shadow-xs space-y-4">
           <div className="flex items-center gap-2">
             <Building className="w-5 h-5 text-slate-600" />
             <h2 className="text-base font-bold text-slate-900">
-              Optional: Insurance Policy Terms (For Proportionate Deductions)
+              {t.policySectionTitle}
             </h2>
           </div>
 
           <p className="text-xs text-muted leading-relaxed">
-            If your insurer deducted charges due to room rent capping, enter your policy limit to verify if the proportionate deduction was calculated lawfully.
+            {t.policySectionDesc}
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
             <div>
               <label className="block font-semibold text-slate-700 mb-1">
-                Room Rent Limit per Day (₹):
+                {t.policyRoomCapLabel}
               </label>
               <input
                 type="number"
@@ -396,7 +473,7 @@ export default function UploadPage() {
 
             <div>
               <label className="block font-semibold text-slate-700 mb-1">
-                Policy Sum Insured (₹):
+                {t.policySumInsuredLabel}
               </label>
               <input
                 type="number"
@@ -405,6 +482,57 @@ export default function UploadPage() {
                 onChange={(e) =>
                   setPolicyInputs({
                     sumInsuredRupees: e.target.value ? parseFloat(e.target.value) : null,
+                  })
+                }
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">
+                {t.policyCopayLabel}
+              </label>
+              <input
+                type="number"
+                placeholder="e.g. 10"
+                value={policyInputs.copayPercent ?? ''}
+                onChange={(e) =>
+                  setPolicyInputs({
+                    copayPercent: e.target.value ? parseFloat(e.target.value) : null,
+                  })
+                }
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">
+                {t.policyRoomDaysLabel}
+              </label>
+              <input
+                type="number"
+                placeholder="e.g. 3"
+                value={policyInputs.roomDays ?? ''}
+                onChange={(e) =>
+                  setPolicyInputs({
+                    roomDays: e.target.value ? parseFloat(e.target.value) : null,
+                  })
+                }
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">
+                {t.policyBilledRateLabel}
+              </label>
+              <input
+                type="number"
+                placeholder="e.g. 6000"
+                value={policyInputs.billedRoomRateRupees ?? ''}
+                onChange={(e) =>
+                  setPolicyInputs({
+                    billedRoomRateRupees: e.target.value ? parseFloat(e.target.value) : null,
                   })
                 }
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 font-mono"
@@ -420,7 +548,7 @@ export default function UploadPage() {
             onClick={() => router.push('/')}
             className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800"
           >
-            &larr; Back to Landing
+            &larr; {t.backBtn}
           </button>
 
           <button
@@ -428,7 +556,7 @@ export default function UploadPage() {
             onClick={handleProceed}
             className="flex items-center gap-2 px-6 py-3.5 bg-primary hover:bg-primary-hover text-white text-sm font-bold rounded-xl shadow-md transition-all cursor-pointer focus:ring-4 focus:ring-primary/20"
           >
-            <span>Proceed to Line Item Verification</span>
+            <span>{t.proceedVerifyBtn}</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>

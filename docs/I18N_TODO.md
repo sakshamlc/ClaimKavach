@@ -33,3 +33,28 @@
 - **Non-Payable / Excluded**: गैर-देय (gair-deya)
 - **Subsumed / Bundled**: समाविष्ट (samāvisht)
 - **Banned Words & Remembered Claims Avoidance**: Zero words like "illegal", "fraud", "cheating", or ungrounded claims ("cannot add margin except", "Legal Metrology/DPCO") appear in any string.
+
+---
+
+## 3. Bilingual UI Strings Catalog (`src/lib/claimI18n.ts`)
+
+| Context / Key | English String (`en`) | Hindi String (`hi`) | Review Status |
+|---|---|---|---|
+| **Header** (`appTagline`) | `Independent Patient Hospital Bill & Insurance Deduction Verification` | `अस्पताल बिल एवं बीमा कटौती की स्वतंत्र विनियामक जांच` | **needs native review** |
+| **Header** (`badgeStatutory`) | `Statutory Audit` | `वैधानिक ऑडिट` | **needs native review** |
+| **Header** (`badgeSynthetic`) | `SYNTHETIC SAMPLE` | `काल्पनिक नमूना` | **needs native review** |
+| **Header** (`bannerMemory`) | `ClaimKavach runs purely in browser memory. Nothing is stored, tracked, or sent to a database.` | `क्लेमकवच पूरी तरह से ब्राउज़र मेमोरी में चलता है। कोई भी डेटा सर्वर या डेटाबेस में सहेजा नहीं जाता है।` | **needs native review** |
+| **Landing** (`heroTitle`) | `Audit Your Hospital Bill for Statutory Ceiling Breaches & Insurance Deductions` | `वैधानिक मूल्य सीमा और बीमा कटौतियों के लिए अपने अस्पताल बिल की जांच करें` | **needs native review** |
+| **Landing** (`consentText`) | `I understand that ClaimKavach is an independent, open-source audit tool for consumer awareness, not legal or insurance advice. All computations run in browser memory and nothing is stored on a server.` | `मैं समझता/समझती हूँ कि क्लेमकवच उपभोक्ता जागरूकता के लिए एक स्वतंत्र ओपन-सोर्स टूल है, कानूनी या बीमा सलाह नहीं। सभी गणनाएँ ब्राउज़र मेमोरी में होती हैं और सर्वर पर कुछ भी संग्रहीत नहीं होता है।` | **needs native review** |
+| **Upload** (`uploadTitle`) | `Step 1: Provide Hospital Bill & Policy Details` | `चरण 1: अस्पताल बिल और पॉलिसी विवरण प्रदान करें` | **needs native review** |
+| **Upload** (`uploadTpaTitle`) | `Optional: Upload TPA Settlement / Claim Deduction Sheet` | `वैकल्पिक: टीपीए निपटान पत्र / कटौती शीट अपलोड करें` | **needs native review** |
+| **Upload** (`gstSectionTitle`) | `Tax & GST Inclusion Setting` | `कर एवं जीएसटी (GST) समावेशन स्थिति` | **needs native review** |
+| **Upload** (`policySectionTitle`) | `Optional: Insurance Policy Terms (For Proportionate Deductions)` | `वैकल्पिक: बीमा पॉलिसी शर्तें (आनुपातिक कटौती के लिए)` | **needs native review** |
+| **Verify** (`verifyTitle`) | `Verify & Edit Bill Line Items` | `बिल मदों का सत्यापन एवं संपादन` | **needs native review** |
+| **Verify** (`reconciledTitle`) | `Grand Total Arithmetic Reconciled` | `कुल योग का गणितीय मिलान सफल` | **needs native review** |
+| **Verify** (`reconcileDiffTitle`) | `Stated Total vs Calculated Line Sum Discrepancy` | `बिल में दर्ज योग और मदों के जोड़ में अंतर` | **needs native review** |
+| **Report** (`reportTitle`) | `Hospital Bill Statutory & Arithmetic Audit Report` | `अस्पताल बिल वैधानिक एवं अंकगणितीय ऑडिट रिपोर्ट` | **needs native review** |
+| **Report** (`tabDisputePack`) | `Dispute Notice Pack (4 Drafts)` | `विवाद पत्रक (4 प्रारूप)` | **needs native review** |
+| **Dispute** (`verifyBeforeSendingTitle`) | `Verify Before Sending Notice` | `भेजने से पूर्व आधिकारिक पुष्टि करें` | **needs native review** |
+| **Dispute** (`verifyBeforeSendingText`) | `Statutory dispute timelines, ombudsman jurisdictional boundaries, and grievance procedures are subject to periodic regulatory updates. Please verify the current complaint procedure and filing window on the official IRDAI portal (irdai.gov.in), Bima Bharosa (bimabharosa.irdai.gov.in), and the Council for Insurance Ombudsmen (cioins.co.in) before submitting.` | `शिकायत की समय-सीमा, लोकपाल का क्षेत्रीय अधिकार क्षेत्र और शिकायत प्रक्रियाएं समय-समय पर संशोधित हो सकती हैं। कृपया भेजने से पहले आधिकारिक आईआरडीएआई पोर्टल (irdai.gov.in), बीमा भरोसा (bimabharosa.irdai.gov.in), और बीमा लोकपाल परिषद (cioins.co.in) पर नवीनतम प्रक्रिया की पुष्टि अवश्य करें।` | **needs native review** |
+

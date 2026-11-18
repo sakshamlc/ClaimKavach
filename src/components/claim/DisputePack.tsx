@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import type { MedicalBill, AuditReport } from '@/lib/audit/types';
 import { formatINR } from '@/lib/audit/currency';
+import { useClaimStore } from '@/store/claimStore';
+import { claimTranslations } from '@/lib/claimI18n';
 import {
   FileText,
   Copy,
@@ -13,52 +15,28 @@ import {
   Send,
   AlertCircle,
   ExternalLink,
+  ShieldAlert,
 } from 'lucide-react';
 
-interface DisputePackProps {
-  bill: MedicalBill;
-  report: AuditReport;
-}
-
-export function DisputePack({ bill, report }: DisputePackProps) {
-  const [activeTab, setActiveTab] = useState<'hospital' | 'insurer' | 'bima_bharosa' | 'ombudsman'>('hospital');
-  const [copiedKey, setCopiedKey] = useState<string | null>(null);
-
+export function generateHospitalLetter(bill: MedicalBill, report: AuditReport): string {
   const hospitalName = bill.hospital.name || '[Hospital Name]';
-  const billDate = bill.billDate || '[Bill Date]';
   const billId = bill.id || '[Bill Number]';
   const totalBilled = formatINR(report.totals.billed);
   const confirmedOvercharge = formatINR(report.totals.confirmed);
   const likelyOvercharge = formatINR(report.totals.likely);
-  const fairAmount = formatINR(report.totals.fair);
 
-  // Collect ceiling and arithmetic findings
   const ceilingFindings = report.findings.filter(
     (f) => f.ruleId === 'R-NPPA-01' && (f.verdict === 'CONFIRMED_OVERCHARGE' || f.verdict === 'LIKELY_ISSUE')
   );
   const mathFindings = report.findings.filter(
     (f) => (f.ruleId === 'R-MATH-01' || f.ruleId === 'R-TOTAL-01') && f.amount > 0
   );
-  const deductionFindings = report.findings.filter(
-    (f) => f.ruleId === 'R-ANX-01' || f.ruleId === 'R-BUNDLE-01'
-  );
 
-  const copyToClipboard = (text: string, key: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedKey(key);
-    setTimeout(() => setCopiedKey(null), 2000);
-  };
-
-  const handlePrint = () => {
-    window.print();
-  };
-
-  // Draft 1: Hospital Clarification & DPCO Refund Letter
-  const hospitalLetter = `To,
+  return `To,
 The Billing In-Charge / Medical Superintendent,
 ${hospitalName}
 
-Date: ${new Date().toLocaleDateString('en-IN')}
+Date: [Date]
 Subject: Request for itemized clarification and statutory ceiling review for Inpatient Bill No. ${billId}
 
 Dear Sir / Madam,
@@ -71,18 +49,18 @@ Total Billed Amount: ${totalBilled}
 
 I am writing to formally request an itemized review and clarification regarding specific charges billed on the final hospital invoice referenced above.
 
-Upon review against notified statutory price ceilings published by the National Pharmaceutical Pricing Authority (NPPA), Department of Pharmaceuticals, Government of India:
+Upon review against notified price ceilings published in official gazette notifications:
 
-1. Statutory Price Ceilings (Drugs (Prices Control) Order, 2013):
+1. Regulatory Price Benchmark Review:
 ${
   ceilingFindings.length > 0
     ? ceilingFindings
         .map(
           (f, idx) =>
-            `   ${idx + 1}. Item: "${f.title || f.itemId}"\n      - Billed Rate: ${f.actual !== undefined ? formatINR(f.actual) : 'N/A'}\n      - Notified Statutory Benchmark: ${f.expected !== undefined ? formatINR(f.expected) : 'N/A'}\n      - Questioned Difference: ${formatINR(f.amount)}\n      - Statutory Authority: ${f.citation.instrument} (${f.citation.kind === 'REGULATORY' && f.citation.instrumentNumber ? f.citation.instrumentNumber : 'NPPA Gazette Order'}, ${f.citation.kind === 'REGULATORY' && f.citation.sourceRef ? f.citation.sourceRef : ''})`
+            `   ${idx + 1}. Item: "${f.title || f.itemId}"\n      - Billed Rate: ${f.actual !== undefined ? formatINR(f.actual) : 'N/A'}\n      - Notified Reference Ceiling: ${f.expected !== undefined ? formatINR(f.expected) : 'N/A'}\n      - Questioned Difference: ${formatINR(f.amount)}\n      - Source Document: ${f.citation.instrument}${f.citation.kind === 'REGULATORY' && f.citation.instrumentNumber ? ` (${f.citation.instrumentNumber})` : ''}${f.citation.kind === 'REGULATORY' && f.citation.sourceRef ? `, Ref: ${f.citation.sourceRef}` : ''}`
         )
         .join('\n\n')
-    : '   - Please confirm that all scheduled formulations and coronary stents adhere strictly to NPPA notified ceilings.'
+    : '   - Please confirm that all scheduled formulations and implants adhere strictly to notified government benchmarks.'
 }
 
 ${
@@ -97,7 +75,7 @@ ${
     : ''
 }
 
-Under the provisions of the Drugs (Prices Control) Order, 2013 and relevant NPPA notifications, scheduled medicines and medical devices may not be billed above the notified statutory ceiling plus applicable taxes.
+Under applicable statutory notifications, scheduled items may not be billed above the notified price ceiling plus applicable taxes.
 
 Kindly issue a revised, corrected final bill and arrange for the refund or adjustment of excess charges amounting to ${confirmedOvercharge !== '₹0.00' ? confirmedOvercharge : likelyOvercharge} within 7 working days.
 
@@ -108,15 +86,23 @@ Yours sincerely,
 Contact Phone: [Phone Number]
 Email Address: [Email Address]
 Address: [Postal Address]`;
+}
 
-  // Draft 2: Insurer Grievance Redressal Officer (GRO) Representation
-  const insurerLetter = `To,
+export function generateInsurerLetter(bill: MedicalBill, report: AuditReport): string {
+  const hospitalName = bill.hospital.name || '[Hospital Name]';
+  const totalBilled = formatINR(report.totals.billed);
+
+  const deductionFindings = report.findings.filter(
+    (f) => f.ruleId === 'R-ANX-01' || f.ruleId === 'R-BUNDLE-01'
+  );
+
+  return `To,
 The Grievance Redressal Officer (GRO),
 [Name of Health Insurance Company]
 [Branch / Corporate Office Address]
 
-Date: ${new Date().toLocaleDateString('en-IN')}
-Subject: Representation regarding arbitrary claim deductions for Claim No. [Claim Number] / Policy No. [Policy Number]
+Date: [Date]
+Subject: Representation regarding claim deductions for Claim No. [Claim Number] / Policy No. [Policy Number]
 
 Dear Sir / Madam,
 
@@ -128,14 +114,13 @@ Hospital: ${hospitalName}
 Total Hospital Bill: ${totalBilled}
 Deduction Amount Questioned: [Total Deducted Amount]
 
-I am writing to formally submit a grievance against deductions applied on the claim settlement letter dated [Settlement Date] for the hospitalization referenced above.
+I am writing to formally submit a representation regarding deductions applied on the claim settlement letter dated [Settlement Date] for the hospitalization referenced above.
 
-The deduction summary indicates that certain items were disallowed as "non-medical expenses" or "subsumed items". In this regard, please note:
+The deduction summary indicates that certain charges were disallowed. In this regard:
 
-1. Compliance with IRDAI Master Circular (Annexure-I):
-   - The Insurance Regulatory and Development Authority of India (IRDAI) specifies non-payable items in Annexure-I.
-   - Deductions must strictly reference the specific clause of the policy terms and conditions or statutory circulars.
-   - Items essential to standard medical procedures that are not expressly listed as excluded in the policy contract cannot be arbitrarily deducted.
+1. Verification of Non-Payable & Deducted Charges:
+   - Deductions must strictly reference the specific exclusion clauses in the policy contract or applicable regulatory guidance.
+   - Items essential to inpatient treatment that are not explicitly excluded in the agreed policy terms should not be arbitrarily deducted.
 
 ${
   deductionFindings.length > 0
@@ -143,13 +128,13 @@ ${
       deductionFindings
         .map(
           (f, idx) =>
-            `   ${idx + 1}. Item: "${f.title || f.itemId}" — Deducted: ${formatINR(f.amount)}\n      Explanation: ${f.explanation.en}`
+            `   ${idx + 1}. Item: "${f.title || f.itemId}" — Deducted: ${formatINR(f.amount)}\n      Explanation: ${f.explanation.en}\n      Source Reference: ${f.citation.instrument}${f.citation.kind === 'REGULATORY' && f.citation.sourceRef ? ` (${f.citation.sourceRef})` : ''}`
         )
         .join('\n\n')
     : ''
 }
 
-I request you to re-examine these deductions under the IRDAI (Protection of Policyholders' Interests) Regulations, 2017, and remit the balance settlement amount to my registered bank account within the statutory 30-day timeline.
+I request you to re-examine these deductions against the policy contract and remit the admissible balance amount to my registered bank account.
 
 Thank you.
 
@@ -158,9 +143,12 @@ Yours sincerely,
 Policy Number: [Policy Number]
 Registered Mobile: [Mobile Number]
 Registered Email: [Email Address]`;
+}
 
-  // Draft 3: Bima Bharosa Portal Text
-  const bimaBharosaText = `Complaint Summary for Bima Bharosa Portal (bimabharosa.irdai.gov.in):
+export function generateBimaBharosaText(bill: MedicalBill, report: AuditReport): string {
+  const hospitalName = bill.hospital.name || '[Hospital Name]';
+
+  return `Complaint Summary for Bima Bharosa Portal (bimabharosa.irdai.gov.in):
 
 1. Policy Type: Health Insurance
 2. Insurer Name: [Name of Insurance Company]
@@ -171,20 +159,24 @@ Registered Email: [Email Address]`;
 7. Disputed Deduction Amount: [Amount in ₹]
 
 Grievance Description:
-I am filing this complaint following unsatisfactory response / lack of resolution from the insurer's Grievance Redressal Officer (GRO) regarding arbitrary claim deductions on Claim No. [Claim Number].
+I am filing this complaint following lack of resolution from the insurer's Grievance Redressal Officer (GRO) regarding claim deductions on Claim No. [Claim Number].
 
-The insurer deducted [Deducted Amount] attributing charges to "non-payable" or "proportionate deduction" categories without transparent itemized justification under IRDAI Master Circular guidelines (Annexure-I). Furthermore, essential inpatient supplies were disallowed despite being medically necessary for inpatient treatment.
+The insurer deducted [Deducted Amount] attributing charges to non-payable or proportionate deduction heads without transparent justification. Essential inpatient items and medical supplies appear to have been disallowed without explicit contractual support.
 
-I request IRDAI intervention to direct the insurer to review the claim settlement and pay the lawful balance claim amount.`;
+I request regulatory intervention to direct the insurer to review the claim settlement and pay the lawful balance claim amount.`;
+}
 
-  // Draft 4: Insurance Ombudsman Formal Complaint
-  const ombudsmanLetter = `To,
+export function generateOmbudsmanLetter(bill: MedicalBill, report: AuditReport): string {
+  const hospitalName = bill.hospital.name || '[Hospital Name]';
+  const totalBilled = formatINR(report.totals.billed);
+
+  return `To,
 The Insurance Ombudsman,
 Office of the Insurance Ombudsman,
 [City / Regional Jurisdiction Address]
 
-Date: ${new Date().toLocaleDateString('en-IN')}
-Subject: Formal Complaint under Rule 14 of the Insurance Ombudsman Rules, 2017
+Date: [Date]
+Subject: Formal Complaint regarding unsettled health insurance claim deductions
 
 Complainant Name: [Complainant Name]
 Insured / Patient Name: [Patient Name]
@@ -200,31 +192,56 @@ Respected Ombudsman,
 The complainant holds health insurance policy No. [Policy Number] issued by [Name of Insurer]. The insured underwent inpatient treatment at ${hospitalName} from ${bill.stay.admissionDate || '[Date]'} to ${bill.stay.dischargeDate || '[Date]'}. Total medical bills incurred were ${totalBilled}.
 
 2. Ground of Grievance:
-The insurer settled only [Settled Amount] and wrongfully repudiated / deducted [Disputed Amount]. The deductions made by the insurer / TPA violate the IRDAI Master Circular on Health Insurance and standard policy provisions.
+The insurer settled only [Settled Amount] and disallowed [Disputed Amount]. The deductions made by the insurer / TPA appear inconsistent with applicable health insurance terms and standard guidelines.
 
-3. Representation to Insurer:
-The complainant represented this matter to the Grievance Redressal Officer (GRO) of the insurer on [Date]. Either the insurer rejected the representation or more than 30 days have elapsed without resolution.
+3. Prior Representation to Insurer:
+The complainant represented this matter to the Grievance Redressal Officer (GRO) of the insurer on [Date]. More than 30 days have elapsed without satisfactory resolution, or the representation was repudiated without adequate justification.
 
 4. Relief Sought:
-I pray for an award directing the insurer to pay the unpaid claim balance of [Disputed Amount] along with applicable interest under the Insurance Ombudsman Rules, 2017.
+I request an award directing the insurer to pay the unpaid claim balance of [Disputed Amount] along with any applicable interest in accordance with grievance redressal norms.
 
 Verification:
-I verify that no complaint on the same subject matter is pending before any Court or Consumer Forum.
+I verify that no complaint on the same subject matter is currently pending before any Court or Consumer Forum.
 
 Yours faithfully,
 [Complainant Name]
 Signature: ______________________
 Phone: [Phone Number]
 Email: [Email Address]`;
+}
 
-  const tabs = [
-    { id: 'hospital', label: '1. Hospital Billing Query', doc: hospitalLetter },
-    { id: 'insurer', label: '2. Insurer GRO Notice', doc: insurerLetter },
-    { id: 'bima_bharosa', label: '3. Bima Bharosa Draft', doc: bimaBharosaText },
-    { id: 'ombudsman', label: '4. Insurance Ombudsman', doc: ombudsmanLetter },
+export function generateAllDisputeDrafts(bill: MedicalBill, report: AuditReport) {
+  return [
+    { id: 'hospital', label: '1. Hospital Billing Query', text: generateHospitalLetter(bill, report) },
+    { id: 'insurer', label: '2. Insurer GRO Notice', text: generateInsurerLetter(bill, report) },
+    { id: 'bima_bharosa', label: '3. Bima Bharosa Draft', text: generateBimaBharosaText(bill, report) },
+    { id: 'ombudsman', label: '4. Insurance Ombudsman', text: generateOmbudsmanLetter(bill, report) },
   ] as const;
+}
 
-  const currentDoc = tabs.find((t) => t.id === activeTab)?.doc || '';
+interface DisputePackProps {
+  bill: MedicalBill;
+  report: AuditReport;
+}
+
+export function DisputePack({ bill, report }: DisputePackProps) {
+  const [activeTab, setActiveTab] = useState<'hospital' | 'insurer' | 'bima_bharosa' | 'ombudsman'>('hospital');
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const language = useClaimStore((state) => state.language);
+  const t = claimTranslations[language] || claimTranslations.en;
+
+  const tabs = generateAllDisputeDrafts(bill, report);
+  const currentDoc = tabs.find((t) => t.id === activeTab)?.text || '';
+
+  const copyToClipboard = (text: string, key: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(key);
+    setTimeout(() => setCopiedKey(null), 2000);
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
 
   return (
     <div className="bg-surface rounded-xl border border-border p-6 space-y-6 shadow-xs font-sans">
@@ -234,20 +251,20 @@ Email: [Email Address]`;
           <div>
             <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
               <FileText className="w-5 h-5 text-primary" />
-              <span>Patient Dispute Pack & Escalation Drafts</span>
+              <span>{t.disputeTitle}</span>
             </h3>
             <p className="text-xs text-muted mt-0.5">
-              Pre-filled formal notices based on statutory findings. Copy to clipboard or print to PDF.
+              {t.disputeSubtitle}
             </p>
           </div>
 
           <button
             type="button"
             onClick={handlePrint}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg border border-slate-300 transition-colors self-start sm:self-auto print:hidden"
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg border border-slate-300 transition-colors self-start sm:self-auto print:hidden cursor-pointer"
           >
             <Printer className="w-4 h-4" />
-            <span>Print Dispute Draft</span>
+            <span>{t.printDisputeBtn}</span>
           </button>
         </div>
 
@@ -258,22 +275,62 @@ Email: [Email Address]`;
           </span>
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 text-center text-[11px] mt-2 font-medium">
             <div className={`p-2 rounded border ${activeTab === 'hospital' ? 'bg-primary text-white border-primary' : 'bg-white border-slate-200 text-slate-700'}`}>
-              <span className="block font-bold">Step 1: Hospital</span>
-              <span className="text-[10px] opacity-80">Clarification (24-48h)</span>
+              <span className="block font-bold">{t.step1Hospital}</span>
+              <span className="text-[10px] opacity-80">{t.step1HospitalSub}</span>
             </div>
             <div className={`p-2 rounded border ${activeTab === 'insurer' ? 'bg-primary text-white border-primary' : 'bg-white border-slate-200 text-slate-700'}`}>
-              <span className="block font-bold">Step 2: Insurer GRO</span>
-              <span className="text-[10px] opacity-80">Statutory 30-day window</span>
+              <span className="block font-bold">{t.step2Gro}</span>
+              <span className="text-[10px] opacity-80">{t.step2GroSub}</span>
             </div>
             <div className={`p-2 rounded border ${activeTab === 'bima_bharosa' ? 'bg-primary text-white border-primary' : 'bg-white border-slate-200 text-slate-700'}`}>
-              <span className="block font-bold">Step 3: Bima Bharosa</span>
-              <span className="text-[10px] opacity-80">IRDAI regulatory portal</span>
+              <span className="block font-bold">{t.step3Bima}</span>
+              <span className="text-[10px] opacity-80">{t.step3BimaSub}</span>
             </div>
             <div className={`p-2 rounded border ${activeTab === 'ombudsman' ? 'bg-primary text-white border-primary' : 'bg-white border-slate-200 text-slate-700'}`}>
-              <span className="block font-bold">Step 4: Ombudsman</span>
-              <span className="text-[10px] opacity-80">Binding quasi-judicial</span>
+              <span className="block font-bold">{t.step4Ombudsman}</span>
+              <span className="text-[10px] opacity-80">{t.step4OmbudsmanSub}</span>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Verify Before Sending Callout Box with Official Portals */}
+      <div className="bg-amber-50/70 border border-amber-300 rounded-xl p-4 text-xs text-amber-950 space-y-2">
+        <div className="flex items-center gap-2 font-bold text-amber-900">
+          <ShieldAlert className="w-4 h-4 text-amber-600" />
+          <span>{t.verifyBeforeSendingTitle}</span>
+        </div>
+        <p className="leading-relaxed">
+          {t.verifyBeforeSendingText}
+        </p>
+        <div className="flex flex-wrap items-center gap-4 pt-1 font-semibold text-amber-900">
+          <a
+            href="https://irdai.gov.in"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 hover:underline text-primary"
+          >
+            <span>irdai.gov.in</span>
+            <ExternalLink className="w-3 h-3" />
+          </a>
+          <a
+            href="https://bimabharosa.irdai.gov.in"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 hover:underline text-primary"
+          >
+            <span>bimabharosa.irdai.gov.in</span>
+            <ExternalLink className="w-3 h-3" />
+          </a>
+          <a
+            href="https://cioins.co.in"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 hover:underline text-primary"
+          >
+            <span>cioins.co.in</span>
+            <ExternalLink className="w-3 h-3" />
+          </a>
         </div>
       </div>
 
@@ -283,8 +340,8 @@ Email: [Email Address]`;
           <button
             key={tab.id}
             type="button"
-            onClick={() => setActiveTab(tab.id)}
-            className={`px-3 py-2 text-xs font-semibold rounded-lg transition-all ${
+            onClick={() => setActiveTab(tab.id as any)}
+            className={`px-3 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
               activeTab === tab.id
                 ? 'bg-primary text-white shadow-xs'
                 : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
@@ -304,17 +361,17 @@ Email: [Email Address]`;
           <button
             type="button"
             onClick={() => copyToClipboard(currentDoc, activeTab)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold transition-all shadow-xs"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold transition-all shadow-xs cursor-pointer"
           >
             {copiedKey === activeTab ? (
               <>
                 <Check className="w-3.5 h-3.5" />
-                <span>Copied to Clipboard!</span>
+                <span>{t.copiedBtn}</span>
               </>
             ) : (
               <>
                 <Copy className="w-3.5 h-3.5" />
-                <span>Copy Draft Text</span>
+                <span>{t.copyDraftBtn}</span>
               </>
             )}
           </button>

@@ -51,22 +51,48 @@ export interface NppaRuleOptions {
 }
 
 /**
- * Checks if the line item matches the manufacturer of a RETAIL reference record.
+ * Checks if the line item matches the manufacturer or marketer of a RETAIL reference record.
+ * Uses structured line item fields (item.manufacturer, item.marketer, item.brand) when provided,
+ * and falls back to item.description and item.notes.
  */
 export function checkManufacturerMatch(
   item: LineItem,
-  recordManufacturer: string | null
+  recordCompany: string | null,
+  role?: 'manufacturer' | 'marketer'
 ): boolean {
-  if (!recordManufacturer) {
-    return true; // No manufacturer restriction (e.g. CEILING records)
+  if (!recordCompany) {
+    return true; // No company restriction (e.g. CEILING records)
   }
 
-  const billText = [
-    item.description,
-    item.notes || '',
-  ].join(' ').toLowerCase();
+  let textSources: (string | null | undefined)[] = [];
+  if (role === 'manufacturer') {
+    if (item.manufacturer) {
+      textSources = [item.manufacturer, item.brand];
+    } else {
+      textSources = [item.brand, item.description, item.notes];
+    }
+  } else if (role === 'marketer') {
+    if (item.marketer) {
+      textSources = [item.marketer, item.brand];
+    } else {
+      textSources = [item.brand, item.description, item.notes];
+    }
+  } else {
+    textSources = [
+      item.manufacturer,
+      item.marketer,
+      item.brand,
+      item.description,
+      item.notes,
+    ];
+  }
 
-  const companyParts = recordManufacturer
+  const billText = textSources
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+
+  const companyParts = recordCompany
     .split(/[/,;]|\band\b/i)
     .map((s) => s.trim())
     .filter(Boolean);
@@ -240,8 +266,8 @@ export function evaluateNppaCeilingRule(
     // RETAIL vs CEILING manufacturer & marketer guard:
     if (isRetail) {
       const rec = record as any;
-      const isMfrMatch = checkManufacturerMatch(item, rec.manufacturer);
-      const isMktMatch = checkManufacturerMatch(item, rec.marketer || rec.manufacturer);
+      const isMfrMatch = checkManufacturerMatch(item, rec.manufacturer, 'manufacturer');
+      const isMktMatch = checkManufacturerMatch(item, rec.marketer || rec.manufacturer, 'marketer');
       if (!isMfrMatch || !isMktMatch) {
         const targetCompanies = [rec.manufacturer, rec.marketer]
           .filter(Boolean)

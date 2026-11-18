@@ -4,19 +4,28 @@ import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useClaimStore } from '@/store/claimStore';
-import { ShieldAlert, Trash2, Sparkles, FileText, CheckCircle2 } from 'lucide-react';
+import { claimTranslations } from '@/lib/claimI18n';
+import { ShieldAlert, Trash2, Sparkles, Languages } from 'lucide-react';
 
 export function Header() {
   const router = useRouter();
   const clearAllData = useClaimStore((state) => state.clearAllData);
-  const bill = useClaimStore((state) => state.bill);
-  const selectedSampleKey = useClaimStore((state) => state.selectedSampleKey);
+  const bill = useClaimStore((state) => state.bill) ?? useClaimStore.getState().bill;
+  const selectedSampleKey = useClaimStore((state) => state.selectedSampleKey) ?? useClaimStore.getState().selectedSampleKey;
+  const language = useClaimStore((state) => state.language);
+  const setLanguage = useClaimStore((state) => state.setLanguage);
+
+  const t = claimTranslations[language] || claimTranslations.en;
 
   const handleClear = () => {
-    if (confirm('Are you sure you want to clear all data and start over? All in-memory bill data will be permanently erased.')) {
+    if (confirm(t.clearConfirm)) {
       clearAllData();
       router.push('/');
     }
+  };
+
+  const toggleLanguage = () => {
+    setLanguage(language === 'en' ? 'hi' : 'en');
   };
 
   return (
@@ -24,7 +33,7 @@ export function Header() {
       {/* Top Disclaimer Banner */}
       <div className="bg-info-bg text-info-fg text-xs px-4 py-1.5 text-center font-medium border-b border-sky-100 flex items-center justify-center gap-2">
         <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-        <span>ClaimKavach runs purely in browser memory. Nothing is stored, tracked, or sent to a database.</span>
+        <span>{t.bannerMemory}</span>
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
@@ -36,26 +45,39 @@ export function Header() {
           <div>
             <div className="flex items-center gap-2">
               <span className="font-bold text-xl text-primary leading-tight font-sans tracking-tight">
-                ClaimKavach
+                {language === 'hi' ? 'ClaimKavach' : 'ClaimKavach'}
               </span>
               <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-300">
-                Statutory Audit
+                {t.badgeStatutory}
               </span>
               {(selectedSampleKey || bill?.isSynthetic) && (
                 <span className="bg-amber-50 text-amber-800 border border-amber-300 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
                   <Sparkles className="w-2.5 h-2.5 text-amber-600" />
-                  SYNTHETIC SAMPLE
+                  {t.badgeSynthetic}
                 </span>
               )}
             </div>
             <p className="text-muted text-xs hidden sm:block leading-tight mt-0.5">
-              Independent Patient Hospital Bill & Insurance Deduction Verification
+              {t.appTagline}
             </p>
           </div>
         </Link>
 
-        {/* Clear Data Action */}
-        <div className="flex items-center gap-3">
+        {/* Right Controls: Language Switcher & Clear Data */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Language Toggle Button */}
+          <button
+            type="button"
+            onClick={toggleLanguage}
+            className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg border border-slate-300 transition-colors"
+            title="Toggle English / हिंदी"
+            aria-label="Toggle language"
+          >
+            <Languages className="w-3.5 h-3.5 text-slate-600" />
+            <span>{language === 'en' ? 'हिंदी' : 'English'}</span>
+          </button>
+
+          {/* Clear Data Action */}
           {bill && (
             <button
               type="button"
@@ -64,7 +86,7 @@ export function Header() {
               title="Wipe in-memory bill data immediately"
             >
               <Trash2 className="w-3.5 h-3.5" />
-              <span>Clear Data</span>
+              <span>{t.clearData}</span>
             </button>
           )}
         </div>

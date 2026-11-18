@@ -47,22 +47,20 @@ describe('POST /api/extract Route & Gate 2 Verification', () => {
     process.env.EXTRACT_MOCK = origEnv;
   });
 
-  it('1. Returns schema-valid JSON with redacted Aadhaar in mock mode', async () => {
-    const req = createExtractRequest(VALID_PNG_BYTES, 'test.png', 'aadhaar', '10.0.0.1');
+  it('1. Returns schema-valid JSON for hospital bill in mock mode', async () => {
+    const req = createExtractRequest(VALID_PNG_BYTES, 'test.png', 'hospital_bill', '10.0.0.1');
     const res = await POST(req);
 
     expect(res.status).toBe(200);
     const data = await res.json();
-    expect(data.docType).toBe('aadhaar');
-    expect(data.fields).toBeDefined();
-    expect(data.fields.fullName.value).toBe('Ramesh Kumar');
-    // Ensure Aadhaar digits are never returned
-    expect(data.fields.aadhaarRedacted.value).toBe('[Aadhaar Present - Redacted]');
+    expect(data.documentType).toBe('hospital_bill');
+    expect(data.bill).toBeDefined();
+    expect(data.bill.items.length).toBeGreaterThan(0);
   });
 
   it('2. Rejects invalid MIME / magic bytes with 400 BAD_TYPE', async () => {
     const invalidBytes = new Uint8Array([0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b]);
-    const req = createExtractRequest(invalidBytes, 'corrupt.bin', 'aadhaar', '10.0.0.2');
+    const req = createExtractRequest(invalidBytes, 'corrupt.bin', 'hospital_bill', '10.0.0.2');
     const res = await POST(req);
 
     expect(res.status).toBe(400);
@@ -74,7 +72,7 @@ describe('POST /api/extract Route & Gate 2 Verification', () => {
   it('2b. Rejects unsupported MIME type (e.g. text/plain or executable bytes) with 400 BAD_TYPE', async () => {
     // Plain text ASCII bytes "Hello World"
     const textBytes = new TextEncoder().encode('Hello world, this is a plain text file not an image or pdf');
-    const req = createExtractRequest(textBytes, 'notes.txt', 'pan', '10.0.0.25');
+    const req = createExtractRequest(textBytes, 'notes.txt', 'hospital_bill', '10.0.0.25');
     const res = await POST(req);
 
     expect(res.status).toBe(400);
@@ -96,7 +94,7 @@ describe('POST /api/extract Route & Gate 2 Verification', () => {
     // Set valid PNG magic bytes so it passes magic bytes check first
     largeBytes.set(VALID_PNG_BYTES.subarray(0, 8), 0);
 
-    const req = createExtractRequest(largeBytes, 'large.png', 'pan', '10.0.0.4');
+    const req = createExtractRequest(largeBytes, 'large.png', 'hospital_bill', '10.0.0.4');
     const res = await POST(req);
 
     expect(res.status).toBe(413);
@@ -109,13 +107,13 @@ describe('POST /api/extract Route & Gate 2 Verification', () => {
 
     // 10 allowed calls
     for (let i = 0; i < 10; i++) {
-      const req = createExtractRequest(VALID_PNG_BYTES, 'test.png', 'bank', testIp);
+      const req = createExtractRequest(VALID_PNG_BYTES, 'test.png', 'hospital_bill', testIp);
       const res = await POST(req);
       expect(res.status).toBe(200);
     }
 
     // 11th call must return 429
-    const req11 = createExtractRequest(VALID_PNG_BYTES, 'test.png', 'bank', testIp);
+    const req11 = createExtractRequest(VALID_PNG_BYTES, 'test.png', 'hospital_bill', testIp);
     const res11 = await POST(req11);
     expect(res11.status).toBe(429);
     const data11 = await res11.json();

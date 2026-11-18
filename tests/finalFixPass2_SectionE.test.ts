@@ -1,7 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { en } from '../src/lib/i18n/en';
-import { hi } from '../src/lib/i18n/hi';
-import { mr } from '../src/lib/i18n/mr';
+import { claimTranslations } from '../src/lib/claimI18n';
 
 describe('Final Fix Pass 2 - Section E: Honest Wording Scanner', () => {
   const BANNED_PATTERNS = [
@@ -11,13 +9,16 @@ describe('Final Fix Pass 2 - Section E: Honest Wording Scanner', () => {
     /\billegal\b/i,
     /\bAll documents match\b/i,
     /\bReady to Apply\b/i,
-    /\bNOT enough\b/, // Case-sensitive or insensitive
+    /\bNOT enough\b/,
     /निश्चित रूप से/i,
     /निश्चितपणे/i,
   ];
 
-  it('1. ensures no banned phrases exist in en.ts, hi.ts, or mr.ts', () => {
-    const dictionaries = { en, hi, mr };
+  it('1. ensures no banned phrases exist in claimTranslations.en or claimTranslations.hi', () => {
+    const dictionaries = {
+      en: claimTranslations.en,
+      hi: claimTranslations.hi,
+    };
 
     for (const [lang, dict] of Object.entries(dictionaries)) {
       for (const [key, value] of Object.entries(dict as Record<string, string>)) {
@@ -32,18 +33,13 @@ describe('Final Fix Pass 2 - Section E: Honest Wording Scanner', () => {
     }
   });
 
-  it('2. verifies zero-findings strings conform to honest wording requirements', () => {
+  it('2. verifies ClaimKavach strings conform to honest wording requirements', () => {
     // EN
-    expect(en.status_ready).toBe('Ready');
-    expect(en.status_ready_desc).toBe('We checked name, date of birth and PAN details across your documents.');
-    expect(en.disclaimer).toContain('This is a check and guide, not an official verification');
+    expect(claimTranslations.en.consentText).toContain('consumer awareness, not legal or insurance advice');
+    expect(claimTranslations.en.bannerMemory).toContain('runs purely in browser memory');
 
     // HI
-    expect(hi.status_ready).toBe('तैयार');
-    expect(hi.status_ready_desc).toContain('जांच की');
-
-    // MR
-    expect(mr.status_ready).toBe('सज्ज');
-    expect(mr.status_ready_desc).toContain('तपासले');
+    expect(claimTranslations.hi.consentText).toContain('उपभोक्ता जागरूकता');
+    expect(claimTranslations.hi.bannerMemory).toContain('पूरी तरह से ब्राउज़र मेमोरी में चलता है');
   });
 });

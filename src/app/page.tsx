@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Header } from '@/components/claim/Header';
 import { Footer } from '@/components/claim/Footer';
 import { useClaimStore } from '@/store/claimStore';
+import { claimTranslations } from '@/lib/claimI18n';
 import {
   ShieldAlert,
   ArrowRight,
@@ -24,6 +25,9 @@ export default function LandingPage() {
   const consentAccepted = useClaimStore((state) => state.consentAccepted);
   const setConsentAccepted = useClaimStore((state) => state.setConsentAccepted);
   const loadSample = useClaimStore((state) => state.loadSample);
+  const language = useClaimStore((state) => state.language);
+
+  const t = claimTranslations[language] || claimTranslations.en;
 
   const handleStart = () => {
     if (!consentAccepted) return;
@@ -44,7 +48,7 @@ export default function LandingPage() {
         {/* Live Reference Data Status Chip */}
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-100 text-slate-800 text-xs font-semibold mb-6 border border-slate-300 shadow-2xs">
           <span className="w-2 h-2 rounded-full bg-amber-500" />
-          <span>Regulatory Engine: 45 reference records, all unverified</span>
+          <span>{t.statusChipPrefix} 45 {t.statusChipSuffix}</span>
           <span className="text-slate-400">|</span>
           <span className="text-[11px] text-slate-600 font-mono">
             NPPA S.O. 5975(E), 1582(E), 1587(E), 6222(E)
@@ -54,11 +58,11 @@ export default function LandingPage() {
         {/* Hero Section */}
         <div className="text-center max-w-2xl mt-2 mb-8 space-y-4">
           <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight">
-            Audit Your Hospital Bill for Statutory Ceiling Breaches & Insurance Deductions
+            {t.heroTitle}
           </h1>
 
           <p className="text-base sm:text-lg text-slate-600 leading-relaxed">
-            Compare medicine rates, stent prices, and TPA settlement deductions against official government gazettes and IRDAI master circulars. Private, stateless, and processed entirely in your browser memory.
+            {t.heroSubtitle}
           </p>
 
           {/* Consent Checkbox */}
@@ -71,7 +75,7 @@ export default function LandingPage() {
                 className="mt-1 h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
               />
               <span className="text-xs text-slate-700 leading-relaxed">
-                <strong>Informed Consent:</strong> I understand that ClaimKavach is an independent, open-source audit tool for consumer awareness, not legal or insurance advice. All computations run in browser memory and nothing is stored on a server.
+                <strong>{t.consentLabel}</strong> {t.consentText}
               </span>
             </label>
           </div>
@@ -88,7 +92,7 @@ export default function LandingPage() {
                   : 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300'
               }`}
             >
-              <span>Start Bill Audit</span>
+              <span>{t.startAuditBtn}</span>
               <ArrowRight className="w-5 h-5" />
             </button>
 
@@ -98,7 +102,7 @@ export default function LandingPage() {
               className="w-full sm:w-auto flex-1 flex items-center justify-center gap-2 px-6 py-3.5 bg-surface hover:bg-slate-50 text-slate-800 border border-slate-300 text-base font-bold rounded-xl shadow-2xs transition-all min-h-[48px] cursor-pointer"
             >
               <Sparkles className="w-4 h-4 text-amber-600" />
-              <span>Try Demo Bill</span>
+              <span>{t.tryDemoBtn}</span>
             </button>
           </div>
         </div>
@@ -109,9 +113,9 @@ export default function LandingPage() {
             <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
               <Cpu className="w-4 h-4" />
             </div>
-            <h3 className="text-sm font-bold text-slate-900">100% In-Memory Audit</h3>
+            <h3 className="text-sm font-bold text-slate-900">{t.pillar1Title}</h3>
             <p className="text-xs text-slate-600 leading-relaxed">
-              Medical bills and claim settlement sheets are parsed and checked in volatile client memory. Closing the tab wipes everything.
+              {t.pillar1Desc}
             </p>
           </div>
 
@@ -119,9 +123,9 @@ export default function LandingPage() {
             <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold">
               <Scale className="w-4 h-4" />
             </div>
-            <h3 className="text-sm font-bold text-slate-900">Deterministic Rules</h3>
+            <h3 className="text-sm font-bold text-slate-900">{t.pillar2Title}</h3>
             <p className="text-xs text-slate-600 leading-relaxed">
-              Audits are calculated using exact integer paise arithmetic and statutory NPPA DPCO 2013 ceiling gazettes. Zero floating-point rounding errors.
+              {t.pillar2Desc}
             </p>
           </div>
 
@@ -129,9 +133,9 @@ export default function LandingPage() {
             <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center font-bold">
               <EyeOff className="w-4 h-4" />
             </div>
-            <h3 className="text-sm font-bold text-slate-900">Zero Accounts & Telemetry</h3>
+            <h3 className="text-sm font-bold text-slate-900">{t.pillar3Title}</h3>
             <p className="text-xs text-slate-600 leading-relaxed">
-              No account creation, no cookies, no tracking pixels. Patient identity and hospital names are never transmitted to third parties.
+              {t.pillar3Desc}
             </p>
           </div>
         </div>
@@ -139,28 +143,28 @@ export default function LandingPage() {
         {/* How It Works Flow */}
         <div className="w-full mt-6 bg-slate-50 border border-slate-200 rounded-2xl p-6 space-y-4">
           <h2 className="text-base font-bold text-slate-900 text-center">
-            How ClaimKavach Audits Your Hospital Bill
+            {t.howItWorksTitle}
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
             <div className="space-y-1 bg-white p-3.5 rounded-xl border border-slate-200">
-              <span className="font-bold text-primary block">Step 1: Upload or Choose Sample</span>
+              <span className="font-bold text-primary block">{t.step1Title}</span>
               <p className="text-slate-600 leading-relaxed">
-                Upload your hospital invoice PDF or pick from 3 pre-configured synthetic samples (Stent ceiling, TPA bundling, or Clean bill).
+                {t.step1Desc}
               </p>
             </div>
 
             <div className="space-y-1 bg-white p-3.5 rounded-xl border border-slate-200">
-              <span className="font-bold text-primary block">Step 2: Verify Line Items</span>
+              <span className="font-bold text-primary block">{t.step2Title}</span>
               <p className="text-slate-600 leading-relaxed">
-                Review extracted medicine names, rates, and quantities in an editable table with a live grand-total reconciliation bar.
+                {t.step2Desc}
               </p>
             </div>
 
             <div className="space-y-1 bg-white p-3.5 rounded-xl border border-slate-200">
-              <span className="font-bold text-primary block">Step 3: Review & Dispute Pack</span>
+              <span className="font-bold text-primary block">{t.step3Title}</span>
               <p className="text-slate-600 leading-relaxed">
-                Inspect 5 unmerged financial cards, expandable statutory citations, and copy pre-filled formal dispute notices for hospital or insurer redressal.
+                {t.step3Desc}
               </p>
             </div>
           </div>

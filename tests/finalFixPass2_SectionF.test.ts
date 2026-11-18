@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { calculateLaplacianVariance } from '../src/lib/blurGate';
 import { verifyMagicBytes } from '../src/lib/extract/client';
-import { analyze } from '../src/lib/rules/analyze';
+import { toMedicalBill } from '../src/lib/extract/toMedicalBill';
 
 describe('Final Fix Pass 2 - Section F: Upload and Extraction Guards', () => {
   // Helper to generate simulated synthetic document pixel buffers
@@ -149,29 +149,16 @@ describe('Final Fix Pass 2 - Section F: Upload and Extraction Guards', () => {
     expect(verifyMagicBytes(pdfBuffer)).toBe('application/pdf');
   });
 
-  it('4. Scholarship with certificate skipped returns R-REQ-1 Blocker', () => {
-    const result = analyze({
-      goalId: 'scholarship_application',
-      documents: {
-        aadhaar: {
-          docType: 'aadhaar',
-          detectedDocType: 'aadhaar',
-          fields: {
-            fullName: { value: 'Rahul Suresh Patil', confidence: 0.95 },
-            dob: { value: '03/05/2005', confidence: 0.95 },
-            aadhaarRedacted: { value: 'XXXX XXXX 1234', confidence: 0.95 },
-          },
-          overallConfidence: 0.95,
-        },
-        // Certificate missing/skipped!
-      },
-      confirmedFields: [],
-      correctVersionChoice: {},
-    });
+  it('4. Missing or corrupted bill structure produces safe empty domain model without crashing', () => {
+    const emptyBill = toMedicalBill({
+      documentType: 'hospital_bill',
+      bill: null,
+      settlement: null,
+      overallConfidence: 0,
+    } as any);
 
-    const reqFinding = result.findings.find((f) => f.ruleId === 'R-REQ-1');
-    expect(reqFinding).toBeDefined();
-    expect(reqFinding?.severity).toBe('blocker');
-    expect(result.status).toBe('blocked');
+    expect(emptyBill).toBeDefined();
+    expect(emptyBill.items).toEqual([]);
+    expect(emptyBill.totalBilledPaise).toBe(0);
   });
 });

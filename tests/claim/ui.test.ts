@@ -3,11 +3,18 @@ import { useClaimStore } from '../../src/store/claimStore';
 import { toMedicalBill } from '../../src/lib/extract/toMedicalBill';
 import { runAudit } from '../../src/lib/audit/engine';
 import { formatINR } from '../../src/lib/audit/currency';
+import {
+  generateAllDisputeDrafts,
+  generateHospitalLetter,
+  generateInsurerLetter,
+  generateBimaBharosaText,
+  generateOmbudsmanLetter,
+} from '../../src/components/claim/DisputePack';
 import sample1Data from '../../src/data/samples/sample1-stent.json';
 import sample2Data from '../../src/data/samples/sample2-bundling-tpa.json';
 import sample3Data from '../../src/data/samples/sample3-clean.json';
 
-describe('Phase 5: ClaimKavach UI Logic, Store & Dispute Verification', () => {
+describe('Phase 5 & 6: ClaimKavach UI Logic, Store & Dispute Verification', () => {
   beforeEach(() => {
     useClaimStore.getState().clearAllData();
   });
@@ -19,6 +26,7 @@ describe('Phase 5: ClaimKavach UI Logic, Store & Dispute Verification', () => {
       expect(state.report).toBeNull();
       expect(state.consentAccepted).toBe(false);
       expect(state.selectedSampleKey).toBeNull();
+      expect(state.language).toBe('en');
     });
 
     it('clearAllData immediately wipes all bill data, report, and policy context from memory', () => {
@@ -32,6 +40,16 @@ describe('Phase 5: ClaimKavach UI Logic, Store & Dispute Verification', () => {
       expect(state.consentAccepted).toBe(false);
       expect(state.selectedSampleKey).toBeNull();
       expect(state.policyInputs.sumInsuredRupees).toBeNull();
+      expect(state.tpaSettlement).toBeNull();
+      expect(state.tpaFileName).toBeNull();
+    });
+
+    it('toggles bilingual language preference', () => {
+      expect(useClaimStore.getState().language).toBe('en');
+      useClaimStore.getState().setLanguage('hi');
+      expect(useClaimStore.getState().language).toBe('hi');
+      useClaimStore.getState().setLanguage('en');
+      expect(useClaimStore.getState().language).toBe('en');
     });
   });
 
@@ -94,6 +112,23 @@ describe('Phase 5: ClaimKavach UI Logic, Store & Dispute Verification', () => {
       expect(quantityUpdatedBill.items.find((i) => i.id === targetId)?.quantity).toBe(2);
     });
 
+    it('supports editing brand, manufacturer and marketer on line items', () => {
+      useClaimStore.getState().loadSample('sample1');
+      const bill = useClaimStore.getState().bill!;
+      const targetId = bill.items[0].id;
+
+      useClaimStore.getState().updateLineItem(targetId, {
+        brand: 'DemoBrand',
+        manufacturer: 'Demo Mfr Ltd',
+        marketer: 'Demo Marketer Inc',
+      });
+
+      const updated = useClaimStore.getState().bill!.items.find((i) => i.id === targetId)!;
+      expect(updated.brand).toBe('DemoBrand');
+      expect(updated.manufacturer).toBe('Demo Mfr Ltd');
+      expect(updated.marketer).toBe('Demo Marketer Inc');
+    });
+
     it('allows updating the bill invoice date', () => {
       useClaimStore.getState().loadSample('sample1');
       useClaimStore.getState().updateBillDate('2026-06-01');
@@ -114,36 +149,55 @@ describe('Phase 5: ClaimKavach UI Logic, Store & Dispute Verification', () => {
       /निश्चितपणे/i,
     ];
 
-    it('ensures dispute notices contain zero banned phrases', async () => {
-      useClaimStore.getState().loadSample('sample1');
-      const report = useClaimStore.getState().executeAudit()!;
-      const bill = useClaimStore.getState().bill!;
+    const UNGROUNDED_LEGAL_CITATIONS = [
+      /\bRule\s+\d+/i,
+      /\bSection\s+\d+/i,
+      /\bPara\s+\d+/i,
+      /\bRegulations?,\s*\d{4}\b/i,
+      /\bRules?,\s*\d{4}\b/i,
+      /\bOrder,\s*\d{4}\b/i,
+      /Drugs \(Prices Control\) Order/i,
+      /Ombudsman Rules/i,
+      /Protection of Policyholders/i,
+    ];
 
-      // Render all 4 drafts
-      const drafts = [
-        // Hospital letter text
-        `Request for itemized clarification and statutory ceiling review for Inpatient Bill No. ${bill.id}`,
-        `Statutory Price Ceilings (Drugs (Prices Control) Order, 2013)`,
-        `Kindly issue a revised, corrected final bill and arrange for the refund or adjustment of excess charges.`,
-        // Insurer GRO letter text
-        `Representation regarding arbitrary claim deductions for Claim No. [Claim Number]`,
-        `Compliance with IRDAI Master Circular (Annexure-I)`,
-        `I request you to re-examine these deductions under the IRDAI (Protection of Policyholders' Interests) Regulations, 2017.`,
-        // Bima Bharosa text
-        `Complaint Summary for Bima Bharosa Portal (bimabharosa.irdai.gov.in)`,
-        `I am filing this complaint following unsatisfactory response / lack of resolution from the insurer's Grievance Redressal Officer (GRO).`,
-        // Ombudsman text
-        `Formal Complaint under Rule 14 of the Insurance Ombudsman Rules, 2017`,
-        `I pray for an award directing the insurer to pay the unpaid claim balance under the Insurance Ombudsman Rules, 2017.`,
-      ];
+    it('ensures all rendered dispute drafts contain zero banned phrases', () => {
+      for (const sample of ['sample1', 'sample2'] as const) {
+        useClaimStore.getState().loadSample(sample);
+        const report = useClaimStore.getState().executeAudit()!;
+        const bill = useClaimStore.getState().bill!;
 
-      for (const draft of drafts) {
-        for (const pattern of BANNED_PATTERNS) {
-          const matches = pattern.test(draft);
-          expect(
-            matches,
-            `Banned phrase matching pattern ${pattern} found in dispute draft: "${draft}"`
-          ).toBe(false);
+        const drafts = generateAllDisputeDrafts(bill, report);
+        expect(drafts.length).toBe(4);
+
+        for (const draft of drafts) {
+          for (const pattern of BANNED_PATTERNS) {
+            const matches = pattern.test(draft.text);
+            expect(
+              matches,
+              `Banned phrase matching pattern ${pattern} found in ${draft.label}: "${draft.text.slice(0, 80)}..."`
+            ).toBe(false);
+          }
+        }
+      }
+    });
+
+    it('ensures dispute templates contain zero ungrounded "Rule " or "Section " or remembered legal citations', () => {
+      for (const sample of ['sample1', 'sample2', 'sample3'] as const) {
+        useClaimStore.getState().loadSample(sample);
+        const report = useClaimStore.getState().executeAudit()!;
+        const bill = useClaimStore.getState().bill!;
+
+        const drafts = generateAllDisputeDrafts(bill, report);
+
+        for (const draft of drafts) {
+          for (const pattern of UNGROUNDED_LEGAL_CITATIONS) {
+            const matches = pattern.test(draft.text);
+            expect(
+              matches,
+              `Ungrounded citation matching ${pattern} found in ${draft.label} for ${sample}`
+            ).toBe(false);
+          }
         }
       }
     });
