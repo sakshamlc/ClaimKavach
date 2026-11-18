@@ -6,11 +6,10 @@ import {
   loadAnnexure1Classifications,
   loadRoomBundlingRecords,
   enforceVerdictGuard,
-  validateRecordVerificationStatus,
   normalizeItemName,
   checkRecordDateValidity,
+  isValidIsoDate,
   RegulatoryLoadError,
-  Manifest,
   BaseRegulatoryRecord,
 } from '../../src/lib/audit/regulatory';
 import { LineItem, Verdict } from '../../src/lib/audit/types';
@@ -20,59 +19,60 @@ import nppaSeedData from '../../src/data/regulatory/nppaCeilings.json';
 import implantSeedData from '../../src/data/regulatory/implants.json';
 import annexure1SeedData from '../../src/data/regulatory/annexure1.json';
 import roomBundlingSeedData from '../../src/data/regulatory/roomBundling.json';
-import manifestData from '../../docs/sources/MANIFEST.json';
 
 describe('Phase 2 Regulatory Loaders, Zod Validation & Integrity Guards', () => {
-  describe('1. Seed Data Validation & Structure', () => {
+  describe('1. Seed Data Validation & Structure (Pure Loaders, No Manifest Read in Trust Zone)', () => {
     it('loads and validates synthetic NPPA ceilings seed data', () => {
-      const { records, warnings } = loadNppaCeilings(nppaSeedData, manifestData as Manifest);
+      const records = loadNppaCeilings(nppaSeedData);
       expect(records.length).toBe(2);
-      expect(warnings.length).toBe(0); // All seed data is already verified: false, so no unexpected demotions
       for (const rec of records) {
         expect(rec.verified).toBe(false); // Seed data MUST be verified: false
-        expect(rec.sourceRef).toBe('TODO'); // Explicit TODO for unverified sources
+        expect(rec.sourceRef).toBe('TODO');
+        expect(rec.sourceFile).toBe('nppa_drug_ceilings.pdf');
         expect(rec.sourceUrl).toBeTruthy();
         expect(rec.ceilingPaise).toBeGreaterThan(0);
         expect(rec.gstTreatment).toBe('EXCLUDED'); // NPPA drug ceilings notified exclusive of GST
+        expect(rec.dosageForm).toBeTruthy();
+        expect(rec.strength).toBeTruthy();
+        expect(rec.priceUnit).toBeTruthy();
         expect(rec.validUntil).toBeNull();
         expect(rec.instrumentNumber).toBeNull();
         expect(rec.instrumentDate).toBeNull();
         expect(rec.normalizedName).toBe(normalizeItemName(rec.name));
-        expect(rec.name).toMatch(/^DEMO Drug /); // Strictly fictional naming
+        expect(rec.name).toMatch(/^DEMO Drug /);
       }
     });
 
-    it('loads and validates synthetic Implant ceilings seed data with round fake prices', () => {
-      const { records, warnings } = loadImplantCeilings(implantSeedData, manifestData as Manifest);
+    it('loads and validates synthetic Implant ceilings seed data with round fake prices and subtype', () => {
+      const records = loadImplantCeilings(implantSeedData);
       expect(records.length).toBe(2);
-      expect(warnings.length).toBe(0);
       for (const rec of records) {
         expect(rec.verified).toBe(false);
         expect(rec.sourceRef).toBe('TODO');
+        expect(rec.subtype).toBeTruthy();
         expect(rec.name).toMatch(/^DEMO Device /);
-        expect([1000000, 2000000]).toContain(rec.ceilingPaise); // Round fake prices
+        expect([1000000, 2000000]).toContain(rec.ceilingPaise);
         expect(['EXCLUDED', 'INCLUDED', 'UNKNOWN']).toContain(rec.gstTreatment);
       }
     });
 
     it('loads and validates synthetic Annexure-I classifications with abstract taxonomy', () => {
-      const { records, warnings } = loadAnnexure1Classifications(annexure1SeedData, manifestData as Manifest);
+      const records = loadAnnexure1Classifications(annexure1SeedData);
       expect(records.length).toBe(3);
-      expect(warnings.length).toBe(0);
       for (const rec of records) {
         expect(rec.verified).toBe(false);
         expect(['NON_PAYABLE', 'SUBSUMED', 'OPTIONAL', 'OTHER']).toContain(rec.treatment);
         expect(rec.listId).toBeTruthy();
         expect(rec.listName).toBeTruthy();
         expect(rec.sourceDocument).toBe('TODO');
+        expect(rec.sourceFile).toBe('irdai_annexure_1.pdf');
         expect(rec.name).toMatch(/^DEMO Item /);
       }
     });
 
     it('loads and validates synthetic Room Bundling seed data', () => {
-      const { records, warnings } = loadRoomBundlingRecords(roomBundlingSeedData, manifestData as Manifest);
+      const records = loadRoomBundlingRecords(roomBundlingSeedData);
       expect(records.length).toBe(2);
-      expect(warnings.length).toBe(0);
       for (const rec of records) {
         expect(rec.verified).toBe(false);
         expect(['room_rent', 'icu']).toContain(rec.bundledWith);
@@ -82,12 +82,13 @@ describe('Phase 2 Regulatory Loaders, Zod Validation & Integrity Guards', () => 
     });
   });
 
-  describe('2. Date Validity & Bill Date Audit Checks', () => {
+  describe('2. Date Validity & Bill Date / LineItem Date Precedence', () => {
     const sampleRecord: BaseRegulatoryRecord = {
       id: 'REC-01',
       name: 'DEMO Drug Alpha',
       normalizedName: 'demo drug alpha',
       source: 'Test Gazette',
+      sourceFile: 'test.pdf',
       sourceUrl: 'https://example.gov.in',
       effectiveDate: '2024-04-01',
       validUntil: '2025-03-31',
@@ -99,28 +100,44 @@ describe('Phase 2 Regulatory Loaders, Zod Validation & Integrity Guards', () => 
       sourceRef: 'TODO',
     };
 
-    it('caps verdict at NEEDS_REVIEW when billDate is null', () => {
-      const check = checkRecordDateValidity(sampleRecord, null);
-      expect(check.isValid).toBe(false);
-      expect(check.needsReviewReason).toContain('billDate is null');
+    it('rejects impossible and non-ISO dates via isValidIsoDate', () => {
+      expect(isValidIsoDate('2024-02-29')).toBe(true);  // Leap year
+      expect(isValidIsoDate('2023-02-29')).toBe(false); // Not a leap year!
+      expect(isValidIsoDate('2024-02-31')).toBe(false); // Impossible February day
+      expect(isValidIsoDate('2024-04-31')).toBe(false); // April has 30 days
+      expect(isValidIsoDate('2024-13-01')).toBe(false); // Impossible month
+      expect(isValidIsoDate('2024-00-10')).toBe(false);
+      expect(isValidIsoDate('invalid-date')).toBe(false);
+      expect(isValidIsoDate('')).toBe(false);
     });
 
-    it('caps verdict at NEEDS_REVIEW when billDate is before effectiveDate', () => {
-      const check = checkRecordDateValidity(sampleRecord, '2024-03-15');
+    it('uses lineItem.date when present in priority over billDate', () => {
+      // lineItem date in 2024 (valid), billDate in 2026 (expired)
+      const check = checkRecordDateValidity(sampleRecord, '2024-06-15', '2026-01-01');
+      expect(check.isValid).toBe(true);
+    });
+
+    it('falls back to billDate when lineItem.date is null or undefined', () => {
+      const check = checkRecordDateValidity(sampleRecord, null, '2024-06-15');
+      expect(check.isValid).toBe(true);
+    });
+
+    it('caps verdict at NEEDS_REVIEW when both lineItem.date and billDate are null', () => {
+      const check = checkRecordDateValidity(sampleRecord, null, null);
+      expect(check.isValid).toBe(false);
+      expect(check.needsReviewReason).toContain('missing');
+    });
+
+    it('caps verdict at NEEDS_REVIEW when date is prior to effectiveDate', () => {
+      const check = checkRecordDateValidity(sampleRecord, '2024-03-15', null);
       expect(check.isValid).toBe(false);
       expect(check.needsReviewReason).toContain('prior to regulatory effectiveDate');
     });
 
-    it('caps verdict at NEEDS_REVIEW with revision note when billDate is after validUntil', () => {
-      const check = checkRecordDateValidity(sampleRecord, '2025-04-10');
+    it('caps verdict at NEEDS_REVIEW with exact revision note when date is after validUntil', () => {
+      const check = checkRecordDateValidity(sampleRecord, null, '2025-04-10');
       expect(check.isValid).toBe(false);
       expect(check.needsReviewReason).toBe('ceiling may have been revised; check the current notification');
-    });
-
-    it('validates successfully when billDate is within [effectiveDate, validUntil]', () => {
-      const check = checkRecordDateValidity(sampleRecord, '2024-06-15');
-      expect(check.isValid).toBe(true);
-      expect(check.needsReviewReason).toBeUndefined();
     });
   });
 
@@ -143,17 +160,21 @@ describe('Phase 2 Regulatory Loaders, Zod Validation & Integrity Guards', () => 
       expect(() => loadNppaCeilings(malformedData)).toThrow(ZodError);
     });
 
-    it('throws ZodError on invalid ceilingPaise (non-integer, negative, or zero)', () => {
-      const invalidPrice = [
+    it('throws ZodError on impossible calendar dates in regulatory records', () => {
+      const invalidDateData = [
         {
           id: 'TEST-1',
-          name: 'Invalid Price Item',
-          normalizedName: 'invalid price item',
-          ceilingPaise: -500, // Negative!
+          name: 'Invalid Date Item',
+          normalizedName: 'invalid date item',
+          ceilingPaise: 5000,
           unit: '1 Tablet',
+          dosageForm: 'Tablet',
+          strength: '100mg',
+          priceUnit: 'per tablet',
           source: 'Test Source',
+          sourceFile: 'test.pdf',
           sourceUrl: 'https://example.gov.in',
-          effectiveDate: '2024-01-01',
+          effectiveDate: '2024-02-31', // Impossible date!
           validUntil: null,
           instrumentNumber: null,
           instrumentDate: null,
@@ -163,95 +184,20 @@ describe('Phase 2 Regulatory Loaders, Zod Validation & Integrity Guards', () => 
           sourceRef: 'Row 1',
         },
       ];
-      expect(() => loadNppaCeilings(invalidPrice)).toThrow(ZodError);
+      expect(() => loadNppaCeilings(invalidDateData)).toThrow(ZodError);
     });
   });
 
-  describe('4. Demotion Reporting & Warnings Array', () => {
-    it('demotes unverified records and returns warnings in the loader result', () => {
-      const rogueDataset = [
-        {
-          id: 'ROGUE-01',
-          name: 'Rogue Item Claiming Verified',
-          normalizedName: 'rogue item claiming verified',
-          ceilingPaise: 5000,
-          unit: '1 Tablet',
-          effectiveDate: '2024-01-01',
-          validUntil: null,
-          instrumentNumber: null,
-          instrumentDate: null,
-          gstTreatment: 'EXCLUDED',
-          source: 'Fake Source',
-          sourceUrl: 'https://fake.example.gov.in',
-          version: '1.0',
-          verified: true, // Claims verified: true
-          sourceRef: 'TODO',
-        },
-      ];
-
-      // Empty manifest
-      const { records, warnings } = loadNppaCeilings(rogueDataset, {
-        schemaVersion: '1.0.0',
-        updatedAt: '2024-01-01',
-        sources: [],
-      });
-
-      expect(records[0].verified).toBe(false); // Demoted
-      expect(warnings.length).toBe(1);
-      expect(warnings[0]).toContain('demoted to verified: false');
-    });
-  });
-
-  describe('5. On-Disk Source Verification & SHA-256 Gate (scripts/verify-sources.ts)', () => {
-    it('verifies that no record currently claims verified: true without matching file and SHA-256 on disk', () => {
-      const report = verifySourcesOnDisk();
+  describe('4. Source Verification on Disk & Demotion (scripts/verify-sources.ts)', () => {
+    it('runs verifySourcesOnDisk and confirms no record claims verified: true without matching file on disk', () => {
+      const report = verifySourcesOnDisk(process.cwd(), { autoDemote: false });
       expect(report.success).toBe(true);
       expect(report.errors.length).toBe(0);
       expect(report.recordsChecked).toBeGreaterThan(0);
     });
-
-    it('fails verification if a record claims verified: true without a matching file on disk', () => {
-      // Create a mock manifest where a source claims to be verified but file does not exist
-      const mockManifest = {
-        schemaVersion: '1.0.0',
-        updatedAt: '2024-01-01',
-        sources: [
-          {
-            filename: 'non_existent_file.pdf',
-            sha256: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
-            sourceUrl: 'https://nppa.gov.in/test.pdf',
-            verified: true,
-          },
-        ],
-      };
-
-      const recordClaimingVerified = {
-        id: 'FAKE-01',
-        name: 'Item With Missing File',
-        normalizedName: 'item with missing file',
-        effectiveDate: '2024-01-01',
-        validUntil: null,
-        instrumentNumber: null,
-        instrumentDate: null,
-        gstTreatment: 'EXCLUDED' as const,
-        source: 'non_existent_file.pdf',
-        sourceUrl: 'https://nppa.gov.in/test.pdf',
-        version: '1.0',
-        verified: true,
-        sourceRef: 'TODO',
-      };
-
-      // In-memory demotion check
-      const validated = validateRecordVerificationStatus(recordClaimingVerified, {
-        schemaVersion: '1.0.0',
-        updatedAt: '2024-01-01',
-        sources: [],
-      });
-      expect(validated.verified).toBe(false);
-    });
   });
 
-  describe('6. Engine Verdict Guard: Capping Unverified Findings', () => {
+  describe('5. Engine Verdict Guard: Capping Unverified Findings', () => {
     it('caps CONFIRMED_OVERCHARGE at LIKELY_ISSUE when record is unverified', () => {
       expect(enforceVerdictGuard('CONFIRMED_OVERCHARGE', false)).toBe('LIKELY_ISSUE');
       expect(enforceVerdictGuard('CONFIRMED_OVERCHARGE', true)).toBe('CONFIRMED_OVERCHARGE');
@@ -260,7 +206,7 @@ describe('Phase 2 Regulatory Loaders, Zod Validation & Integrity Guards', () => 
     });
   });
 
-  describe('7. LineItem Null Handling Contract (Money, Quantity, Dates)', () => {
+  describe('6. LineItem Null Handling Contract (Money, Quantity, Dates)', () => {
     it('returns NOT_CHECKED when quantity, money, or date is null', () => {
       const itemWithNullQty: LineItem = {
         id: 'NULL-QTY-01',

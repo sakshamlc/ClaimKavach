@@ -111,6 +111,7 @@ export interface RegulatoryCitation {
   instrument: string;           // e.g. "NPPA Drug Ceiling Schedule", "IRDAI Master Circular"
   section?: string;             // e.g. "Annexure-I List II Item 12", "Para 4(c)"
   url: string;                  // Official source URL
+  sourceFile?: string | null;   // Matching filename in docs/sources/raw/ (from manifest)
   effectiveDate: string;        // YYYY-MM-DD
   validUntil?: string | null;   // YYYY-MM-DD (null if indefinite or unexpired)
   instrumentNumber?: string | null; // e.g. "S.O. 1335(E)" as printed, never from memory
@@ -188,11 +189,12 @@ export interface ReportTotals {
 }
 
 /**
- * Coverage metrics tracking verified vs unverified items.
+ * Coverage metrics tracking arithmetic vs regulatory verification.
  */
 export interface ReportCoverage {
-  checked: number;     // Number of line items checked against rules
-  total: number;       // Total number of line items on bill
+  arithmeticChecked: number;   // Number of line items checked for arithmetic consistency
+  regulatoryChecked: number;   // Number of line items matched and checked against reference data
+  total: number;               // Total number of line items on bill
 }
 
 /**

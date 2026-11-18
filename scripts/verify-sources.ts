@@ -7,8 +7,9 @@
  * Verifies:
  * 1. Every entry in MANIFEST.json has a matching file on disk in docs/sources/raw/.
  * 2. The SHA-256 hash computed from disk matches the hash recorded in MANIFEST.json.
- * 3. No regulatory record in src/data/regulatory/*.json claims verified: true unless
- *    its official source file exists on disk and matches MANIFEST.json.
+ * 3. Enforces that no regulatory record in src/data/regulatory/*.json claims verified: true
+ *    unless its official sourceFile exists on disk and matches MANIFEST.json.
+ * 4. Demotes any record claiming verified: true without a verified file match to verified: false.
  */
 
 import * as fs from 'fs';
@@ -28,7 +29,10 @@ export function computeFileSha256(filePath: string): string {
   return crypto.createHash('sha256').update(fileBuffer).digest('hex');
 }
 
-export function verifySourcesOnDisk(workspaceRoot: string = process.cwd()): VerificationReport {
+export function verifySourcesOnDisk(
+  workspaceRoot: string = process.cwd(),
+  options: { autoDemote?: boolean } = { autoDemote: true }
+): VerificationReport {
   const report: VerificationReport = {
     success: true,
     filesChecked: 0,
@@ -103,43 +107,33 @@ export function verifySourcesOnDisk(workspaceRoot: string = process.cwd()): Veri
     for (const dataFile of dataFiles) {
       const fullPath = path.join(regulatoryDir, dataFile);
       const records = JSON.parse(fs.readFileSync(fullPath, 'utf8'));
+      let modified = false;
 
       if (Array.isArray(records)) {
         for (const record of records) {
           report.recordsChecked++;
-          if (record.verified === true) {
-            // Find matching verified source in manifest
-            const matchingSource = manifest.sources.find(
-              (s) =>
-                s.verified &&
-                (s.sourceUrl === record.sourceUrl || (record.source && record.source.includes(s.filename)))
+          const targetFile = record.sourceFile;
+
+          const isFileVerified =
+            targetFile &&
+            verifiedManifestFiles.has(targetFile) &&
+            fs.existsSync(path.join(rawDir, targetFile));
+
+          if (record.verified === true && !isFileVerified) {
+            report.success = false;
+            report.errors.push(
+              `Record "${record.id}" in ${dataFile} claims verified: true, but sourceFile "${targetFile}" is not verified on disk.`
             );
-
-            if (!matchingSource) {
-              report.success = false;
-              report.errors.push(
-                `Record "${record.id}" in ${dataFile} claims verified: true, but no matching verified source exists in MANIFEST.json.`
-              );
-              continue;
-            }
-
-            const rawFilePath = path.join(rawDir, matchingSource.filename);
-            if (!fs.existsSync(rawFilePath)) {
-              report.success = false;
-              report.errors.push(
-                `Record "${record.id}" in ${dataFile} claims verified: true, but source file "${matchingSource.filename}" is missing from disk.`
-              );
-              continue;
-            }
-
-            const hashOnDisk = computeFileSha256(rawFilePath);
-            if (hashOnDisk.toLowerCase() !== matchingSource.sha256.toLowerCase()) {
-              report.success = false;
-              report.errors.push(
-                `Record "${record.id}" in ${dataFile} claims verified: true, but hash of "${matchingSource.filename}" on disk does not match manifest.`
-              );
+            if (options.autoDemote) {
+              record.verified = false;
+              modified = true;
+              report.warnings.push(`Demoted record "${record.id}" to verified: false`);
             }
           }
+        }
+
+        if (modified && options.autoDemote) {
+          fs.writeFileSync(fullPath, JSON.stringify(records, null, 2) + '\n');
         }
       }
     }
@@ -149,7 +143,7 @@ export function verifySourcesOnDisk(workspaceRoot: string = process.cwd()): Veri
 }
 
 // Direct CLI invocation
-if (process.argv[1] && process.argv[1].endsWith('verify-sources.ts')) {
+if (process.argv[1] && process.argv[1].includes('verify-sources')) {
   const result = verifySourcesOnDisk();
   console.log('--- Source Verification Report ---');
   console.log(`Success: ${result.success}`);

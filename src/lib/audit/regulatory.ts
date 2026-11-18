@@ -4,27 +4,11 @@
  * All regulatory databases (NPPA ceilings, implants, IRDAI Annexure-I, Room Bundling)
  * are validated strictly via Zod schemas.
  *
- * Mandatory Record Provenance:
- * - id: unique string
- * - name: official name
- * - normalizedName: clean lowercase string
- * - source: notification or circular name
- * - sourceUrl: official portal URL
- * - effectiveDate: YYYY-MM-DD
- * - validUntil: YYYY-MM-DD or null
- * - instrumentNumber: string or null (as printed, never from memory)
- * - instrumentDate: YYYY-MM-DD or null (as printed, never from memory)
- * - gstTreatment: "EXCLUDED" | "INCLUDED" | "UNKNOWN"
- * - version: dataset version string
- * - verified: boolean flag (false for synthetic seed/demo data)
- * - sourceRef: exact page or row reference (or "TODO")
- *
- * Trust Zone Security Guards:
- * 1. Loaders fail loudly on missing, empty, or malformed records.
- * 2. Any record with verified: false is capped by the engine (can NEVER produce CONFIRMED_OVERCHARGE).
- * 3. A record cannot be verified: true unless MANIFEST.json contains a matching
- *    file entry with a valid 64-character SHA-256 hash.
- * 4. Demotions of verified: true records are recorded and returned in a warnings array.
+ * Trust Zone Isolation Principles:
+ * - The Trust Zone loader never reads files or interprets MANIFEST.json.
+ * - It strictly consumes parsed data and relies solely on `record.verified`.
+ * - All dates are strictly validated for ISO 8601 calendar validity using pure arithmetic (no Date objects).
+ * - Loaders fail loudly on missing, empty, or malformed records.
  */
 
 import { z } from 'zod';
@@ -36,6 +20,32 @@ export class RegulatoryLoadError extends Error {
     this.name = 'RegulatoryLoadError';
   }
 }
+
+/**
+ * Validates that a string is a strictly real ISO 8601 calendar date (YYYY-MM-DD).
+ * Uses pure integer arithmetic to comply with Trust Zone isolation (no Date objects).
+ */
+export function isValidIsoDate(val: string): boolean {
+  if (typeof val !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(val)) {
+    return false;
+  }
+  const parts = val.split('-');
+  const year = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10);
+  const day = parseInt(parts[2], 10);
+
+  if (month < 1 || month > 12) return false;
+  if (year < 1900 || year > 2100) return false;
+
+  const isLeap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+  const daysInMonths = [31, isLeap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+  return day >= 1 && day <= daysInMonths[month - 1];
+}
+
+const IsoDateSchema = z.string().refine(isValidIsoDate, {
+  message: 'Must be a valid ISO calendar date (YYYY-MM-DD)',
+});
 
 /**
  * Normalizes item names for deterministic lookup (lowercase, punctuation stripped, single spaces).
@@ -62,11 +72,12 @@ export const BaseRegulatoryRecordSchema = z.object({
   name: z.string().min(1, 'Record name is required'),
   normalizedName: z.string().min(1, 'Record normalizedName is required'),
   source: z.string().min(1, 'Record source is required'),
+  sourceFile: z.string().nullable().default(null),
   sourceUrl: z.string().min(1, 'Record sourceUrl is required'),
-  effectiveDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'effectiveDate must be YYYY-MM-DD'),
-  validUntil: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'validUntil must be YYYY-MM-DD').nullable().default(null),
+  effectiveDate: IsoDateSchema,
+  validUntil: IsoDateSchema.nullable().default(null),
   instrumentNumber: z.string().nullable().default(null),
-  instrumentDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'instrumentDate must be YYYY-MM-DD').nullable().default(null),
+  instrumentDate: IsoDateSchema.nullable().default(null),
   gstTreatment: GstTreatmentSchema.default('UNKNOWN'),
   version: z.string().min(1, 'version is required'),
   verified: z.boolean(),
@@ -84,29 +95,40 @@ export interface DateValidityCheck {
 }
 
 /**
- * Validates whether a record's statutory ceiling is active for a given bill date.
- * If billDate is null, or if billDate is outside [effectiveDate, validUntil],
- * downgrades to NEEDS_REVIEW with the required explanatory note.
+ * Validates whether a record's statutory ceiling is active.
+ * Uses lineItem.date when present, otherwise falls back to billDate.
+ * If neither is present, or if date is outside [effectiveDate, validUntil],
+ * downgrades verdict to NEEDS_REVIEW with the required explanatory note.
  */
 export function checkRecordDateValidity(
   record: BaseRegulatoryRecord,
+  itemDate?: string | null,
   billDate?: string | null
 ): DateValidityCheck {
-  if (!billDate) {
+  const effectiveAuditDate = itemDate || billDate;
+
+  if (!effectiveAuditDate) {
     return {
       isValid: false,
-      needsReviewReason: 'billDate is null; date-sensitive regulatory ceiling cannot be verified for the billing period. Check current notification.',
+      needsReviewReason: 'billDate and item date are missing; date-sensitive regulatory ceiling cannot be verified for the billing period. Check current notification.',
     };
   }
 
-  if (billDate < record.effectiveDate) {
+  if (!isValidIsoDate(effectiveAuditDate)) {
     return {
       isValid: false,
-      needsReviewReason: `Bill date (${billDate}) is prior to regulatory effectiveDate (${record.effectiveDate}); ceiling may not have been in force.`,
+      needsReviewReason: `Invalid date format (${effectiveAuditDate}); expected valid ISO date (YYYY-MM-DD).`,
     };
   }
 
-  if (record.validUntil && billDate > record.validUntil) {
+  if (effectiveAuditDate < record.effectiveDate) {
+    return {
+      isValid: false,
+      needsReviewReason: `Bill/item date (${effectiveAuditDate}) is prior to regulatory effectiveDate (${record.effectiveDate}); ceiling may not have been in force.`,
+    };
+  }
+
+  if (record.validUntil && effectiveAuditDate > record.validUntil) {
     return {
       isValid: false,
       needsReviewReason: 'ceiling may have been revised; check the current notification',
@@ -118,20 +140,26 @@ export function checkRecordDateValidity(
 
 /**
  * NPPA Scheduled Drug Ceiling Schema
+ * Enhanced with dosageForm, strength, and priceUnit for exact matching.
  */
 export const NppaCeilingRecordSchema = BaseRegulatoryRecordSchema.extend({
   ceilingPaise: z.number().int().positive('ceilingPaise must be a positive integer'),
   unit: z.string().min(1, 'unit is required (e.g. 1 Tablet, 1 Vial)'),
+  dosageForm: z.string().min(1, 'dosageForm is required (e.g. Tablet, Capsule, Injection)'),
+  strength: z.string().min(1, 'strength is required (e.g. 100mg, 500mg)'),
+  priceUnit: z.string().min(1, 'priceUnit is required (e.g. per tablet, per strip, per vial)'),
 });
 
 export type NppaCeilingRecord = z.infer<typeof NppaCeilingRecordSchema>;
 
 /**
  * Medical Devices & Implants Ceiling Schema (Stents, Knee Implants, Pacemakers)
+ * Enhanced with subtype for precise device categorization.
  */
 export const ImplantCeilingRecordSchema = BaseRegulatoryRecordSchema.extend({
   ceilingPaise: z.number().int().positive('ceilingPaise must be a positive integer'),
   implantType: z.string().min(1, 'implantType is required'),
+  subtype: z.string().min(1, 'subtype is required (e.g. bare_metal, drug_eluting, femoral_component)'),
   specification: z.string().optional(),
 });
 
@@ -175,61 +203,6 @@ export const RoomBundlingRecordSchema = BaseRegulatoryRecordSchema.extend({
 export type RoomBundlingRecord = z.infer<typeof RoomBundlingRecordSchema>;
 
 /**
- * Schema for docs/sources/MANIFEST.json
- */
-export const ManifestSourceSchema = z.object({
-  filename: z.string().min(1),
-  sha256: z.string().regex(/^[a-fA-F0-9]{64}$/, 'sha256 must be a 64-character hex string'),
-  sourceUrl: z.string().url(),
-  verified: z.boolean(),
-});
-
-export const ManifestSchema = z.object({
-  schemaVersion: z.string(),
-  updatedAt: z.string(),
-  sources: z.array(ManifestSourceSchema),
-});
-
-export type Manifest = z.infer<typeof ManifestSchema>;
-
-/**
- * Cross-checks a record's verified flag against the official sources manifest.
- * A record CANNOT be verified: true unless MANIFEST.json contains a matching
- * verified source file with a valid 64-character SHA-256 hash.
- */
-export function validateRecordVerificationStatus<T extends BaseRegulatoryRecord>(
-  record: T,
-  manifest?: Manifest | null
-): T {
-  if (!record.verified) {
-    return record; // Already marked unverified / demo data
-  }
-
-  // If a record claims verified: true, a valid manifest must be supplied
-  if (!manifest || !manifest.sources || manifest.sources.length === 0) {
-    return {
-      ...record,
-      verified: false,
-    };
-  }
-
-  // Check if any manifest source confirms this record's source or sourceUrl
-  const matchingSource = manifest.sources.find(
-    (s) => s.verified && s.sha256 && (s.sourceUrl === record.sourceUrl || record.source.includes(s.filename))
-  );
-
-  if (!matchingSource) {
-    // Demote to verified: false because no verified hash exists in manifest
-    return {
-      ...record,
-      verified: false,
-    };
-  }
-
-  return record;
-}
-
-/**
  * Engine Guard: Enforces that unverified/demo reference data can NEVER produce
  * a CONFIRMED_OVERCHARGE verdict. Any attempted CONFIRMED verdict is capped at LIKELY_ISSUE.
  */
@@ -241,83 +214,41 @@ export function enforceVerdictGuard(verdict: Verdict, isRecordVerified: boolean)
 }
 
 /**
- * Generic result structure returned by regulatory loaders reporting loaded records and demotion warnings.
- */
-export interface LoadResult<T> {
-  records: T[];
-  warnings: string[];
-}
-
-/**
- * Helper to process and validate records against schema and manifest, tracking demotion warnings.
- */
-function processRecords<T extends BaseRegulatoryRecord>(
-  records: T[],
-  manifest?: Manifest | null
-): LoadResult<T> {
-  const warnings: string[] = [];
-  const processedRecords = records.map((rec) => {
-    const validated = validateRecordVerificationStatus(rec, manifest);
-    if (rec.verified && !validated.verified) {
-      warnings.push(
-        `Record ${rec.id} ("${rec.name}") demoted to verified: false: no matching verified entry with valid SHA-256 in manifest.`
-      );
-    }
-    return validated;
-  });
-  return { records: processedRecords, warnings };
-}
-
-/**
  * Loader for NPPA Drug Ceilings.
  */
-export function loadNppaCeilings(data: unknown, manifest?: Manifest | null): LoadResult<NppaCeilingRecord> {
+export function loadNppaCeilings(data: unknown): NppaCeilingRecord[] {
   if (!data || !Array.isArray(data) || data.length === 0) {
     throw new RegulatoryLoadError('NPPA ceilings dataset is missing or empty.');
   }
-
-  const parsed = z.array(NppaCeilingRecordSchema).parse(data);
-  return processRecords(parsed, manifest);
+  return z.array(NppaCeilingRecordSchema).parse(data);
 }
 
 /**
  * Loader for Implant Ceilings (Stents, Knee Implants, Pacemakers).
  */
-export function loadImplantCeilings(data: unknown, manifest?: Manifest | null): LoadResult<ImplantCeilingRecord> {
+export function loadImplantCeilings(data: unknown): ImplantCeilingRecord[] {
   if (!data || !Array.isArray(data) || data.length === 0) {
     throw new RegulatoryLoadError('Implant ceilings dataset is missing or empty.');
   }
-
-  const parsed = z.array(ImplantCeilingRecordSchema).parse(data);
-  return processRecords(parsed, manifest);
+  return z.array(ImplantCeilingRecordSchema).parse(data);
 }
 
 /**
  * Loader for IRDAI Annexure-I Classifications.
  */
-export function loadAnnexure1Classifications(
-  data: unknown,
-  manifest?: Manifest | null
-): LoadResult<Annexure1Record> {
+export function loadAnnexure1Classifications(data: unknown): Annexure1Record[] {
   if (!data || !Array.isArray(data) || data.length === 0) {
     throw new RegulatoryLoadError('Annexure-I dataset is missing or empty.');
   }
-
-  const parsed = z.array(Annexure1RecordSchema).parse(data);
-  return processRecords(parsed, manifest);
+  return z.array(Annexure1RecordSchema).parse(data);
 }
 
 /**
  * Loader for Room / ICU Bundling Records.
  */
-export function loadRoomBundlingRecords(
-  data: unknown,
-  manifest?: Manifest | null
-): LoadResult<RoomBundlingRecord> {
+export function loadRoomBundlingRecords(data: unknown): RoomBundlingRecord[] {
   if (!data || !Array.isArray(data) || data.length === 0) {
     throw new RegulatoryLoadError('Room bundling dataset is missing or empty.');
   }
-
-  const parsed = z.array(RoomBundlingRecordSchema).parse(data);
-  return processRecords(parsed, manifest);
+  return z.array(RoomBundlingRecordSchema).parse(data);
 }
