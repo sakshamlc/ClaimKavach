@@ -31,6 +31,7 @@ export const NppaCeilingRecordSchema = z.object({
   priceUnit: z.string().min(1),
   priceType: z.enum(['CEILING', 'RETAIL']).default('RETAIL'),
   manufacturer: z.string().nullable().default(null),
+  marketer: z.string().nullable().default(null),
   rawComposition: z.string().default(''),
   ingredients: z.array(IngredientSchema).default([]),
   effectiveDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -281,7 +282,42 @@ export async function parseDrugceiling1(): Promise<{
 
     const name = nameLines.join(' ').replace(/\s+/g, ' ').trim();
     const rawComposition = compLines.join(' ').replace(/\s+/g, ' ').trim();
-    const manufacturer = mfgLines.length > 0 ? mfgLines.join(' ').replace(/\s+/g, ' ').trim() : null;
+    // Extract manufacturer & marketer
+    const mfgCollectedLines: string[] = [];
+    let inMfg = false;
+    for (const line of rawLines) {
+      if (/\bM\/s\b/i.test(line)) {
+        inMfg = true;
+        mfgCollectedLines.push(line);
+      } else if (inMfg) {
+        if (/^(?:Each|Sodium|Potassium|Magnesium|Calcium|Zinc|Chlorpheniramine|Monohydrate|Hydroxocobalamin|Folic|Sulbactam|Meropenem|\(Sterile\)|\d+\.\d{2})/i.test(line)) {
+          inMfg = false;
+        } else {
+          mfgCollectedLines.push(line);
+        }
+      }
+    }
+
+    let s = mfgCollectedLines.join(' ');
+    s = s.replace(/^1\s+(?:Tablet|Capsule|ml|Vial|GM|AMPOULE|pack\s+of\s+\d+\s*m[Ll])\s+/i, '');
+    s = s.replace(/\s+\d+\.\d{2}.*$/, '');
+
+    const matches = [...s.matchAll(/(?:^|\s+|\/)\s*(M\/s\b)/gi)];
+    let manufacturer: string | null = null;
+    let marketer: string | null = null;
+    if (matches.length >= 2 && matches[1].index !== undefined) {
+      const splitIdx = matches[1].index;
+      manufacturer = s.slice(0, splitIdx).replace(/[\/\s]+$/, '').trim();
+      marketer = s.slice(splitIdx).replace(/^[\/\s]+/, '').trim();
+    } else if (s.includes(' / ')) {
+      const parts = s.split(' / ');
+      manufacturer = parts[0].trim();
+      marketer = parts.slice(1).join(' / ').trim();
+    } else if (s.trim().length > 0) {
+      manufacturer = s.trim();
+      marketer = manufacturer;
+    }
+
     const pageNum = i <= 9 ? 8 : i <= 19 ? 9 : i <= 28 ? 10 : 11;
     const { dosageForm, priceUnit } = deduceDosageAndPriceUnit(name, unit);
     const ingredients = extractStructuredIngredients(rawComposition, name);
@@ -298,6 +334,7 @@ export async function parseDrugceiling1(): Promise<{
       priceUnit,
       priceType: 'RETAIL' as const,
       manufacturer,
+      marketer,
       rawComposition,
       ingredients,
       effectiveDate: '2025-12-24',

@@ -10,7 +10,8 @@
     "test": "vitest run",
     "check": "next lint && tsc --noEmit && vitest run",
     "typecheck": "tsc --noEmit",
-    "verify-sources": "node --experimental-strip-types scripts/verify-sources.ts"
+    "verify-sources": "node --experimental-strip-types scripts/verify-sources.ts",
+    "report-ingest": "node --experimental-strip-types scripts/report-ingest.ts"
   },
   "dependencies": {
     "@google/genai": "^1.52.0",

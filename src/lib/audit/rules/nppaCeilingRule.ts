@@ -28,7 +28,12 @@ import {
   normalizeItemName,
   getRecordPricePaise,
 } from '../regulatory';
-import { formatINR, multiplyPaiseByQuantity } from '../currency';
+import {
+  formatINR,
+  multiplyPaiseByQuantity,
+  calculateGstAdjustedPaise,
+  parseGstRateToBasisPoints,
+} from '../currency';
 import {
   extractStrength,
   extractAllStrengths,
@@ -232,10 +237,15 @@ export function evaluateNppaCeilingRule(
       };
     }
 
-    // RETAIL vs CEILING manufacturer guard:
+    // RETAIL vs CEILING manufacturer & marketer guard:
     if (isRetail) {
-      const isMfrMatch = checkManufacturerMatch(item, record.manufacturer);
-      if (!isMfrMatch) {
+      const rec = record as any;
+      const isMfrMatch = checkManufacturerMatch(item, rec.manufacturer);
+      const isMktMatch = checkManufacturerMatch(item, rec.marketer || rec.manufacturer);
+      if (!isMfrMatch || !isMktMatch) {
+        const targetCompanies = [rec.manufacturer, rec.marketer]
+          .filter(Boolean)
+          .join(' / ');
         return {
           ruleId: 'R-NPPA-01',
           itemId: item.id,
@@ -259,8 +269,8 @@ export function evaluateNppaCeilingRule(
           },
           title: 'Manufacturer-Specific Retail Price Review',
           explanation: {
-            en: `Retail price order (${record.instrumentNumber || record.sourceRef}) applies specifically to manufacturer "${record.manufacturer}". Line item does not confirm this manufacturer; verify manufacturer on invoice.`,
-            hi: `खुदरा मूल्य आदेश (${record.instrumentNumber || record.sourceRef}) विशेष रूप से निर्माता "${record.manufacturer}" पर लागू होता है। बिल में इस निर्माता की पुष्टि नहीं है; चालान पर निर्माता की जांच करें।`,
+            en: `Retail price order (${record.instrumentNumber || record.sourceRef}) applies specifically to manufacturer and marketer "${targetCompanies}". Bill does not confirm both manufacturer and marketer; verify on pharmacy invoice.`,
+            hi: `खुदरा मूल्य आदेश (${record.instrumentNumber || record.sourceRef}) विशेष रूप से निर्माता और विपणक "${targetCompanies}" पर लागू होता है। बिल में दोनों की पुष्टि नहीं है; चालान पर जांच करें।`,
           },
           suggestedAction: 'Verify manufacturer/marketer on drug packaging against retail price notification.',
         };
@@ -390,7 +400,11 @@ export function evaluateNppaCeilingRule(
       };
     }
 
-    effectiveBenchmarkPaise = Math.round(targetPricePaise * (1 + gstRate / 100));
+    // GST Adjusted Ceiling Computation:
+    // Pure integer arithmetic via basis points and roundHalfUp in currency.ts.
+    // Zero float operations, zero Math.round on money values.
+    const gstBasisPoints = parseGstRateToBasisPoints(gstRate);
+    effectiveBenchmarkPaise = calculateGstAdjustedPaise(targetPricePaise, gstBasisPoints || 0);
     gstAssumptionText = `Billed price includes GST at ${gstRate}%. Benchmark is ${formatINR(targetPricePaise)} (GST-exclusive), corresponding to ${formatINR(effectiveBenchmarkPaise)} inclusive of ${gstRate}% GST.`;
 
     // Check compliance after adjusting benchmark with stated GST

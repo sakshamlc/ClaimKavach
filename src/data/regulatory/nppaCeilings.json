@@ -9,7 +9,8 @@
     "strength": "Aceclofenac 100mg + Paracetamol 325mg",
     "priceUnit": "per tablet",
     "priceType": "RETAIL",
-    "manufacturer": "M/s Shiva Biogenetic Pharmaceuticals Pvt. Ltd./ M/s Softdeal Pharmaceutical Pvt. Ltd.",
+    "manufacturer": "M/s Shiva Biogenetic Pharmaceuticals Pvt. Ltd.",
+    "marketer": "M/s Softdeal Pharmaceutical Pvt. Ltd.",
     "rawComposition": "Each film coated tablet contains: Aceclofenac IP 100 mg Paracetamol IP 325 mg",
     "ingredients": [
       {
@@ -43,7 +44,8 @@
     "strength": "Albendazole 200mg + Ivermectin 3mg",
     "priceUnit": "per ml",
     "priceType": "RETAIL",
-    "manufacturer": "M/s Yacca Lifesciences Pvt. Ltd./ M/s Wockhardt Ltd.",
+    "manufacturer": "M/s Yacca Lifesciences Pvt. Ltd.",
+    "marketer": "M/s Wockhardt Ltd.",
     "rawComposition": "Each 5ml contains: Albendazole IP 200 mg Ivermectin IP 3 mg",
     "ingredients": [
       {
@@ -77,7 +79,8 @@
     "strength": "Atorvastatin 80mg + Ezetimibe 10mg",
     "priceUnit": "per tablet",
     "priceType": "RETAIL",
-    "manufacturer": "M/s Pure and Cure Healthcare Pvt. Ltd./ M/s Eris Lifesciences Ltd.",
+    "manufacturer": "M/s Pure and Cure Healthcare Pvt. Ltd.",
+    "marketer": "M/s Eris Lifesciences Ltd.",
     "rawComposition": "Each Film Coated Tablet Contains: Atorvastatin Calcium IP Eq. to Atorvastatin 80mg Ezetimibe IP 10mg",
     "ingredients": [
       {
@@ -111,7 +114,8 @@
     "strength": "Bilastine 40mg + Montelukast 10mg",
     "priceUnit": "per tablet",
     "priceType": "RETAIL",
-    "manufacturer": "M/s Akums Drugs & Pharmaceuticals Ltd./ M/s Cipla Ltd.",
+    "manufacturer": "M/s Akums Drugs & Pharmaceuticals Ltd.",
+    "marketer": "M/s Cipla Ltd.",
     "rawComposition": "Each film coated bilayered tablet contains: Bilastine IP 40 mg Montelukast Sodium IP eq. to Montelukast10mg",
     "ingredients": [
       {
@@ -145,7 +149,8 @@
     "strength": "Bisoprolol fumarate 2.5mg + Telmisartan 40mg",
     "priceUnit": "per tablet",
     "priceType": "RETAIL",
-    "manufacturer": "M/s Mascot Health Series Pvt. Ltd./ M/s Primus Remedies Pvt. Ltd.",
+    "manufacturer": "M/s Mascot Health Series Pvt. Ltd.",
+    "marketer": "M/s Primus Remedies Pvt. Ltd.",
     "rawComposition": "Each film coated Bi-layered tablet contains: Bisoprolol fumarate IP 2.5 mg Telmisartan IP 40 mg",
     "ingredients": [
       {
@@ -179,7 +184,8 @@
     "strength": "Bisoprolol fumarate 5mg + Telmisartan 40mg",
     "priceUnit": "per tablet",
     "priceType": "RETAIL",
-    "manufacturer": "M/s Mascot Health series Pvt. Ltd./ M/s Primus Remedies Pvt. Ltd.",
+    "manufacturer": "M/s Mascot Health series Pvt. Ltd.",
+    "marketer": "M/s Primus Remedies Pvt. Ltd.",
     "rawComposition": "Each film coated Bi-layered tablet contains: Bisoprolol fumarate IP 5 mg Telmisartan IP 40 mg",
     "ingredients": [
       {
@@ -213,7 +219,8 @@
     "strength": "Bisoprolol fumarate 2.5mg + Telmisartan 40mg",
     "priceUnit": "per tablet",
     "priceType": "RETAIL",
-    "manufacturer": "M/s Windlas Biotech Ltd./ M/s Dr. Reddy’s Laboratories Ltd.",
+    "manufacturer": "M/s Windlas Biotech Ltd.",
+    "marketer": "M/s Dr. Reddy’s Laboratories Ltd.",
     "rawComposition": "Each uncoated bilayered tablet contains: Bisoprolol fumarate IP 2.5 mg Telmisartan IP 40 mg",
     "ingredients": [
       {
@@ -247,7 +254,8 @@
     "strength": "Bisoprolol fumarate 5mg + Telmisartan 40mg",
     "priceUnit": "per tablet",
     "priceType": "RETAIL",
-    "manufacturer": "M/s Windlas Biotech Ltd./ M/s Dr. Reddy’s Laboratories Ltd.",
+    "manufacturer": "M/s Windlas Biotech Ltd.",
+    "marketer": "M/s Dr. Reddy’s Laboratories Ltd.",
     "rawComposition": "Each uncoated bilayered tablet contains: Bisoprolol fumarate IP 5 mg Telmisartan IP 40 mg",
     "ingredients": [
       {
@@ -281,7 +289,8 @@
     "strength": "Calcium Aspartate 500mg + Calcium Orotate 500mg + Calcitriol 0.25mcg + Minerals unspecified + vitamins unspecified",
     "priceUnit": "per tablet",
     "priceType": "RETAIL",
-    "manufacturer": "Pharmaceuticals Ltd. Monohydrate) IP 7.5 mg Magnesium Hydroxide IP 50 mg Hydroxocobalamin IP 100 mcg Folic Acid IP 1.5 mg",
+    "manufacturer": "M/s Troikaa Pharmaceuticals Ltd.",
+    "marketer": "M/s Troikaa Pharmaceuticals Ltd.",
     "rawComposition": "Each Film Coated Tablet Contains: Calcium Aspartate 500 mg Calcium Orotate 500 mg Calcitriol IP 0.25 mcg Zinc (As Zinc Sulphate",
     "ingredients": [
       {
@@ -327,7 +336,8 @@
     "strength": "Calcium 1250mg + Vitamin D3 2000IU + Methyl cobalamin 1500mcg + L- Methyl folate Calcium unspecified + Pyridoxal-5- Phosphate 20mg",
     "priceUnit": "per tablet",
     "priceType": "RETAIL",
-    "manufacturer": "M/s Pure & Cure Healthcare Pvt. Ltd. M/s Pharmed Ltd.",
+    "manufacturer": "M/s Pure & Cure Healthcare Pvt. Ltd.",
+    "marketer": "M/s Pharmed Ltd.",
     "rawComposition": "Each film coated tablet contains: Calcium Carbonate IP 1250 mg Eq. to Elemental Calcium 500 mg Vitamin D3 IP 2000 IU Methyl cobalamin IP 1500 mcg L-Methyl folate Calcium 1 mg Pyridoxal-5- Phosphate 20 mg",
     "ingredients": [
       {
@@ -373,7 +383,8 @@
     "strength": "Cholecalciferol (Vitamin D3) unspecified",
     "priceUnit": "per ml",
     "priceType": "RETAIL",
-    "manufacturer": "M/s Ravenbhel Healthcare Pvt. Ltd./ M/s Troikaa Pharmaceuticals Ltd.",
+    "manufacturer": "M/s Ravenbhel Healthcare Pvt. Ltd.",
+    "marketer": "M/s Troikaa Pharmaceuticals Ltd.",
     "rawComposition": "Each 5 ml contains: Cholecalciferol IP (In Nano Droplet form) 60000 IU",
     "ingredients": [
       {
@@ -403,7 +414,8 @@
     "strength": "Dextromethorphan Hydrobromide 15mg + Phenylephrine Hydrochloride 5mg + Chlorpheniramine Maleate 2mg",
     "priceUnit": "per ml",
     "priceType": "RETAIL",
-    "manufacturer": "M/s East African (I) Overseas / M/s SRK Puremed LLP",
+    "manufacturer": "M/s East African (I) Overseas",
+    "marketer": "M/s SRK Puremed LLP",
     "rawComposition": "Each 5 ml contains: Dextromethorphan Hydrobromide IP 15 mg Phenylephrine Hydrochloride IP 5mg Chlorpheniramine Maleate IP 2 mg",
     "ingredients": [
       {
@@ -441,7 +453,8 @@
     "strength": "Levocetirizine Dihydrochloride 2.5mg + Montelukast Sodium 4Mg",
     "priceUnit": "per ml",
     "priceType": "RETAIL",
-    "manufacturer": "M/s Tirupati Medicare Ltd./ M/s German Remedies Pharmaceuticals Pvt. Ltd.",
+    "manufacturer": "M/s Tirupati Medicare Ltd.",
+    "marketer": "M/s German Remedies Pharmaceuticals Pvt. Ltd.",
     "rawComposition": "Each 5ml contains: Levocetirizine Dihydrochloride IP 2.5 mg Montelukast Sodium IP eq. to Montelukast 4 Mg",
     "ingredients": [
       {
@@ -475,7 +488,8 @@
     "strength": "Mefenamic acid 50mg + Paracetamol oral unspecified",
     "priceUnit": "per ml",
     "priceType": "RETAIL",
-    "manufacturer": "M/s East African (I) Overseas / M/s SRK Puremed LLP",
+    "manufacturer": "M/s East African (I) Overseas",
+    "marketer": "M/s SRK Puremed LLP",
     "rawComposition": "Each 5 ml contains: Mefenamic acid IP 50 mg Paracetamol IP 125 mg",
     "ingredients": [
       {
@@ -509,7 +523,8 @@
     "strength": "Mefenamic acid 100mg + Paracetamol oral unspecified",
     "priceUnit": "per ml",
     "priceType": "RETAIL",
-    "manufacturer": "M/s East African (I) Overseas / M/s SRK Puremed LLP",
+    "manufacturer": "M/s East African (I) Overseas",
+    "marketer": "M/s SRK Puremed LLP",
     "rawComposition": "Each 5 ml contains: Mefenamic acid IP 100 mg Paracetamol IP 250 mg",
     "ingredients": [
       {
@@ -543,7 +558,8 @@
     "strength": "Mefenamic acid 500mg + Paracetamol 325mg",
     "priceUnit": "per tablet",
     "priceType": "RETAIL",
-    "manufacturer": "M/s East African (I) Overseas / M/s SRK Puremed LLP",
+    "manufacturer": "M/s East African (I) Overseas",
+    "marketer": "M/s SRK Puremed LLP",
     "rawComposition": "Each uncoated tablet contains: Mefenamic Acid IP 500mg Paracetamol IP 325mg",
     "ingredients": [
       {
@@ -577,7 +593,8 @@
     "strength": "Mefenamic Acid 100mg + Paracetamol 250mg",
     "priceUnit": "per ml",
     "priceType": "RETAIL",
-    "manufacturer": "M/s Skymap Pharmaceuticals Pvt. Ltd./ M/s Glensmith Labs Pvt. Ltd.",
+    "manufacturer": "M/s Skymap Pharmaceuticals Pvt. Ltd.",
+    "marketer": "M/s Glensmith Labs Pvt. Ltd.",
     "rawComposition": "Each 5 ml contains: Mefenamic Acid IP 100 mg Paracetamol IP 250 mg",
     "ingredients": [
       {
@@ -611,7 +628,8 @@
     "strength": "Mefenamic Acid 100mg + Paracetamol 250mg",
     "priceUnit": "per ml",
     "priceType": "RETAIL",
-    "manufacturer": "M/s Skymap Pharmaceuticals Pvt. Ltd./ M/s Jagsonpal Pharmaceuticals Ltd.",
+    "manufacturer": "M/s Skymap Pharmaceuticals Pvt. Ltd.",
+    "marketer": "M/s Jagsonpal Pharmaceuticals Ltd.",
     "rawComposition": "Each 5 ml contains: Mefenamic Acid IP 100 mg Paracetamol IP 250 mg",
     "ingredients": [
       {
@@ -645,7 +663,8 @@
     "strength": "Meropenem 1000mg + Sulbactam for unspecified",
     "priceUnit": "per vial",
     "priceType": "RETAIL",
-    "manufacturer": "M/s Gufic Biosciences Ltd./ M/s Intas Pharmaceuticals Ltd. (Sterile) IP Equivalent to Sodium 90.2 mg",
+    "manufacturer": "M/s Gufic Biosciences Ltd.",
+    "marketer": "M/s Intas Pharmaceuticals Ltd.",
     "rawComposition": "Each vial contains: Sulbactam Sodium (Sterile) IP Equivalent to Sulbactam 500 mg Meropenem (Sterile) IP Equivalent to Anhydrous Meropenem 1000 mg Sodium Carbonate (As buffer)",
     "ingredients": [
       {
@@ -679,7 +698,8 @@
     "strength": "Myo-Inositol 600mg + Metformin Hydrochloride (SR) unspecified",
     "priceUnit": "per tablet",
     "priceType": "RETAIL",
-    "manufacturer": "M/s Akums Drugs & Pharmaceuticals Ltd. M/s Mankind Pharma Ltd.",
+    "manufacturer": "M/s Akums Drugs & Pharmaceuticals Ltd.",
+    "marketer": "M/s Mankind Pharma Ltd.",
     "rawComposition": "Each Film Coated Bilayered Tablet Contains: Myo-Inositol IP 600 mg Metformin Hydrochloride IP 500 mg (As sustained release)",
     "ingredients": [
       {
@@ -713,7 +733,8 @@
     "strength": "Myo-Inositol 600mg + Metformin Hydrochloride (SR) unspecified",
     "priceUnit": "per tablet",
     "priceType": "RETAIL",
-    "manufacturer": "M/s Akums Drugs & Pharmaceuticals Ltd. M/s Emcure Pharmaceuticals Ltd.",
+    "manufacturer": "M/s Akums Drugs & Pharmaceuticals Ltd.",
+    "marketer": "M/s Emcure Pharmaceuticals Ltd.",
     "rawComposition": "Each Film Coated Bilayered Tablet Contains: Myo-Inositol IP 600 mg Metformin Hydrochloride IP 500 mg (As sustained release)",
     "ingredients": [
       {
@@ -747,7 +768,8 @@
     "strength": "Myo-Inositol 600mg + Metformin Hydrochloride (SR) unspecified",
     "priceUnit": "per tablet",
     "priceType": "RETAIL",
-    "manufacturer": "M/s Akums Drugs & Pharmaceuticals Ltd. M/s Torrent Pharmaceuticals Ltd.",
+    "manufacturer": "M/s Akums Drugs & Pharmaceuticals Ltd.",
+    "marketer": "M/s Torrent Pharmaceuticals Ltd.",
     "rawComposition": "Each Film Coated Bilayered Tablet Contains: Myo-Inositol IP 600 mg Metformin Hydrochloride IP 500 mg (As sustained release)",
     "ingredients": [
       {
@@ -781,7 +803,8 @@
     "strength": "Moxifloxacin Hydrochloride 0.5%w/v + Ketorolac Tromethamine Ophthalmic solution unspecified",
     "priceUnit": "per ml",
     "priceType": "RETAIL",
-    "manufacturer": "M/s East African (I) Overseas / M/s Torrent Pharmaceuticals Ltd.",
+    "manufacturer": "M/s East African (I) Overseas",
+    "marketer": "M/s Torrent Pharmaceuticals Ltd.",
     "rawComposition": "Composition: Moxifloxacin Hydrochloride IP Eq. to Moxifloxacin 0.5% w/v Ketorolac Tromethamine IP 0.5 % w/v Preservative: Benzalkonium Chloride solution IP 0.01% w/v",
     "ingredients": [
       {
@@ -816,6 +839,7 @@
     "priceUnit": "per 500 mL pack",
     "priceType": "RETAIL",
     "manufacturer": "M/s Otsuka Pharmaceutical India Pvt. Ltd.",
+    "marketer": "M/s Otsuka Pharmaceutical India Pvt. Ltd.",
     "rawComposition": "Each 100 mL contains: Sodium Chloride IP 526 mg Sodium Gluconate USP 502 mg Sodium Acetate Trihydrate IP 368 mg Potassium Chloride IP 37 mg Magnesium Chloride Hexahydrate IP 30 mg Dextrose Monohydrate IP 5000 mg",
     "ingredients": [
       {
@@ -849,7 +873,8 @@
     "strength": "Paracetamol 500mg + Phenylephrine Hydrochloride 10mg + Chlorpheniramine Maleate 2mg",
     "priceUnit": "per tablet",
     "priceType": "RETAIL",
-    "manufacturer": "M/s East African (I) Overseas / M/s Intas Pharmaceuticals Ltd.",
+    "manufacturer": "M/s East African (I) Overseas",
+    "marketer": "M/s Intas Pharmaceuticals Ltd.",
     "rawComposition": "Each uncoated tablet contains: Paracetamol IP 500 mg Phenylephrine Hydrochloride IP 10 mg Chlorpheniramine Maleate IP 2 mg",
     "ingredients": [
       {
@@ -887,7 +912,8 @@
     "strength": "Paracetamol 250mg + Phenylephrine Hydrochloride 5mg + Chlorpheniramine Maleate 2mg",
     "priceUnit": "per ml",
     "priceType": "RETAIL",
-    "manufacturer": "M/s Mascot Health Series Pvt. Ltd./ M/s Stedman Pharmaceuticals Pvt. Ltd.",
+    "manufacturer": "M/s Mascot Health Series Pvt. Ltd.",
+    "marketer": "M/s Stedman Pharmaceuticals Pvt. Ltd.",
     "rawComposition": "Each 5 ml contains: Paracetamol IP 250 mg Phenylephrine Hydrochloride IP 5 mg Chlorpheniramine Maleate IP 2 mg",
     "ingredients": [
       {
@@ -925,7 +951,8 @@
     "strength": "Paracetamol 125mg + Phenylephrine Hydrochloride 5mg + Chlorpheniramine Maleate 2mg",
     "priceUnit": "per ml",
     "priceType": "RETAIL",
-    "manufacturer": "M/s Mascot Health Series Pvt. Ltd./ M/s Macleods Pharmaceuticals Ltd.",
+    "manufacturer": "M/s Mascot Health Series Pvt. Ltd.",
+    "marketer": "M/s Macleods Pharmaceuticals Ltd.",
     "rawComposition": "Each 5 ml contains: Paracetamol IP 125 mg Phenylephrine Hydrochloride IP 5 mg Chlorpheniramine Maleate IP 2 mg",
     "ingredients": [
       {
@@ -963,7 +990,8 @@
     "strength": "Paracetamol 250mg + Phenylephrine Hydrochloride 5mg + Chlorpheniramine Maleate unspecified",
     "priceUnit": "per ml",
     "priceType": "RETAIL",
-    "manufacturer": "M/s Mascot Health Series Pvt. Ltd./ M/s Macleods Pharmaceuticals Ltd. Chlorpheniramine Maleate IP 2mg",
+    "manufacturer": "M/s Mascot Health Series Pvt. Ltd.",
+    "marketer": "M/s Macleods Pharmaceuticals Ltd.",
     "rawComposition": "Each 5 ml contains: Paracetamol IP 250 mg Phenylephrine Hydrochloride IP 5mg",
     "ingredients": [
       {
@@ -1001,7 +1029,8 @@
     "strength": "Paroxetine (CR) unspecified + Clonazepam 0.25mg",
     "priceUnit": "per capsule",
     "priceType": "RETAIL",
-    "manufacturer": "M/s Windlas Biotech Ltd./ M/s Ipca Laboratories Ltd.",
+    "manufacturer": "M/s Windlas Biotech Ltd.",
+    "marketer": "M/s Ipca Laboratories Ltd.",
     "rawComposition": "Each hard gelatin capsule contains: Paroxetine Hydrochloride Hemihydrate IP Eq. to Paroxetine 12.5 mg (as enteric coated controlled release tablet) Clonazepam IP 0.25 mg (as uncoated Clonazepam Tablets IP)",
     "ingredients": [
       {
@@ -1035,7 +1064,8 @@
     "strength": "Phenylephrine Hydrochloride 5mg + Chlorpheniramine Maleate 2mg",
     "priceUnit": "per ml",
     "priceType": "RETAIL",
-    "manufacturer": "M/s East African (I) Overseas/ M/s SRK Puremed LLP",
+    "manufacturer": "M/s East African (I) Overseas",
+    "marketer": "M/s SRK Puremed LLP",
     "rawComposition": "Each 5ml contains: Phenylephrine Hydrochloride IP 5 mg Chlorpheniramine Maleate IP 2 mg",
     "ingredients": [
       {
@@ -1070,6 +1100,7 @@
     "priceUnit": "per gm",
     "priceType": "RETAIL",
     "manufacturer": "M/s Stedman Pharmaceuticals Pvt. Ltd.",
+    "marketer": "M/s Stedman Pharmaceuticals Pvt. Ltd.",
     "rawComposition": "Composition: Povidone-Iodine IP 5 % w/w (0.5 % w/w available Iodine) Metronidazole IP 1 % w/w",
     "ingredients": [
       {
@@ -1103,7 +1134,8 @@
     "strength": "Tropicamide 0.2mg + Phenylephrine Hydrochloride 3.1mg + Lidocaine Hydrochloride 10mg",
     "priceUnit": "per ml",
     "priceType": "RETAIL",
-    "manufacturer": "AMPOULE M/s Samarth Life Sciences Pvt. Ltd.",
+    "manufacturer": "M/s Samarth Life Sciences Pvt. Ltd.",
+    "marketer": "M/s Samarth Life Sciences Pvt. Ltd.",
     "rawComposition": "Each ml contains: Tropicamide IP 0.2 mg Phenylephrine Hydrochloride IP 3.1 mg Lidocaine Hydrochloride IP 10 mg",
     "ingredients": [
       {
@@ -1141,7 +1173,8 @@
     "strength": "Vitamin D3 nano unspecified",
     "priceUnit": "per ml",
     "priceType": "RETAIL",
-    "manufacturer": "M/s Unicure India Ltd./ M/s Obsurge Biotech Ltd.",
+    "manufacturer": "M/s Unicure India Ltd.",
+    "marketer": "M/s Obsurge Biotech Ltd.",
     "rawComposition": "Each 5ml Contains: Cholecalciferol IP 60,000 IU (in Nano Droplet Form)",
     "ingredients": [
       {
@@ -1171,7 +1204,8 @@
     "strength": "Dapagliflozin 10mg + Telmisartan 40mg",
     "priceUnit": "per tablet",
     "priceType": "RETAIL",
-    "manufacturer": "M/s Exemed Pharmaceuticals/ M/s Glenmark Pharmaceuticals Ltd.",
+    "manufacturer": "M/s Exemed Pharmaceuticals",
+    "marketer": "M/s Glenmark Pharmaceuticals Ltd.",
     "rawComposition": "Each film coated tablet contains: Dapagliflozin Propanediol USP eq. to Dapagliflozin 10 mg Telmisartan IP 40 mg",
     "ingredients": [
       {
@@ -1205,7 +1239,8 @@
     "strength": "Glycopyrronium 25mcg + Formoterol Fumarate 20mcg + Budesonide Inhalation unspecified",
     "priceUnit": "per ml",
     "priceType": "RETAIL",
-    "manufacturer": "Pharmaceuticals Ltd.",
+    "manufacturer": "M/s Glenmark Pharmaceuticals Ltd.",
+    "marketer": "M/s Glenmark Pharmaceuticals Ltd.",
     "rawComposition": "Each Smartule contains: Glycopyrrolate IP Eq. to Glycopyrronium 25 mcg Formoterol Fumarate Dihydrate IP Eq. to Formoterol Fumarate 20 mcg Budesonide IP 500 mcg",
     "ingredients": [
       {
@@ -1243,7 +1278,8 @@
     "strength": "Sitagliptin 100mg + Gliclazide (SR) unspecified + Metformin Hydrochloride (SR) unspecified",
     "priceUnit": "per tablet",
     "priceType": "RETAIL",
-    "manufacturer": "Ltd.",
+    "manufacturer": "M/s Eris Lifesciences Ltd.",
+    "marketer": "M/s Eris Lifesciences Ltd.",
     "rawComposition": "Each film coated bilayered tablet contains: Sitagliptin Phosphate Monohydrate IP eq. to Sitagliptin 100 mg Gliclazide IP 60 mg (As sustained release) Metformin Hydrochloride IP 500mg (As sustained release)",
     "ingredients": [
       {
@@ -1281,7 +1317,8 @@
     "strength": "Paracetamol 325mg + Chlorpheniramine Maleate 2mg",
     "priceUnit": "per tablet",
     "priceType": "RETAIL",
-    "manufacturer": "Ltd.",
+    "manufacturer": "M/s Indoco Remedies Ltd.",
+    "marketer": "M/s Indoco Remedies Ltd.",
     "rawComposition": "Each Uncoated Tablet Contains: Paracetamol IP 325 mg Chlorpheniramine Maleate IP 2 mg",
     "ingredients": [
       {

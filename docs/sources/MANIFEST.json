@@ -38,6 +38,7 @@
       "instrumentNumber": "S.O. 6222(E)",
       "instrumentDate": "2026-11-13",
       "effectiveDate": "2026-11-15",
+      "validUntil": "2027-01-15",
       "sha256": "6b14b0f1c6fa0754aab29553f6c427b0188479e6e87ea10cc8f7875e39082daf",
       "sourceUrl": null,
       "verified": false

@@ -8,6 +8,8 @@ import {
   multiplyPaiseByQuantity,
   calculatePercentagePaise,
   parseCurrencyToPaise,
+  parseGstRateToBasisPoints,
+  calculateGstAdjustedPaise,
   roundHalfUp,
   assertSafePaise,
   CurrencyError,
@@ -163,6 +165,33 @@ describe('Trust Zone Currency & Integer Paise Arithmetic', () => {
       expect(calculatePercentagePaise(toPaise(500000)!, 1)).toBe(500000);
       // Decimal percentage: 2.5% on ₹1,000.00 = ₹25.00
       expect(calculatePercentagePaise(toPaise(1000)!, 2.5)).toBe(2500);
+    });
+  });
+
+  describe('7. GST Basis Points and Integer Adjustment (Zero Float Math)', () => {
+    it('parses GST rates into basis points integers', () => {
+      expect(parseGstRateToBasisPoints(5)).toBe(500);
+      expect(parseGstRateToBasisPoints(12)).toBe(1200);
+      expect(parseGstRateToBasisPoints(18)).toBe(1800);
+      expect(parseGstRateToBasisPoints(0.25)).toBe(25);
+      expect(parseGstRateToBasisPoints('18%')).toBe(1800);
+      expect(parseGstRateToBasisPoints('0.25%')).toBe(25);
+      expect(parseGstRateToBasisPoints(null)).toBeNull();
+      expect(parseGstRateToBasisPoints(undefined)).toBeNull();
+    });
+
+    it('computes GST adjusted benchmark using integer half-up on 1010p edge cases', () => {
+      // 1010p at 5% (500 bps): 1010 * 10500 / 10000 = 10605000 / 10000 = 1060.5 -> 1061p
+      expect(calculateGstAdjustedPaise(1010, 500)).toBe(1061);
+
+      // 1010p at 12% (1200 bps): 1010 * 11200 / 10000 = 11312000 / 10000 = 1131.2 -> 1131p
+      expect(calculateGstAdjustedPaise(1010, 1200)).toBe(1131);
+
+      // 1010p at 18% (1800 bps): 1010 * 11800 / 10000 = 11918000 / 10000 = 1191.8 -> 1192p
+      expect(calculateGstAdjustedPaise(1010, 1800)).toBe(1192);
+
+      // 1010p at 0.25% (25 bps): 1010 * 10025 / 10000 = 10125250 / 10000 = 1012.525 -> 1013p
+      expect(calculateGstAdjustedPaise(1010, 25)).toBe(1013);
     });
   });
 });

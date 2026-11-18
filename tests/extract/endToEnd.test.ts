@@ -10,17 +10,27 @@ import { POST } from '@/app/api/extract/route';
 import { NextRequest } from 'next/server';
 
 describe('Phase 4: End-to-End Extraction -> Mapper -> Audit Engine Flow', () => {
-  const originalEnv = process.env.EXTRACT_MOCK;
+  const originalMock = process.env.EXTRACT_MOCK;
+  const originalNodeEnv = process.env.NODE_ENV;
+  const originalGeminiModel = process.env.GEMINI_MODEL;
 
   beforeEach(() => {
     process.env.EXTRACT_MOCK = '1';
+    (process.env as any).NODE_ENV = 'test';
+    delete process.env.GEMINI_MODEL;
   });
 
   afterEach(() => {
-    process.env.EXTRACT_MOCK = originalEnv;
+    process.env.EXTRACT_MOCK = originalMock;
+    (process.env as any).NODE_ENV = originalNodeEnv;
+    if (originalGeminiModel !== undefined) {
+      process.env.GEMINI_MODEL = originalGeminiModel;
+    } else {
+      delete process.env.GEMINI_MODEL;
+    }
   });
 
-  it('Sample 1 (Stent Bill): extract -> toMedicalBill -> runAudit executes correctly', () => {
+  it('Sample 1 (Stent Bill): runs on production dataset (src/data/regulatory/implants.json & nppaCeilings.json) and audits ceiling breach', () => {
     // 1. Validate extracted JSON
     const parsed = ExtractedMedicalDocumentSchema.parse(sample1Stent);
     expect(parsed.documentType).toBe('hospital_bill');
@@ -30,21 +40,22 @@ describe('Phase 4: End-to-End Extraction -> Mapper -> Audit Engine Flow', () => 
     expect(medicalBill.isSynthetic).toBe(true);
     expect(medicalBill.items).toHaveLength(2);
     expect(medicalBill.totalBilledPaise).toBe(4500280); // 45002.80 in paise
+    expect(medicalBill.billedPriceIncludesGst).toBe(false);
 
-    // 3. Execute Trust Zone audit engine
+    // 3. Execute Trust Zone audit engine using default production dataset
     const report = runAudit(medicalBill);
     expect(report).toBeDefined();
     expect(report.billId).toBe(medicalBill.id);
     expect(report.totals.billed).toBe(4500280);
 
-    // Stent item should be audited against coronary stent ceiling data
+    // Stent item audited against coronary stent ceiling data (S.O. 1587(E))
     const stentFinding = report.findings.find(
       (f) => f.ruleId === 'R-STENT-01' || f.ruleId === 'R-NPPA-01' || f.itemId === 'item-1'
     );
     expect(stentFinding).toBeDefined();
   });
 
-  it('Sample 2 (Room Bundling & TPA Deduction): extract -> toMedicalBill -> runAudit executes correctly', () => {
+  it('Sample 2 (Room Bundling & TPA Deduction): runs on default dataset and explicit bundling fixture', () => {
     // 1. Validate extracted JSON
     const parsed = ExtractedMedicalDocumentSchema.parse(sample2Bundling);
     expect(parsed.documentType).toBe('combined');
@@ -56,13 +67,13 @@ describe('Phase 4: End-to-End Extraction -> Mapper -> Audit Engine Flow', () => 
     expect(medicalBill.items).toHaveLength(3);
     expect(medicalBill.totalBilledPaise).toBe(1835000); // 18350.00 in paise
 
-    // Check that deduction is mapped to Digital Thermometer item
-    const thermometerItem = medicalBill.items.find((it) => it.description.includes('Thermometer'));
-    expect(thermometerItem).toBeDefined();
-    expect(thermometerItem?.deductedPaise).toBe(35000); // 350.00 in paise
-    expect(thermometerItem?.deductionReason).toContain('Annexure-I');
+    // Check that deduction is mapped to fictional consumable item
+    const consumableItem = medicalBill.items.find((it) => it.description.includes('Consumable') || it.description.includes('Alpha'));
+    expect(consumableItem).toBeDefined();
+    expect(consumableItem?.deductedPaise).toBe(35000); // 350.00 in paise
+    expect(consumableItem?.deductionReason).toContain('Annexure-I');
 
-    // 3. Execute Trust Zone audit engine with default reference data (annexure deduction fires)
+    // 3. Execute Trust Zone audit engine with default production reference data (annexure deduction fires)
     const report = runAudit(medicalBill);
     expect(report).toBeDefined();
     expect(report.totals.billed).toBe(1835000);
@@ -73,10 +84,10 @@ describe('Phase 4: End-to-End Extraction -> Mapper -> Audit Engine Flow', () => 
     // 4. Test bundling when room bundling reference data is loaded
     const sampleBundlingRecord: RoomBundlingRecord = {
       id: 'BUNDLE-NURSING-01',
-      name: 'Routine Nursing Charges',
-      normalizedName: 'routine nursing charges',
+      name: 'DEMO Routine Inpatient Nursing Charges',
+      normalizedName: 'demo routine inpatient nursing charges',
       bundledWith: 'room_rent',
-      description: 'Routine nursing charges bundled with room rent',
+      description: 'Routine nursing charges bundled with room rent (fictional fixture)',
       effectiveDate: '2026-01-01',
       validUntil: null,
       instrumentNumber: 'CIRCULAR-2026-01',
@@ -94,7 +105,7 @@ describe('Phase 4: End-to-End Extraction -> Mapper -> Audit Engine Flow', () => 
     expect(bundlingFinding).toBeDefined();
   });
 
-  it('Sample 3 (Clean Bill): extract -> toMedicalBill -> runAudit executes with zero overcharges', () => {
+  it('Sample 3 (Clean Bill): runs on default production dataset and yields zero overcharges', () => {
     // 1. Validate extracted JSON
     const parsed = ExtractedMedicalDocumentSchema.parse(sample3Clean);
     expect(parsed.documentType).toBe('hospital_bill');
@@ -105,7 +116,7 @@ describe('Phase 4: End-to-End Extraction -> Mapper -> Audit Engine Flow', () => 
     expect(medicalBill.items).toHaveLength(3);
     expect(medicalBill.totalBilledPaise).toBe(270000); // 2700.00 in paise
 
-    // 3. Execute Trust Zone audit engine
+    // 3. Execute Trust Zone audit engine on production reference dataset
     const report = runAudit(medicalBill);
     expect(report).toBeDefined();
     expect(report.totals.billed).toBe(270000);
@@ -115,7 +126,6 @@ describe('Phase 4: End-to-End Extraction -> Mapper -> Audit Engine Flow', () => 
   });
 
   it('/api/extract mock mode returns synthetic bills with no network and sets Cache-Control: no-store', async () => {
-    // Create a mock multipart request with a dummy PDF file
     const formData = new FormData();
     const dummyPdf = new Blob(['%PDF-1.4 dummy file content for testing'], { type: 'application/pdf' });
     formData.append('file', dummyPdf, 'test-bill.pdf');
@@ -135,5 +145,30 @@ describe('Phase 4: End-to-End Extraction -> Mapper -> Audit Engine Flow', () => 
     const json = await response.json();
     expect(json.documentType).toBe('hospital_bill');
     expect(json.bill.hospitalName).toBe('Synthetic Metro Heart Institute');
+  });
+
+  it('EXTRACT_MOCK is disabled in production (NODE_ENV === "production")', async () => {
+    // When in production, EXTRACT_MOCK is ignored.
+    (process.env as any).NODE_ENV = 'production';
+    process.env.EXTRACT_MOCK = '1';
+    delete process.env.GEMINI_MODEL; // Ensure missing model fails with 500 config error
+
+    const formData = new FormData();
+    const dummyPdf = new Blob(['%PDF-1.4 dummy file content for testing'], { type: 'application/pdf' });
+    formData.append('file', dummyPdf, 'test-bill.pdf');
+    formData.append('docType', 'medical_bill');
+
+    const req = new NextRequest('http://localhost:3000/api/extract', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const response = await POST(req);
+    // Because NODE_ENV === 'production', mock mode is bypassed, and missing GEMINI_MODEL triggers 500
+    expect(response.status).toBe(500);
+    const json = await response.json();
+    expect(json.error.code).toBe('CONFIG_ERROR');
+    expect(json.error.message).toContain('GEMINI_MODEL is not configured');
+    expect(response.headers.get('x-is-mock')).toBeNull();
   });
 });

@@ -12,6 +12,7 @@
     "hasDiscountOrTaxColumns": false,
     "billedPriceIncludesGst": false,
     "gstRatePct": null,
+    "notes": "Clean bill sample: billedPriceIncludesGst is explicitly false; arithmetic exact, tariff compliant.",
     "items": [
       {
         "name": "General Ward Bed Charges",

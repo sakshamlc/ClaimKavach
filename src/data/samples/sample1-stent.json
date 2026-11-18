@@ -12,6 +12,7 @@
     "hasDiscountOrTaxColumns": false,
     "billedPriceIncludesGst": false,
     "gstRatePct": null,
+    "notes": "Stent bill: billedPriceIncludesGst is explicitly false (rates billed as pre-tax hospital rate excluding GST).",
     "items": [
       {
         "name": "Drug Eluting Stents (DES) including metallic DES and Bioresorbable Vascular Scaffold (BVS)/ Biodegradable Stents",
@@ -23,7 +24,7 @@
         "tax": "0.00",
         "date": "2026-05-15",
         "confidence": 0.98,
-        "notes": "Coronary angioplasty drug-eluting stent"
+        "notes": "Coronary angioplasty drug-eluting stent (pre-tax hospital rate)"
       },
       {
         "name": "Acetyl Salicylic Acid 300mg Tablet",
@@ -35,7 +36,7 @@
         "tax": "0.00",
         "date": "2026-05-15",
         "confidence": 0.99,
-        "notes": "Post-procedure antiplatelet"
+        "notes": "Post-procedure antiplatelet (pre-tax hospital rate)"
       }
     ],
     "statedTotal": "45002.80"

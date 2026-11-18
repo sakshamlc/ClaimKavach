@@ -1,442 +1,440 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Header } from '@/components/Header';
-import { useTranslation } from '@/lib/i18n';
-import { useAppStore } from '@/lib/store';
-import { DocType } from '@/lib/rules/types';
-import goalsData from '@/data/goals.json';
-import { checkCanvasBlur } from '@/lib/blurGate';
+import { Header } from '@/components/claim/Header';
+import { Footer } from '@/components/claim/Footer';
+import { useClaimStore } from '@/store/claimStore';
 import {
-  Camera,
   Upload,
-  CheckCircle2,
-  AlertTriangle,
-  RotateCcw,
-  Trash2,
-  ArrowRight,
-  ArrowLeft,
-  Loader2,
   FileText,
+  Sparkles,
+  ArrowRight,
+  ShieldCheck,
+  CheckCircle2,
+  AlertCircle,
+  HelpCircle,
+  Building,
+  Percent,
+  Receipt,
+  FileCheck,
 } from 'lucide-react';
 
-/**
- * Compresses raster images using client-side HTML5 canvas to max 1600px and JPEG quality 0.8.
- * PDFs pass through directly.
- */
-async function processClientFile(file: File): Promise<{ blob: Blob; fileName: string }> {
-  // If PDF, pass through directly
-  if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
-    return { blob: file, fileName: file.name };
-  }
-
-  // Raster image compression via HTML5 canvas
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        let width = img.width;
-        let height = img.height;
-        const maxDimension = 1600;
-
-        if (width > maxDimension || height > maxDimension) {
-          if (width > height) {
-            height = Math.round((height * maxDimension) / width);
-            width = maxDimension;
-          } else {
-            width = Math.round((width * maxDimension) / height);
-            height = maxDimension;
-          }
-        }
-
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          resolve({ blob: file, fileName: file.name });
-          return;
-        }
-
-        ctx.drawImage(img, 0, 0, width, height);
-
-        // Client-side Blur Detection Gate (variance threshold 40)
-        const blurCheck = checkCanvasBlur(canvas, 40);
-        if (blurCheck.isBlurry) {
-          reject(new Error('PHOTO_BLURRY'));
-          return;
-        }
-
-        canvas.toBlob(
-          (blob) => {
-            if (blob) {
-              resolve({
-                blob,
-                fileName: file.name.replace(/\.[^/.]+$/, '') + '.jpg',
-              });
-            } else {
-              resolve({ blob: file, fileName: file.name });
-            }
-          },
-          'image/jpeg',
-          0.8
-        );
-      };
-      img.onerror = () => resolve({ blob: file, fileName: file.name });
-      img.src = e.target?.result as string;
-    };
-    reader.onerror = () => reject(new Error('Failed to read file'));
-    reader.readAsDataURL(file);
-  });
-}
-
 export default function UploadPage() {
-  const { t } = useTranslation();
   const router = useRouter();
+  const consentAccepted = useClaimStore((state) => state.consentAccepted);
+  const setBill = useClaimStore((state) => state.setBill);
+  const loadSample = useClaimStore((state) => state.loadSample);
+  const selectedSampleKey = useClaimStore((state) => state.selectedSampleKey);
+  const bill = useClaimStore((state) => state.bill);
 
-  const goalId = useAppStore((state) => state.goalId);
-  const consentAccepted = useAppStore((state) => state.consentAccepted);
-  const documents = useAppStore((state) => state.documents);
-  const setDocumentFile = useAppStore((state) => state.setDocumentFile);
-  const setDocumentReading = useAppStore((state) => state.setDocumentReading);
-  const setDocumentExtracted = useAppStore((state) => state.setDocumentExtracted);
-  const setDocumentError = useAppStore((state) => state.setDocumentError);
-  const removeDocument = useAppStore((state) => state.removeDocument);
+  // Policy options local state
+  const policyInputs = useClaimStore((state) => state.policyInputs);
+  const setPolicyInputs = useClaimStore((state) => state.setPolicyInputs);
 
-  const [activeSlot, setActiveSlot] = useState<DocType | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [mismatchSuggestion, setMismatchSuggestion] = useState<{
-    from: DocType;
-    to: DocType;
-    data: any;
-  } | null>(null);
+  // GST options local state
+  const billedPriceIncludesGst = useClaimStore((state) => state.billedPriceIncludesGst);
+  const gstRatePct = useClaimStore((state) => state.gstRatePct);
+  const setGstOptions = useClaimStore((state) => state.setGstOptions);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  const goal = goalsData.find((g) => g.id === goalId);
-  const requiredDocs = (goal?.required as DocType[]) || [];
+  const handleSelectSample = (key: 'sample1' | 'sample2' | 'sample3') => {
+    loadSample(key);
+    setUploadError(null);
+  };
 
-  useEffect(() => {
-    if (!goalId) {
-      router.push('/goal');
-    } else if (!consentAccepted) {
-      router.push('/consent');
-    }
-  }, [goalId, consentAccepted, router]);
-
-  const handleFilePicked = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !activeSlot) return;
+    if (!file) return;
 
-    setErrorMessage(null);
-
-    // Size check (4 MB)
-    if (file.size > 4 * 1024 * 1024) {
-      setErrorMessage(t('fileSizeError'));
-      return;
-    }
+    setIsProcessing(true);
+    setUploadError(null);
 
     try {
-      const objectUrl = URL.createObjectURL(file);
-      setDocumentFile(activeSlot, file, objectUrl);
-      setDocumentReading(activeSlot);
-
-      // Process & compress client-side
-      const { blob, fileName } = await processClientFile(file);
-
-      // Post to /api/extract
       const formData = new FormData();
-      formData.append('file', blob, fileName);
-      formData.append('docType', activeSlot);
+      formData.append('file', file);
+      formData.append('documentType', 'hospital_bill');
 
       const res = await fetch('/api/extract', {
         method: 'POST',
         body: formData,
       });
 
-      const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error?.message || 'Extraction failed');
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || `Upload extraction failed (${res.status})`);
       }
 
-      if (res.headers.get('x-is-mock') === '1') {
-        useAppStore.getState().setMockDataUsed(true);
-      }
-
-      // Check if uploaded document belongs to another required slot
-      if (
-        data.detectedDocType &&
-        data.detectedDocType !== 'unknown' &&
-        data.detectedDocType !== activeSlot &&
-        requiredDocs.includes(data.detectedDocType)
-      ) {
-        setMismatchSuggestion({
-          from: activeSlot,
-          to: data.detectedDocType,
-          data,
-        });
-      } else {
-        setDocumentExtracted(activeSlot, data);
-      }
+      const extractedData = await res.json();
+      const { toMedicalBill } = await import('@/lib/extract/toMedicalBill');
+      const domainBill = toMedicalBill(extractedData);
+      setBill(domainBill, file.name);
     } catch (err: any) {
-      if (err?.message === 'PHOTO_BLURRY') {
-        setErrorMessage(t('photoBlurryError'));
-        setDocumentError(activeSlot, t('photoBlurryError'));
-      } else {
-        setErrorMessage(err?.message || 'Failed to read document');
-        setDocumentError(activeSlot, err?.message || 'Failed to read document');
-      }
+      console.error('File extraction error:', err);
+      setUploadError(
+        err.message || 'Failed to extract bill. You can try one of our 3 synthetic sample bills.'
+      );
     } finally {
-      // Clear inputs
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      if (cameraInputRef.current) cameraInputRef.current.value = '';
+      setIsProcessing(false);
     }
   };
 
-  const triggerUpload = (docType: DocType, isCamera: boolean) => {
-    setActiveSlot(docType);
-    if (isCamera && cameraInputRef.current) {
-      cameraInputRef.current.click();
-    } else if (fileInputRef.current) {
-      fileInputRef.current.click();
+  const handleProceed = () => {
+    if (!bill) {
+      setUploadError('Please select a synthetic sample bill or upload a hospital invoice first.');
+      return;
     }
+    router.push('/verify');
   };
-
-  // Check if all required documents are extracted
-  const allRequiredDone =
-    requiredDocs.length > 0 &&
-    requiredDocs.every((d) => documents[d]?.status === 'done');
 
   return (
     <div className="min-h-screen bg-background flex flex-col font-sans">
       <Header />
 
-      {/* Hidden File Inputs */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp,application/pdf"
-        className="hidden"
-        onChange={handleFilePicked}
-      />
-      <input
-        ref={cameraInputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        className="hidden"
-        onChange={handleFilePicked}
-      />
-
-      <main className="flex-1 max-w-2xl mx-auto px-4 py-8 w-full">
-        {/* Back */}
-        <button
-          type="button"
-          onClick={() => router.push('/consent')}
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted hover:text-text-main mb-6 min-h-[36px]"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>{t('back')}</span>
-        </button>
-
-        {/* Heading */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-extrabold text-text-main">
-            {t('uploadTitle')}
+      <main className="flex-1 max-w-4xl mx-auto px-4 py-8 w-full space-y-8">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            Step 1: Provide Hospital Bill & Policy Details
           </h1>
-          <p className="mt-1 text-sm text-muted">{t('uploadSubtitle')}</p>
-          <p className="mt-1 text-xs text-info-fg bg-info-bg px-2.5 py-1 rounded-md inline-block">
-            {t('cameraHint')}
+          <p className="text-sm text-slate-600 mt-1">
+            Choose one of our 3 pre-configured synthetic sample bills or upload your own hospital invoice PDF.
           </p>
         </div>
 
-        {/* Mismatch Move Suggestion Dialog */}
-        {mismatchSuggestion && (
-          <div className="mb-6 p-4 bg-amber-50 border border-amber-300 rounded-xl shadow-xs">
-            <h4 className="font-bold text-sm text-amber-900 mb-1 flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0" />
-              <span>
-                {t('mismatchedSlotAlert')
-                  .replace('{0}', t(`doc_${mismatchSuggestion.to}`))
-                  .replace('{1}', t(`doc_${mismatchSuggestion.from}`))}
-              </span>
-            </h4>
-            <div className="flex items-center gap-2 mt-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setDocumentExtracted(mismatchSuggestion.to, mismatchSuggestion.data);
-                  removeDocument(mismatchSuggestion.from);
-                  setMismatchSuggestion(null);
-                }}
-                className="px-3 py-2 bg-primary text-white text-xs font-bold rounded-lg shadow-xs hover:bg-primary-hover min-h-[40px]"
-              >
-                {t('moveToCorrectSlot').replace('{0}', t(`doc_${mismatchSuggestion.to}`))}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setDocumentExtracted(mismatchSuggestion.from, mismatchSuggestion.data);
-                  setMismatchSuggestion(null);
-                }}
-                className="px-3 py-2 bg-background border border-border text-text-main text-xs font-bold rounded-lg hover:bg-slate-100 min-h-[40px]"
-              >
-                {t('keepInCurrentSlot').replace('{0}', t(`doc_${mismatchSuggestion.from}`))}
-              </button>
+        {/* Section 1: Synthetic Sample Bills (One-Click Testing) */}
+        <div className="bg-surface rounded-2xl border border-border p-6 shadow-xs space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-amber-600" />
+              <h2 className="text-base font-bold text-slate-900">
+                1-Click Synthetic Sample Bills
+              </h2>
             </div>
+            <span className="text-[11px] font-bold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
+              Zero Upload Required
+            </span>
           </div>
-        )}
 
-        {/* Error Alert */}
-        {errorMessage && (
-          <div className="mb-4 p-3 bg-danger-bg text-danger-fg border border-rose-300 rounded-xl text-xs font-medium flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 shrink-0" />
-            <span>{errorMessage}</span>
-          </div>
-        )}
+          <p className="text-xs text-muted leading-relaxed">
+            Click any scenario to load a fully structured synthetic fixture with zero real patient data.
+          </p>
 
-        {/* Upload Slots */}
-        <div className="space-y-4">
-          {requiredDocs.map((docType) => {
-            const docState = documents[docType];
-            const status = docState?.status || 'empty';
-
-            return (
-              <div
-                key={docType}
-                className="p-5 bg-surface rounded-card border border-border shadow-xs"
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-background border border-border flex items-center justify-center text-primary">
-                      <FileText className="w-4 h-4" />
-                    </div>
-                    <span className="font-bold text-base text-text-main">
-                      {t(`doc_${docType}`)}
-                    </span>
-                  </div>
-
-                  {/* Status Indicator */}
-                  {status === 'done' && (
-                    <span className="inline-flex items-center gap-1 text-xs font-bold text-success-fg bg-success-bg px-2.5 py-1 rounded-full border border-emerald-300">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>{t('slot_done')}</span>
-                    </span>
-                  )}
-                  {status === 'reading' && (
-                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary bg-info-bg px-2.5 py-1 rounded-full border border-sky-200">
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>{t('slot_reading')}</span>
-                    </span>
-                  )}
-                  {status === 'failed' && (
-                    <span className="inline-flex items-center gap-1 text-xs font-bold text-danger-fg bg-danger-bg px-2.5 py-1 rounded-full border border-rose-300">
-                      <AlertTriangle className="w-3.5 h-3.5" />
-                      <span>{t('slot_failed')}</span>
-                    </span>
-                  )}
-                  {status === 'empty' && (
-                    <span className="text-xs text-muted font-medium">
-                      {t('slot_empty')}
-                    </span>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {/* Sample 1: Stent */}
+            <button
+              type="button"
+              onClick={() => handleSelectSample('sample1')}
+              className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-2 ${
+                selectedSampleKey === 'sample1'
+                  ? 'border-primary bg-primary/5 ring-2 ring-primary/20 shadow-xs'
+                  : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+              }`}
+            >
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-amber-100 text-amber-900">
+                    Sample 1
+                  </span>
+                  {selectedSampleKey === 'sample1' && (
+                    <CheckCircle2 className="w-4 h-4 text-primary" />
                   )}
                 </div>
-
-                {/* Specific Slot Error Message */}
-                {docState?.error && (
-                  <div className="mt-2 mb-3 p-2.5 bg-rose-50 border border-rose-200 text-danger-fg text-xs rounded-lg flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 shrink-0" />
-                    <span>{docState.error}</span>
-                  </div>
-                )}
-
-                {/* Slot Action Buttons (Min 48px tap targets) */}
-                {status === 'failed' ? (
-                  <div className="flex gap-2.5 mt-2">
-                    <button
-                      type="button"
-                      onClick={() => triggerUpload(docType, true)}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-white text-xs font-bold rounded-xl shadow-xs hover:bg-primary-hover min-h-[48px] focus:ring-4 focus:ring-primary/20"
-                    >
-                      <RotateCcw className="w-4 h-4" />
-                      <span>{t('retake')}</span>
-                    </button>
-                  </div>
-                ) : status === 'empty' ? (
-                  <div className="flex flex-col sm:flex-row gap-2.5 mt-2">
-                    <button
-                      type="button"
-                      onClick={() => triggerUpload(docType, true)}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-white text-xs font-bold rounded-xl shadow-xs hover:bg-primary-hover min-h-[48px] focus:ring-4 focus:ring-primary/20"
-                    >
-                      <Camera className="w-4 h-4" />
-                      <span>{t('takePhoto')}</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => triggerUpload(docType, false)}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-background border border-border text-text-main text-xs font-bold rounded-xl shadow-xs hover:bg-slate-100 min-h-[48px] focus:ring-4 focus:ring-slate-200"
-                    >
-                      <Upload className="w-4 h-4 text-muted" />
-                      <span>{t('chooseFile')}</span>
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between pt-2 border-t border-border mt-3">
-                    <div className="text-xs text-muted truncate max-w-[200px]">
-                      {docState?.file?.name || 'Uploaded Document'}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => triggerUpload(docType, false)}
-                        className="inline-flex items-center gap-1 text-xs font-semibold text-primary p-2 hover:underline min-h-[36px]"
-                      >
-                        <RotateCcw className="w-3.5 h-3.5" />
-                        <span>{t('retry')}</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => removeDocument(docType)}
-                        className="inline-flex items-center gap-1 text-xs font-semibold text-danger-fg p-2 hover:underline min-h-[36px]"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        <span>{t('remove')}</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
+                <h3 className="text-sm font-bold text-slate-900">Coronary Stent Bill</h3>
+                <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">
+                  Angioplasty DES stent billed at ₹45,000 above the ₹39,186.03 NPPA statutory ceiling.
+                </p>
               </div>
-            );
-          })}
+              <span className="text-[10px] font-mono text-slate-500 pt-2 border-t border-slate-100">
+                Tests: R-NPPA-01 Ceiling Rule
+              </span>
+            </button>
+
+            {/* Sample 2: Bundling & TPA */}
+            <button
+              type="button"
+              onClick={() => handleSelectSample('sample2')}
+              className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-2 ${
+                selectedSampleKey === 'sample2'
+                  ? 'border-primary bg-primary/5 ring-2 ring-primary/20 shadow-xs'
+                  : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+              }`}
+            >
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-indigo-100 text-indigo-900">
+                    Sample 2
+                  </span>
+                  {selectedSampleKey === 'sample2' && (
+                    <CheckCircle2 className="w-4 h-4 text-primary" />
+                  )}
+                </div>
+                <h3 className="text-sm font-bold text-slate-900">Bundling & TPA Deductions</h3>
+                <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">
+                  Separate billing of nursing & gowns, plus arbitrary TPA non-payable deduction disputes.
+                </p>
+              </div>
+              <span className="text-[10px] font-mono text-slate-500 pt-2 border-t border-slate-100">
+                Tests: R-BUNDLE-01 & R-ANX-01
+              </span>
+            </button>
+
+            {/* Sample 3: Clean */}
+            <button
+              type="button"
+              onClick={() => handleSelectSample('sample3')}
+              className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-2 ${
+                selectedSampleKey === 'sample3'
+                  ? 'border-primary bg-primary/5 ring-2 ring-primary/20 shadow-xs'
+                  : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+              }`}
+            >
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-emerald-100 text-emerald-900">
+                    Sample 3
+                  </span>
+                  {selectedSampleKey === 'sample3' && (
+                    <CheckCircle2 className="w-4 h-4 text-primary" />
+                  )}
+                </div>
+                <h3 className="text-sm font-bold text-slate-900">Clean Medical Bill</h3>
+                <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">
+                  Fully compliant inpatient bill with zero statutory ceiling overcharges or math errors.
+                </p>
+              </div>
+              <span className="text-[10px] font-mono text-slate-500 pt-2 border-t border-slate-100">
+                Tests: Zero-Findings Clean Path
+              </span>
+            </button>
+          </div>
         </div>
 
-        {/* Continue Button to S5 Review */}
-        <div className="mt-8">
-          <button
-            type="button"
-            disabled={!allRequiredDone}
-            onClick={() => router.push('/review')}
-            className={`w-full flex items-center justify-center gap-2 px-6 py-3.5 text-base font-bold rounded-xl shadow-md transition-all min-h-[48px] ${
-              allRequiredDone
-                ? 'bg-primary hover:bg-primary-hover text-white cursor-pointer focus:ring-4 focus:ring-primary/20'
-                : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
-            }`}
-          >
-            <span>{t('continue')}</span>
-            <ArrowRight className="w-5 h-5" />
-          </button>
+        {/* Section 2: Upload Own Hospital Bill PDF */}
+        <div className="bg-surface rounded-2xl border border-border p-6 shadow-xs space-y-4">
+          <div className="flex items-center gap-2">
+            <Upload className="w-5 h-5 text-primary" />
+            <h2 className="text-base font-bold text-slate-900">
+              Or Upload Hospital Bill (PDF or Photo)
+            </h2>
+          </div>
 
-          {!allRequiredDone && (
-            <p className="text-center text-xs text-muted mt-2">
-              {t('allRequiredWarning')}
-            </p>
+          <div className="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:bg-slate-50/50 transition-colors">
+            <input
+              type="file"
+              id="bill-upload"
+              accept=".pdf,image/*"
+              onChange={handleFileUpload}
+              className="hidden"
+              disabled={isProcessing}
+            />
+            <label
+              htmlFor="bill-upload"
+              className="cursor-pointer flex flex-col items-center justify-center space-y-2"
+            >
+              <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                <FileText className="w-6 h-6" />
+              </div>
+              <span className="text-sm font-bold text-primary">
+                {isProcessing ? 'Reading document text...' : 'Click to select bill or drag file here'}
+              </span>
+              <span className="text-xs text-muted">
+                Accepts itemized hospital bill (PDF or camera photo). Processed in memory only.
+              </span>
+            </label>
+          </div>
+
+          {uploadError && (
+            <div className="flex items-center gap-2 text-xs text-rose-700 bg-rose-50 border border-rose-200 p-3 rounded-lg">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{uploadError}</span>
+            </div>
+          )}
+
+          {bill && !selectedSampleKey && (
+            <div className="flex items-center gap-2 text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 p-3 rounded-lg">
+              <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+              <span>
+                Loaded bill with <strong>{bill.items.length} line items</strong>. Hospital: {bill.hospital.name}.
+              </span>
+            </div>
           )}
         </div>
+
+        {/* Section 3: GST Configuration */}
+        <div className="bg-surface rounded-2xl border border-border p-6 shadow-xs space-y-4">
+          <div className="flex items-center gap-2">
+            <Receipt className="w-5 h-5 text-indigo-600" />
+            <h2 className="text-base font-bold text-slate-900">
+              Tax & GST Inclusion Setting
+            </h2>
+          </div>
+
+          <p className="text-xs text-muted leading-relaxed">
+            Statutory NPPA ceilings are published pre-tax (excluding GST). Indicate whether your bill rates include GST so the audit engine can make an accurate statutory comparison without false flags.
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <label
+              className={`flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition-all text-xs ${
+                billedPriceIncludesGst === false
+                  ? 'border-primary bg-primary/5 text-primary font-bold'
+                  : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              <input
+                type="radio"
+                name="gstInclusion"
+                checked={billedPriceIncludesGst === false}
+                onChange={() => setGstOptions(false, null)}
+                className="mt-0.5 text-primary"
+              />
+              <div>
+                <span className="block font-semibold">Excludes GST</span>
+                <span className="text-[11px] text-muted font-normal">
+                  Hospital rates billed as pre-tax base rate
+                </span>
+              </div>
+            </label>
+
+            <label
+              className={`flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition-all text-xs ${
+                billedPriceIncludesGst === true
+                  ? 'border-primary bg-primary/5 text-primary font-bold'
+                  : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              <input
+                type="radio"
+                name="gstInclusion"
+                checked={billedPriceIncludesGst === true}
+                onChange={() => setGstOptions(true, gstRatePct || 5)}
+                className="mt-0.5 text-primary"
+              />
+              <div>
+                <span className="block font-semibold">Includes GST</span>
+                <span className="text-[11px] text-muted font-normal">
+                  Unit rates are inclusive of tax
+                </span>
+              </div>
+            </label>
+
+            <label
+              className={`flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition-all text-xs ${
+                billedPriceIncludesGst === null
+                  ? 'border-primary bg-primary/5 text-primary font-bold'
+                  : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              <input
+                type="radio"
+                name="gstInclusion"
+                checked={billedPriceIncludesGst === null}
+                onChange={() => setGstOptions(null, null)}
+                className="mt-0.5 text-primary"
+              />
+              <div>
+                <span className="block font-semibold">Not Stated / Unknown</span>
+                <span className="text-[11px] text-muted font-normal">
+                  Caps findings at NEEDS_REVIEW
+                </span>
+              </div>
+            </label>
+          </div>
+
+          {billedPriceIncludesGst === true && (
+            <div className="pt-2 flex items-center gap-3 text-xs">
+              <span className="text-slate-700 font-semibold">Stated GST Rate (%):</span>
+              <input
+                type="number"
+                min="0"
+                max="28"
+                step="0.01"
+                value={gstRatePct ?? 5}
+                onChange={(e) => setGstOptions(true, parseFloat(e.target.value) || 0)}
+                className="w-24 px-3 py-1.5 border border-slate-300 rounded-lg text-slate-900 font-mono text-xs focus:ring-2 focus:ring-primary/20"
+                placeholder="5"
+              />
+              <span className="text-[11px] text-muted">
+                Typical GST for medicines: 5% or 12%; Stents: 5%.
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Section 4: Optional Policy Context */}
+        <div className="bg-surface rounded-2xl border border-border p-6 shadow-xs space-y-4">
+          <div className="flex items-center gap-2">
+            <Building className="w-5 h-5 text-slate-600" />
+            <h2 className="text-base font-bold text-slate-900">
+              Optional: Insurance Policy Terms (For Proportionate Deductions)
+            </h2>
+          </div>
+
+          <p className="text-xs text-muted leading-relaxed">
+            If your insurer deducted charges due to room rent capping, enter your policy limit to verify if the proportionate deduction was calculated lawfully.
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">
+                Room Rent Limit per Day (₹):
+              </label>
+              <input
+                type="number"
+                placeholder="e.g. 5000"
+                value={policyInputs.roomRentLimitRupees ?? ''}
+                onChange={(e) =>
+                  setPolicyInputs({
+                    roomRentLimitRupees: e.target.value ? parseFloat(e.target.value) : null,
+                  })
+                }
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">
+                Policy Sum Insured (₹):
+              </label>
+              <input
+                type="number"
+                placeholder="e.g. 500000"
+                value={policyInputs.sumInsuredRupees ?? ''}
+                onChange={(e) =>
+                  setPolicyInputs({
+                    sumInsuredRupees: e.target.value ? parseFloat(e.target.value) : null,
+                  })
+                }
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 font-mono"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Actions */}
+        <div className="flex items-center justify-between pt-4">
+          <button
+            type="button"
+            onClick={() => router.push('/')}
+            className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800"
+          >
+            &larr; Back to Landing
+          </button>
+
+          <button
+            type="button"
+            onClick={handleProceed}
+            className="flex items-center gap-2 px-6 py-3.5 bg-primary hover:bg-primary-hover text-white text-sm font-bold rounded-xl shadow-md transition-all cursor-pointer focus:ring-4 focus:ring-primary/20"
+          >
+            <span>Proceed to Line Item Verification</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
       </main>
+
+      <Footer />
     </div>
   );
 }

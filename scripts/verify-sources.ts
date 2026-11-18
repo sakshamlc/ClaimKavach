@@ -4,12 +4,11 @@
  * Recomputes SHA-256 hashes from docs/sources/raw/<file> and compares them against MANIFEST.json.
  * Only this script (outside src/lib/audit/**) is permitted to write verified: true.
  *
- * Verifies:
- * 1. Every entry in MANIFEST.json has a matching file on disk in docs/sources/raw/.
- * 2. The SHA-256 hash computed from disk matches the hash recorded in MANIFEST.json.
- * 3. Enforces that no regulatory record in src/data/regulatory/*.json claims verified: true
- *    unless its official sourceFile exists on disk and matches MANIFEST.json.
- * 4. Demotes any record claiming verified: true without a verified file match to verified: false.
+ * Human Sign-off Policy (F3):
+ * verify-sources may set verified:true ONLY when docs/sources/REVIEW.json has an entry:
+ * { sourceFile, sha256, reviewer, reviewedAt, sampleRecordIds, result: "PASS" }
+ * whose hash matches the manifest. If REVIEW.json has no matching PASS entry,
+ * records remain verified: false.
  */
 
 import * as fs from 'fs';
@@ -22,6 +21,15 @@ export interface VerificationReport {
   recordsChecked: number;
   errors: string[];
   warnings: string[];
+}
+
+export interface SourceReviewEntry {
+  sourceFile: string;
+  sha256: string;
+  reviewer: string;
+  reviewedAt: string;
+  sampleRecordIds: string[];
+  result: 'PASS' | 'FAIL';
 }
 
 export function computeFileSha256(filePath: string): string {
@@ -42,6 +50,7 @@ export function verifySourcesOnDisk(
   };
 
   const manifestPath = path.join(workspaceRoot, 'docs', 'sources', 'MANIFEST.json');
+  const reviewPath = path.join(workspaceRoot, 'docs', 'sources', 'REVIEW.json');
   const rawDir = path.join(workspaceRoot, 'docs', 'sources', 'raw');
   const regulatoryDir = path.join(workspaceRoot, 'src', 'data', 'regulatory');
 
@@ -57,7 +66,7 @@ export function verifySourcesOnDisk(
     sources: Array<{
       filename: string;
       sha256: string;
-      sourceUrl: string;
+      sourceUrl: string | null;
       verified: boolean;
     }>;
   };
@@ -70,8 +79,18 @@ export function verifySourcesOnDisk(
     return report;
   }
 
-  // 1. Verify all sources listed in MANIFEST.json
-  const verifiedManifestFiles = new Map<string, string>(); // filename -> sha256
+  // Load human sign-offs from REVIEW.json
+  let reviews: SourceReviewEntry[] = [];
+  if (fs.existsSync(reviewPath)) {
+    try {
+      reviews = JSON.parse(fs.readFileSync(reviewPath, 'utf8'));
+    } catch {
+      reviews = [];
+    }
+  }
+
+  // 1. Verify all sources listed in MANIFEST.json against disk and REVIEW.json
+  const verifiedFiles = new Set<string>(); // set of filenames that have BOTH disk match and human sign-off PASS
 
   for (const src of manifest.sources) {
     report.filesChecked++;
@@ -93,10 +112,24 @@ export function verifySourcesOnDisk(
       report.errors.push(
         `Hash mismatch for "${src.filename}": calculated ${calculatedHash}, manifest expects ${src.sha256}`
       );
-    } else {
-      if (src.verified) {
-        verifiedManifestFiles.set(src.filename, calculatedHash);
-      }
+      continue;
+    }
+
+    // Check Human Sign-Off (F3 requirement)
+    const reviewPass = reviews.find(
+      (r) =>
+        r.sourceFile === src.filename &&
+        r.sha256?.toLowerCase() === calculatedHash.toLowerCase() &&
+        r.result === 'PASS' &&
+        r.reviewer &&
+        r.reviewedAt &&
+        Array.isArray(r.sampleRecordIds)
+    );
+
+    if (reviewPass && src.verified) {
+      verifiedFiles.add(src.filename);
+    } else if (!reviewPass) {
+      report.warnings.push(`File "${src.filename}" matches disk hash but has no PASS entry in REVIEW.json (unverified)`);
     }
   }
 
@@ -114,15 +147,12 @@ export function verifySourcesOnDisk(
           report.recordsChecked++;
           const targetFile = record.sourceFile;
 
-          const isFileVerified =
-            targetFile &&
-            verifiedManifestFiles.has(targetFile) &&
-            fs.existsSync(path.join(rawDir, targetFile));
+          const isRecordVerified = targetFile && verifiedFiles.has(targetFile);
 
-          if (record.verified === true && !isFileVerified) {
+          if (record.verified === true && !isRecordVerified) {
             report.success = false;
             report.errors.push(
-              `Record "${record.id}" in ${dataFile} claims verified: true, but sourceFile "${targetFile}" is not verified on disk.`
+              `Record "${record.id}" in ${dataFile} claims verified: true, but sourceFile "${targetFile}" is not human-verified in REVIEW.json.`
             );
             if (options.autoDemote) {
               record.verified = false;
@@ -149,13 +179,10 @@ if (process.argv[1] && process.argv[1].includes('verify-sources')) {
   console.log(`Success: ${result.success}`);
   console.log(`Files checked: ${result.filesChecked}`);
   console.log(`Records checked: ${result.recordsChecked}`);
-  if (result.warnings.length > 0) {
-    console.log(`Warnings (${result.warnings.length}):`);
-    result.warnings.forEach((w) => console.log(`  - ${w}`));
-  }
+  console.log(`Errors: ${result.errors.length}`);
+  console.log(`Warnings: ${result.warnings.length}`);
   if (result.errors.length > 0) {
-    console.error(`Errors (${result.errors.length}):`);
-    result.errors.forEach((e) => console.error(`  - ${e}`));
+    console.error('Errors:', result.errors);
     process.exit(1);
   }
   process.exit(0);

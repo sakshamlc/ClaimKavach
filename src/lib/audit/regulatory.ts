@@ -162,6 +162,7 @@ export const NppaCeilingRecordSchema = BaseRegulatoryRecordSchema.extend({
   priceUnit: z.string().min(1, 'priceUnit is required (e.g. per tablet, per strip, per vial)'),
   priceType: z.enum(['CEILING', 'RETAIL']).default('CEILING'),
   manufacturer: z.string().nullable().default(null),
+  marketer: z.string().nullable().default(null),
   rawComposition: z.string().default(''),
   ingredients: z.array(IngredientSchema).default([]),
 }).refine(

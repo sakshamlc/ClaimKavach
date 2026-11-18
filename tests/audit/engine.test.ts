@@ -201,7 +201,7 @@ describe('Phase 3 Audit Engine: Determinism, Golden-File Synthetic Bills & Centr
   });
 
   describe('2. Golden-File Bills Audit Executions', () => {
-    it('Golden Bill 1 (Overcharge Case): produces expected totals and arithmetic findings', () => {
+    it('Golden Bill 1 (Overcharge Case): runs on synthetic fixture dataset (getDemoReferenceData()) and produces expected totals and arithmetic findings', () => {
       const report = runAuditWithDemo(goldenBillOvercharge);
 
       expect(report.billId).toBe('GOLDEN-SYN-01-OVERCHARGE');
@@ -229,7 +229,7 @@ describe('Phase 3 Audit Engine: Determinism, Golden-File Synthetic Bills & Centr
       expect(report.coverage.total).toBe(3);
     });
 
-    it('Golden Bill 2 (Bundling & TPA Case): handles bundling and valid exclusions', () => {
+    it('Golden Bill 2 (Bundling & TPA Case): runs on synthetic fixture dataset (getDemoReferenceData()) and handles bundling and valid exclusions', () => {
       const report = runAuditWithDemo(goldenBillBundlingAndTpa);
 
       expect(report.billId).toBe('GOLDEN-SYN-02-BUNDLING-TPA');
@@ -255,7 +255,7 @@ describe('Phase 3 Audit Engine: Determinism, Golden-File Synthetic Bills & Centr
       expect(report.totals.ifLikelyUpheld).toBe(825000); // Fair - likely (925000 - 100000)
     });
 
-    it('Golden Bill 3 (Clean Bill): results in zero confirmed and zero likely issues', () => {
+    it('Golden Bill 3 (Clean Bill): runs on synthetic fixture dataset (getDemoReferenceData()) and results in zero confirmed and zero likely issues', () => {
       const report = runAuditWithDemo(goldenBillClean);
 
       expect(report.billId).toBe('GOLDEN-SYN-03-CLEAN');
@@ -371,7 +371,7 @@ describe('Phase 3 Audit Engine: Determinism, Golden-File Synthetic Bills & Centr
         items: [
           {
             id: 'R1',
-            description: 'Aceclofenac 100mg + Paracetamol 325mg Tablets (Softdeal Pharmaceutical)',
+            description: 'Aceclofenac 100mg + Paracetamol 325mg Tablets (Shiva Biogenetic / Softdeal Pharmaceutical)',
             category: 'pharmacy',
             quantity: 10,
             unitRatePaise: 800, // 8.00 vs ceiling 5.46 (546 paise)
@@ -487,6 +487,13 @@ describe('Phase 3 Audit Engine: Determinism, Golden-File Synthetic Bills & Centr
       expect(report.notCheckedItems).toBeDefined();
       const unpricedItem = report.notCheckedItems?.find((i) => i.id === 'ADMIN-01');
       expect(unpricedItem).toBeDefined();
+
+      // Knee implant is in notCheckedItems with note citing S.O. 6222(E) and 2027-01-15 validity
+      const kneeNotChecked = report.notCheckedItems?.find((i) => i.id === 'KNEE-01');
+      expect(kneeNotChecked).toBeDefined();
+      expect(kneeNotChecked?.notes).toContain('S.O. 6222(E)');
+      expect(kneeNotChecked?.notes).toContain('2027-01-15');
+      expect(kneeNotChecked?.notes).toContain('NOT_CHECKED');
     });
 
     it('8. Stent Test: synthetic bill with coronary stent billed above ceiling yields LIKELY_ISSUE while records are verified:false, and CONFIRMED_OVERCHARGE only when fixture copy has verified:true and valid date', () => {

@@ -146,8 +146,11 @@ export async function POST(req: NextRequest) {
       docTypeRaw === 'tpa_settlement' ||
       docTypeRaw === 'medical';
 
-    // 5. EXTRACT_MOCK=1 support
-    if (process.env.EXTRACT_MOCK === '1') {
+    // 5. EXTRACT_MOCK=1 support (allowed ONLY in non-production environments)
+    const isMockAllowed =
+      process.env.EXTRACT_MOCK === '1' && process.env.NODE_ENV !== 'production';
+
+    if (isMockAllowed) {
       if (isMedicalBill) {
         const sample = medicalSampleMap[sampleId] || sample1Stent;
         const validated = ExtractedMedicalDocumentSchema.parse(sample);
@@ -175,7 +178,23 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 6. Upstream Gemini Call
+    // 6. Config Validation: GEMINI_MODEL must be explicitly set outside mock mode
+    if (!process.env.GEMINI_MODEL) {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'CONFIG_ERROR',
+            message: 'GEMINI_MODEL is not configured in server environment.',
+          },
+        },
+        {
+          status: 500,
+          headers: { 'Cache-Control': 'no-store' },
+        }
+      );
+    }
+
+    // 7. Upstream Gemini Call
     const clientKey = req.headers.get('x-gemini-key') || undefined;
     try {
       if (isMedicalBill) {

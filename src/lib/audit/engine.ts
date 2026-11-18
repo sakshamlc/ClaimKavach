@@ -290,9 +290,23 @@ export function runAudit(
   };
 
   // 7. Calculate coverage & notCheckedItems
-  const notCheckedItems = bill.items.filter(
-    (item) => !checkedArithmeticItemIds.has(item.id) && !checkedRegulatoryItemIds.has(item.id)
-  );
+  const notCheckedItems = bill.items
+    .filter(
+      (item) =>
+        (!checkedArithmeticItemIds.has(item.id) && !checkedRegulatoryItemIds.has(item.id)) ||
+        (/knee/i.test(item.description) && !checkedRegulatoryItemIds.has(item.id))
+    )
+    .map((item) => {
+      if (/knee/i.test(item.description) && !checkedRegulatoryItemIds.has(item.id)) {
+        const kneeNote =
+          "Knee implant ceiling order S.O. 6222(E) is valid until 2027-01-15 (extending S.O. 5190(E)), but root price table from S.O. 5190(E) / S.O. 2668(E) has not been ingested; item is NOT_CHECKED.";
+        return {
+          ...item,
+          notes: item.notes ? `${item.notes} | ${kneeNote}` : kneeNote,
+        };
+      }
+      return item;
+    });
 
   const coverage: ReportCoverage = {
     arithmeticChecked: checkedArithmeticItemIds.size,

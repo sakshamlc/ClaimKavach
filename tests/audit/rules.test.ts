@@ -196,6 +196,7 @@ describe('Phase 3 Unit Tests: Pure Audit Rules', () => {
       priceUnit: 'per tablet',
       priceType: 'CEILING',
       manufacturer: null,
+      marketer: null,
       rawComposition: 'DEMO Composition 100mg',
       ingredients: [{ name: 'DEMO Drug Alpha', strength: '100mg' }],
       effectiveDate: '2024-01-01',
@@ -219,7 +220,8 @@ describe('Phase 3 Unit Tests: Pure Audit Rules', () => {
       priceType: 'RETAIL',
       ceilingPaise: undefined,
       pricePaise: 10000,
-      manufacturer: 'M/s Akums Drugs & Pharmaceuticals Ltd. / M/s Emcure Pharmaceuticals Ltd.',
+      manufacturer: 'M/s Akums Drugs & Pharmaceuticals Ltd.',
+      marketer: 'M/s Emcure Pharmaceuticals Ltd.',
       source: 'NPPA Retail Price Order',
       sourceRef: 'Page 8, Sl. No. 1',
     };
@@ -296,6 +298,62 @@ describe('Phase 3 Unit Tests: Pure Audit Rules', () => {
       expect(finding?.amount).toBe(7500); // (12000 - 10500) * 5
       expect(finding?.explanation.en).toContain('Billed price includes GST at 5%');
       expect(finding?.explanation.en).toContain('inclusive of 5% GST');
+    });
+
+    it('GST edge test: confirms adjusted ceiling = ceiling x (1 + rate/100) with integer paise half-up rounding', () => {
+      // 1. Edge test for half-up (fractional .50 rounds up):
+      // Ceiling = 1010 paise, GST rate = 5%. 1010 * 1.05 = 1060.50 => rounds up to 1061 paise.
+      const halfUpRecord: NppaCeilingRecord = {
+        ...demoRecord,
+        ceilingPaise: 1010,
+      };
+      // Billed at exactly 1061 paise => compliant (no overcharge)
+      const itemCompliant: LineItem = {
+        id: 'MED-GST-ROUND-1',
+        description: 'DEMO Drug Alpha 100mg Tablet',
+        category: 'pharmacy',
+        quantity: 1,
+        unitRatePaise: 1061,
+        totalBilledPaise: 1061,
+        billedPriceIncludesGst: true,
+        gstRatePct: 5,
+      };
+      expect(evaluateNppaCeilingRule(itemCompliant, halfUpRecord, true)).toBeNull();
+
+      // Billed at 1062 paise => 1 paise overcharge
+      const itemOvercharge: LineItem = {
+        ...itemCompliant,
+        unitRatePaise: 1062,
+        totalBilledPaise: 1062,
+      };
+      const findingHalfUp = evaluateNppaCeilingRule(itemOvercharge, halfUpRecord, true);
+      expect(findingHalfUp).not.toBeNull();
+      expect(findingHalfUp?.amount).toBe(1); // 1062 - 1061 = 1 paise
+      expect(findingHalfUp?.expected).toBe(1061);
+
+      // 2. Edge test for round-down (fractional .45 rounds down):
+      // Ceiling = 1009 paise, GST rate = 5%. 1009 * 1.05 = 1059.45 => rounds down to 1059 paise.
+      const roundDownRecord: NppaCeilingRecord = {
+        ...demoRecord,
+        ceilingPaise: 1009,
+      };
+      const itemRoundDownCompliant: LineItem = {
+        ...itemCompliant,
+        unitRatePaise: 1059,
+        totalBilledPaise: 1059,
+      };
+      expect(evaluateNppaCeilingRule(itemRoundDownCompliant, roundDownRecord, true)).toBeNull();
+
+      // Billed at 1060 paise => 1 paise overcharge against rounded down benchmark 1059
+      const itemRoundDownOvercharge: LineItem = {
+        ...itemCompliant,
+        unitRatePaise: 1060,
+        totalBilledPaise: 1060,
+      };
+      const findingRoundDown = evaluateNppaCeilingRule(itemRoundDownOvercharge, roundDownRecord, true);
+      expect(findingRoundDown).not.toBeNull();
+      expect(findingRoundDown?.amount).toBe(1); // 1060 - 1059 = 1 paise
+      expect(findingRoundDown?.expected).toBe(1059);
     });
 
     it('A5 Amount check: NPPA finding amount = (billed unit price - ceiling) x qty in integer paise', () => {
@@ -375,10 +433,10 @@ describe('Phase 3 Unit Tests: Pure Audit Rules', () => {
       expect(finding?.explanation.en).toContain('applies specifically to manufacturer');
     });
 
-    it('retail priceType: yields LIKELY_ISSUE (never CONFIRMED_OVERCHARGE) when manufacturer matches', () => {
+    it('retail priceType: yields LIKELY_ISSUE (never CONFIRMED_OVERCHARGE) when both manufacturer and marketer match', () => {
       const itemMatchingMfr: LineItem = {
         id: 'MED-RETAIL-MATCH',
-        description: 'DEMO Retail Drug 100mg Tablet (Emcure)',
+        description: 'DEMO Retail Drug 100mg Tablet (Akums / Emcure)',
         category: 'pharmacy',
         quantity: 10,
         unitRatePaise: 15000,
@@ -390,6 +448,22 @@ describe('Phase 3 Unit Tests: Pure Audit Rules', () => {
       expect(finding).not.toBeNull();
       expect(finding?.verdict).toBe('LIKELY_ISSUE');
       expect(finding?.amount).toBe(50000);
+    });
+
+    it('retail priceType: yields NEEDS_REVIEW when only marketer matches but manufacturer is missing', () => {
+      const itemPartialMfr: LineItem = {
+        id: 'MED-RETAIL-PARTIAL',
+        description: 'DEMO Retail Drug 100mg Tablet (Emcure)',
+        category: 'pharmacy',
+        quantity: 10,
+        unitRatePaise: 15000,
+        totalBilledPaise: 150000,
+        billedPriceIncludesGst: false,
+      };
+      const finding = evaluateNppaCeilingRule(itemPartialMfr, retailDemoRecord, true);
+      expect(finding).not.toBeNull();
+      expect(finding?.verdict).toBe('NEEDS_REVIEW');
+      expect(finding?.title).toBe('Manufacturer-Specific Retail Price Review');
     });
 
     it('unit mismatch test: unconfirmed billing unit yields NEEDS_REVIEW', () => {

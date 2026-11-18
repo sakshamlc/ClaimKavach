@@ -3,23 +3,37 @@
 import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Header } from '@/components/Header';
-import { useTranslation } from '@/lib/i18n';
-import { useAppStore } from '@/lib/store';
-import { ShieldCheck, ArrowRight, Play, CheckCircle2, Lock, EyeOff, Smartphone } from 'lucide-react';
+import { Header } from '@/components/claim/Header';
+import { Footer } from '@/components/claim/Footer';
+import { useClaimStore } from '@/store/claimStore';
+import {
+  ShieldAlert,
+  ArrowRight,
+  Sparkles,
+  Lock,
+  EyeOff,
+  Cpu,
+  FileSpreadsheet,
+  CheckCircle2,
+  AlertTriangle,
+  Scale,
+} from 'lucide-react';
 
-export default function HomePage() {
-  const { t } = useTranslation();
+export default function LandingPage() {
   const router = useRouter();
-  const setDemoMode = useAppStore((state) => state.setDemoMode);
+  const consentAccepted = useClaimStore((state) => state.consentAccepted);
+  const setConsentAccepted = useClaimStore((state) => state.setConsentAccepted);
+  const loadSample = useClaimStore((state) => state.loadSample);
 
   const handleStart = () => {
-    setDemoMode(false);
-    router.push('/goal');
+    if (!consentAccepted) return;
+    router.push('/upload');
   };
 
-  const handleDemo = () => {
-    router.push('/demo');
+  const handleTryDemo = () => {
+    setConsentAccepted(true);
+    loadSample('sample1');
+    router.push('/verify');
   };
 
   return (
@@ -27,94 +41,133 @@ export default function HomePage() {
       <Header />
 
       <main className="flex-1 max-w-4xl mx-auto px-4 py-8 w-full flex flex-col items-center">
-        {/* Hero Section */}
-        <div className="text-center max-w-2xl mt-4 mb-8">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-info-bg text-info-fg text-xs font-semibold mb-4 border border-sky-200">
-            <ShieldCheck className="w-4 h-4" />
-            <span>Private • Stateless • No Login Required</span>
-          </div>
+        {/* Live Reference Data Status Chip */}
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-100 text-slate-800 text-xs font-semibold mb-6 border border-slate-300 shadow-2xs">
+          <span className="w-2 h-2 rounded-full bg-amber-500" />
+          <span>Regulatory Engine: 45 reference records, all unverified</span>
+          <span className="text-slate-400">|</span>
+          <span className="text-[11px] text-slate-600 font-mono">
+            NPPA S.O. 5975(E), 1582(E), 1587(E), 6222(E)
+          </span>
+        </div>
 
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-text-main tracking-tight leading-tight">
-            {t('heroTitle')}
+        {/* Hero Section */}
+        <div className="text-center max-w-2xl mt-2 mb-8 space-y-4">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight">
+            Audit Your Hospital Bill for Statutory Ceiling Breaches & Insurance Deductions
           </h1>
 
-          <p className="mt-4 text-base sm:text-lg text-muted leading-relaxed">
-            {t('heroSubtitle')}
+          <p className="text-base sm:text-lg text-slate-600 leading-relaxed">
+            Compare medicine rates, stent prices, and TPA settlement deductions against official government gazettes and IRDAI master circulars. Private, stateless, and processed entirely in your browser memory.
           </p>
 
-          {/* Primary Action Buttons (Min 48px tap targets) */}
-          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4 w-full max-w-md mx-auto">
+          {/* Consent Checkbox */}
+          <div className="pt-4 max-w-lg mx-auto text-left">
+            <label className="flex items-start gap-3 p-3.5 rounded-xl border border-border bg-surface hover:bg-slate-50 cursor-pointer transition-colors shadow-2xs">
+              <input
+                type="checkbox"
+                checked={consentAccepted}
+                onChange={(e) => setConsentAccepted(e.target.checked)}
+                className="mt-1 h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
+              />
+              <span className="text-xs text-slate-700 leading-relaxed">
+                <strong>Informed Consent:</strong> I understand that ClaimKavach is an independent, open-source audit tool for consumer awareness, not legal or insurance advice. All computations run in browser memory and nothing is stored on a server.
+              </span>
+            </label>
+          </div>
+
+          {/* Primary Action Buttons */}
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3 w-full max-w-md mx-auto">
             <button
               type="button"
               onClick={handleStart}
-              className="w-full sm:w-auto flex-1 flex items-center justify-center gap-2 px-6 py-3.5 bg-primary hover:bg-primary-hover text-white text-base font-bold rounded-xl shadow-md transition-all min-h-[48px] focus:ring-4 focus:ring-primary/20"
+              disabled={!consentAccepted}
+              className={`w-full sm:w-auto flex-1 flex items-center justify-center gap-2 px-6 py-3.5 text-base font-bold rounded-xl shadow-md transition-all min-h-[48px] ${
+                consentAccepted
+                  ? 'bg-primary hover:bg-primary-hover text-white cursor-pointer focus:ring-4 focus:ring-primary/20'
+                  : 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300'
+              }`}
             >
-              <span>{t('start')}</span>
+              <span>Start Bill Audit</span>
               <ArrowRight className="w-5 h-5" />
             </button>
 
             <button
               type="button"
-              onClick={handleDemo}
-              className="w-full sm:w-auto flex-1 flex items-center justify-center gap-2 px-6 py-3.5 bg-surface hover:bg-slate-50 text-text-main border border-border text-base font-bold rounded-xl shadow-xs transition-all min-h-[48px] focus:ring-4 focus:ring-slate-200"
+              onClick={handleTryDemo}
+              className="w-full sm:w-auto flex-1 flex items-center justify-center gap-2 px-6 py-3.5 bg-surface hover:bg-slate-50 text-slate-800 border border-slate-300 text-base font-bold rounded-xl shadow-2xs transition-all min-h-[48px] cursor-pointer"
             >
-              <Play className="w-4 h-4 text-primary" />
-              <span>{t('demo')}</span>
+              <Sparkles className="w-4 h-4 text-amber-600" />
+              <span>Try Demo Bill</span>
             </button>
           </div>
         </div>
 
-        {/* 3 Privacy Pillars */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full mt-6 mb-12">
-          <div className="p-5 bg-surface rounded-card border border-border flex flex-col gap-2 shadow-xs">
-            <div className="w-10 h-10 rounded-xl bg-info-bg text-info-fg flex items-center justify-center">
-              <EyeOff className="w-5 h-5" />
+        {/* 3 Privacy & Trust Pillars */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full my-6">
+          <div className="p-4 rounded-xl border border-border bg-surface shadow-2xs space-y-2">
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
+              <Cpu className="w-4 h-4" />
             </div>
-            <h3 className="font-bold text-text-main text-sm mt-1">100% Stateless</h3>
-            <p className="text-muted text-xs leading-relaxed">{t('privacyBullet1')}</p>
+            <h3 className="text-sm font-bold text-slate-900">100% In-Memory Audit</h3>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Medical bills and claim settlement sheets are parsed and checked in volatile client memory. Closing the tab wipes everything.
+            </p>
           </div>
 
-          <div className="p-5 bg-surface rounded-card border border-border flex flex-col gap-2 shadow-xs">
-            <div className="w-10 h-10 rounded-xl bg-success-bg text-success-fg flex items-center justify-center">
-              <Lock className="w-5 h-5" />
+          <div className="p-4 rounded-xl border border-border bg-surface shadow-2xs space-y-2">
+            <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold">
+              <Scale className="w-4 h-4" />
             </div>
-            <h3 className="font-bold text-text-main text-sm mt-1">Aadhaar Redaction</h3>
-            <p className="text-muted text-xs leading-relaxed">{t('privacyBullet2')}</p>
+            <h3 className="text-sm font-bold text-slate-900">Deterministic Rules</h3>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Audits are calculated using exact integer paise arithmetic and statutory NPPA DPCO 2013 ceiling gazettes. Zero floating-point rounding errors.
+            </p>
           </div>
 
-          <div className="p-5 bg-surface rounded-card border border-border flex flex-col gap-2 shadow-xs">
-            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center">
-              <Smartphone className="w-5 h-5" />
+          <div className="p-4 rounded-xl border border-border bg-surface shadow-2xs space-y-2">
+            <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center font-bold">
+              <EyeOff className="w-4 h-4" />
             </div>
-            <h3 className="font-bold text-text-main text-sm mt-1">Browser Memory Only</h3>
-            <p className="text-muted text-xs leading-relaxed">{t('privacyBullet3')}</p>
+            <h3 className="text-sm font-bold text-slate-900">Zero Accounts & Telemetry</h3>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              No account creation, no cookies, no tracking pixels. Patient identity and hospital names are never transmitted to third parties.
+            </p>
           </div>
         </div>
 
-        {/* How It Works */}
-        <div className="w-full bg-surface rounded-card border border-border p-6 shadow-xs mb-8">
-          <h2 className="text-lg font-bold text-text-main mb-4">{t('howItWorksTitle')}</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <div className="space-y-1">
-              <span className="font-bold text-primary text-sm">{t('step1Title')}</span>
-              <p className="text-muted text-xs">{t('step1Desc')}</p>
+        {/* How It Works Flow */}
+        <div className="w-full mt-6 bg-slate-50 border border-slate-200 rounded-2xl p-6 space-y-4">
+          <h2 className="text-base font-bold text-slate-900 text-center">
+            How ClaimKavach Audits Your Hospital Bill
+          </h2>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+            <div className="space-y-1 bg-white p-3.5 rounded-xl border border-slate-200">
+              <span className="font-bold text-primary block">Step 1: Upload or Choose Sample</span>
+              <p className="text-slate-600 leading-relaxed">
+                Upload your hospital invoice PDF or pick from 3 pre-configured synthetic samples (Stent ceiling, TPA bundling, or Clean bill).
+              </p>
             </div>
-            <div className="space-y-1">
-              <span className="font-bold text-primary text-sm">{t('step2Title')}</span>
-              <p className="text-muted text-xs">{t('step2Desc')}</p>
+
+            <div className="space-y-1 bg-white p-3.5 rounded-xl border border-slate-200">
+              <span className="font-bold text-primary block">Step 2: Verify Line Items</span>
+              <p className="text-slate-600 leading-relaxed">
+                Review extracted medicine names, rates, and quantities in an editable table with a live grand-total reconciliation bar.
+              </p>
             </div>
-            <div className="space-y-1">
-              <span className="font-bold text-primary text-sm">{t('step3Title')}</span>
-              <p className="text-muted text-xs">{t('step3Desc')}</p>
+
+            <div className="space-y-1 bg-white p-3.5 rounded-xl border border-slate-200">
+              <span className="font-bold text-primary block">Step 3: Review & Dispute Pack</span>
+              <p className="text-slate-600 leading-relaxed">
+                Inspect 5 unmerged financial cards, expandable statutory citations, and copy pre-filled formal dispute notices for hospital or insurer redressal.
+              </p>
             </div>
           </div>
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-border bg-surface py-4 text-center text-xs text-muted">
-        <p>{t('disclaimer')}</p>
-      </footer>
+      <Footer />
     </div>
   );
 }

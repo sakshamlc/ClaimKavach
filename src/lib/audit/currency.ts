@@ -80,7 +80,7 @@ export function parseCurrencyToPaise(input: string | number | null | undefined):
     if (dotIdx !== -1 && numStr.length - dotIdx - 1 > 2) {
       throw new CurrencyError(`Currency amount cannot have more than 2 decimal places, got: ${input}`);
     }
-    return Math.round(input * 100);
+    return parseCurrencyToPaise(input.toFixed(2));
   }
 
   const raw = String(input).trim();
@@ -261,12 +261,14 @@ export function multiplyPaiseByQuantity(unitPaise: number, quantity: number | st
   const qtyStr = typeof quantity === 'string' ? quantity.trim() : qty.toString();
   const decimalIdx = qtyStr.indexOf('.');
   if (decimalIdx === -1) {
-    return Math.round(unitPaise * qty);
+    const intVal = parseInt(qtyStr, 10);
+    return unitPaise * intVal;
   }
 
   const decimals = qtyStr.length - decimalIdx - 1;
   const denominator = Math.pow(10, decimals);
-  const numerator = Math.round(qty * denominator);
+  // Pure string-based integer parsing without float multiplication
+  const numerator = parseInt(qtyStr.replace('.', ''), 10);
 
   return roundHalfUp(unitPaise * numerator, denominator);
 }
@@ -289,8 +291,66 @@ export function calculatePercentagePaise(paise: number, percentage: number): num
   }
   const decimals = pctStr.length - decimalIdx - 1;
   const factor = Math.pow(10, decimals);
-  const numerator = Math.round(percentage * factor);
+  const numerator = parseInt(pctStr.replace('.', ''), 10);
   const denominator = 100 * factor;
 
   return roundHalfUp(paise * numerator, denominator);
+}
+
+/**
+ * Parses a GST rate (percentage number or string e.g. 5, "18", "0.25") into integer basis points.
+ * 1 basis point = 0.01% (1/10000). E.g. 5% = 500 bps, 18% = 1800 bps, 0.25% = 25 bps.
+ * Guarantees zero floating point operations.
+ */
+export function parseGstRateToBasisPoints(rate: number | string | null | undefined): number | null {
+  if (rate === null || rate === undefined || rate === '') {
+    return null;
+  }
+  if (typeof rate === 'number') {
+    if (isNaN(rate) || !isFinite(rate) || rate < 0) {
+      throw new CurrencyError(`Invalid GST rate: ${rate}`);
+    }
+    return parseDecimalPercentageToBasisPoints(rate.toString());
+  }
+  return parseDecimalPercentageToBasisPoints(rate);
+}
+
+function parseDecimalPercentageToBasisPoints(rateStr: string): number {
+  const clean = rateStr.trim().replace(/%/g, '');
+  if (!clean || clean.toUpperCase() === 'N/A' || clean === '-') {
+    throw new CurrencyError(`Invalid GST rate string: ${rateStr}`);
+  }
+  const parts = clean.split('.');
+  if (parts.length > 2) {
+    throw new CurrencyError(`Invalid GST percentage format: ${rateStr}`);
+  }
+  const whole = parseInt(parts[0], 10);
+  if (isNaN(whole) || whole < 0) {
+    throw new CurrencyError(`Invalid whole part in GST percentage: ${rateStr}`);
+  }
+  let frac = 0;
+  if (parts.length === 2) {
+    const fracStr = parts[1];
+    if (fracStr.length > 2) {
+      throw new CurrencyError(`GST rate cannot have more than 2 decimal places (basis point limit): ${rateStr}`);
+    }
+    frac = parseInt(fracStr.padEnd(2, '0'), 10);
+  }
+  return whole * 100 + frac;
+}
+
+/**
+ * Computes GST-adjusted regulatory benchmark price in integer paise.
+ * Formula: adjustedCeilingPaise = roundHalfUp(targetPricePaise * (10000 + gstBasisPoints), 10000)
+ * Uses integer round-half-up policy from roundHalfUp. Zero floats, zero Math.round on money.
+ */
+export function calculateGstAdjustedPaise(basePaise: number, gstRateBasisPoints: number): number {
+  assertSafePaise(basePaise);
+  if (!Number.isInteger(gstRateBasisPoints) || gstRateBasisPoints < 0) {
+    throw new CurrencyError(`GST rate basis points must be a non-negative integer, got: ${gstRateBasisPoints}`);
+  }
+  if (gstRateBasisPoints === 0) return basePaise;
+
+  const numerator = basePaise * (10000 + gstRateBasisPoints);
+  return roundHalfUp(numerator, 10000);
 }

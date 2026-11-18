@@ -155,7 +155,10 @@ export async function extractWithGemini(
     throw new Error('GEMINI_API_KEY is not configured');
   }
 
-  const modelName = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
+  const modelName = process.env.GEMINI_MODEL;
+  if (!modelName) {
+    throw new Error('GEMINI_MODEL is not configured');
+  }
   const ai = new GoogleGenAI({ apiKey: key });
 
   const base64Data = buffer.toString('base64');
@@ -225,7 +228,10 @@ export async function extractMedicalBillWithGemini(
     throw new Error('GEMINI_API_KEY is not configured');
   }
 
-  const modelName = process.env.GEMINI_MODEL || 'gemini-1.5-pro';
+  const modelName = process.env.GEMINI_MODEL;
+  if (!modelName) {
+    throw new Error('GEMINI_MODEL is not configured');
+  }
   const ai = new GoogleGenAI({ apiKey: key });
 
   const base64Data = buffer.toString('base64');
