@@ -37,40 +37,14 @@ function main() {
   // 5. Run Drugceiling5 ingestion
   console.log(runScript('ingest-drugceiling5.ts').trim());
 
-  // Update annexure1.json and roomBundling.json to remove DEMO- IDs
+  // Knee/Annexure/bundling data remains empty until sourced
   const annexure1Path = path.join(REG_DIR, 'annexure1.json');
-  const currentAnnexure1 = JSON.parse(fs.readFileSync(annexure1Path, 'utf8'));
-  const updatedAnnexure1 = currentAnnexure1.map((item: any, idx: number) => ({
-    ...item,
-    id: `PENDING-ANX-${String(idx + 1).padStart(2, '0')}`,
-    name: item.name.replace(/^DEMO\s+Item\s+/i, 'Pending Specification Item '),
-    normalizedName: item.normalizedName.replace(/^demo item /i, 'pending specification item '),
-    source: 'PENDING OFFICIAL INGESTION (Annexure schedule not attached in Drugceiling5.pdf)',
-    sourceFile: 'Drugceiling5.pdf',
-    sourceUrl: 'https://irdai.gov.in',
-    version: 'PENDING.1',
-    verified: false,
-    sourceRef: 'Drugceiling5.pdf (Annexure Pending)',
-  }));
-  fs.writeFileSync(annexure1Path, JSON.stringify(updatedAnnexure1, null, 2) + '\n');
-  console.log(`-> Verified ${annexure1Path} (no DEMO IDs)`);
+  fs.writeFileSync(annexure1Path, '[]\n');
+  console.log(`-> Set ${annexure1Path} to empty array (pending official source)`);
 
   const roomBundlingPath = path.join(REG_DIR, 'roomBundling.json');
-  const currentRoomBundling = JSON.parse(fs.readFileSync(roomBundlingPath, 'utf8'));
-  const updatedRoomBundling = currentRoomBundling.map((item: any, idx: number) => ({
-    ...item,
-    id: `PENDING-BND-${String(idx + 1).padStart(2, '0')}`,
-    name: item.name.replace(/^DEMO\s+Bundled\s+Service\s+/i, 'Pending Bundled Service '),
-    normalizedName: item.normalizedName.replace(/^demo bundled service /i, 'pending bundled service '),
-    source: 'PENDING OFFICIAL INGESTION (Annexure schedule not attached in Drugceiling5.pdf)',
-    sourceFile: 'Drugceiling5.pdf',
-    sourceUrl: 'https://irdai.gov.in',
-    version: 'PENDING.1',
-    verified: false,
-    sourceRef: 'Drugceiling5.pdf (Annexure Pending)',
-  }));
-  fs.writeFileSync(roomBundlingPath, JSON.stringify(updatedRoomBundling, null, 2) + '\n');
-  console.log(`-> Verified ${roomBundlingPath} (no DEMO IDs)\n`);
+  fs.writeFileSync(roomBundlingPath, '[]\n');
+  console.log(`-> Set ${roomBundlingPath} to empty array (pending official source)\n`);
 
   console.log('=== Regulatory Ingestion Complete ===');
 }

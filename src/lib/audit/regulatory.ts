@@ -139,8 +139,18 @@ export function checkRecordDateValidity(
 }
 
 /**
+ * Structured Active Pharmaceutical Ingredient (API) Schema.
+ */
+export const IngredientSchema = z.object({
+  name: z.string().min(1, 'Ingredient name is required'),
+  strength: z.string().min(1, 'Ingredient strength is required'),
+});
+
+export type Ingredient = z.infer<typeof IngredientSchema>;
+
+/**
  * NPPA Scheduled Drug Ceiling Schema
- * Enhanced with dosageForm, strength, and priceUnit for exact matching.
+ * Enhanced with dosageForm, structured ingredients, rawComposition, priceType, manufacturer, and priceUnit.
  */
 export const NppaCeilingRecordSchema = BaseRegulatoryRecordSchema.extend({
   ceilingPaise: z.number().int().positive('ceilingPaise must be a positive integer'),
@@ -148,6 +158,10 @@ export const NppaCeilingRecordSchema = BaseRegulatoryRecordSchema.extend({
   dosageForm: z.string().min(1, 'dosageForm is required (e.g. Tablet, Capsule, Injection)'),
   strength: z.string().min(1, 'strength is required (e.g. 100mg, 500mg)'),
   priceUnit: z.string().min(1, 'priceUnit is required (e.g. per tablet, per strip, per vial)'),
+  priceType: z.enum(['CEILING', 'RETAIL']).default('CEILING'),
+  manufacturer: z.string().nullable().default(null),
+  rawComposition: z.string().default(''),
+  ingredients: z.array(IngredientSchema).default([]),
 });
 
 export type NppaCeilingRecord = z.infer<typeof NppaCeilingRecordSchema>;
@@ -235,20 +249,22 @@ export function loadImplantCeilings(data: unknown): ImplantCeilingRecord[] {
 
 /**
  * Loader for IRDAI Annexure-I Classifications.
+ * Allows empty array when Annexure-I data is pending/empty.
  */
 export function loadAnnexure1Classifications(data: unknown): Annexure1Record[] {
-  if (!data || !Array.isArray(data) || data.length === 0) {
-    throw new RegulatoryLoadError('Annexure-I dataset is missing or empty.');
+  if (!data || !Array.isArray(data)) {
+    throw new RegulatoryLoadError('Annexure-I dataset is missing or malformed.');
   }
   return z.array(Annexure1RecordSchema).parse(data);
 }
 
 /**
  * Loader for Room / ICU Bundling Records.
+ * Allows empty array when bundling data is pending/empty.
  */
 export function loadRoomBundlingRecords(data: unknown): RoomBundlingRecord[] {
-  if (!data || !Array.isArray(data) || data.length === 0) {
-    throw new RegulatoryLoadError('Room bundling dataset is missing or empty.');
+  if (!data || !Array.isArray(data)) {
+    throw new RegulatoryLoadError('Room bundling dataset is missing or malformed.');
   }
   return z.array(RoomBundlingRecordSchema).parse(data);
 }

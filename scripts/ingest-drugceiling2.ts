@@ -14,6 +14,11 @@ const { PDFParse } = require('pdf-parse');
 
 const PDF_PATH = path.resolve(process.cwd(), 'docs/sources/raw/DrugCeiling2.pdf');
 
+export const IngredientSchema = z.object({
+  name: z.string().min(1),
+  strength: z.string().min(1),
+});
+
 export const NppaCeilingRecordSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
@@ -23,6 +28,10 @@ export const NppaCeilingRecordSchema = z.object({
   dosageForm: z.string().min(1),
   strength: z.string().min(1),
   priceUnit: z.string().min(1),
+  priceType: z.enum(['CEILING', 'RETAIL']).default('CEILING'),
+  manufacturer: z.string().nullable().default(null),
+  rawComposition: z.string().default(''),
+  ingredients: z.array(IngredientSchema).default([]),
   effectiveDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   validUntil: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
   instrumentNumber: z.string().nullable(),
@@ -62,16 +71,6 @@ export async function parseDrugceiling2(): Promise<{
   const records: NppaCeilingRecord[] = [];
   const unparseable: Array<{ row: number | string; reason: string }> = [];
 
-  // Deterministic item definition from the English table of S.O. 1582(E)
-  // Page 3 has items 1 and 2:
-  // "1 Acetyl Salicylic Acid Tablet 300mg 1 Tablet 0.28 1488(E) 27-03-2025"
-  // "2 Calcium carbonate Tablet 250 mg 1 Tablet 2.49 1488(E) 27-03-2025"
-  // Page 4 has items 3 to 6:
-  // "3 Condoms 1 Condom 11.65 1488(E) 27-03-2025"
-  // "4 Dapsone Tablet 50 mg 1 Tablet 0.30 1488(E) 27-03-2025"
-  // "5 Medroxy Progesterone Acetate Tablet 5mg 1 Tablet 3.80 1488(E) 27-03-2025"
-  // "6 Rifampicin Tablet 450mg 1 Tablet 5.66 1488(E) 27-03-2025"
-
   const rawEntries = [
     {
       num: 1,
@@ -82,6 +81,8 @@ export async function parseDrugceiling2(): Promise<{
       unit: '1 Tablet',
       priceUnit: 'per tablet',
       priceStr: '0.28',
+      rawComposition: 'Tablet 300mg',
+      ingredients: [{ name: 'Acetyl Salicylic Acid', strength: '300mg' }],
       existingSo: '1488(E) 27-03-2025',
     },
     {
@@ -89,10 +90,12 @@ export async function parseDrugceiling2(): Promise<{
       page: 3,
       name: 'Calcium carbonate',
       dosageForm: 'Tablet',
-      strength: '250 mg',
+      strength: '250mg',
       unit: '1 Tablet',
       priceUnit: 'per tablet',
       priceStr: '2.49',
+      rawComposition: 'Tablet 250 mg',
+      ingredients: [{ name: 'Calcium carbonate', strength: '250mg' }],
       existingSo: '1488(E) 27-03-2025',
     },
     {
@@ -100,10 +103,12 @@ export async function parseDrugceiling2(): Promise<{
       page: 4,
       name: 'Condoms',
       dosageForm: 'Condom',
-      strength: 'Standard',
+      strength: '1',
       unit: '1 Condom',
       priceUnit: 'per condom',
       priceStr: '11.65',
+      rawComposition: '1 Condom',
+      ingredients: [{ name: 'Condoms', strength: '1' }],
       existingSo: '1488(E) 27-03-2025',
     },
     {
@@ -111,10 +116,12 @@ export async function parseDrugceiling2(): Promise<{
       page: 4,
       name: 'Dapsone',
       dosageForm: 'Tablet',
-      strength: '50 mg',
+      strength: '50mg',
       unit: '1 Tablet',
       priceUnit: 'per tablet',
       priceStr: '0.30',
+      rawComposition: 'Tablet 50 mg',
+      ingredients: [{ name: 'Dapsone', strength: '50mg' }],
       existingSo: '1488(E) 27-03-2025',
     },
     {
@@ -126,6 +133,8 @@ export async function parseDrugceiling2(): Promise<{
       unit: '1 Tablet',
       priceUnit: 'per tablet',
       priceStr: '3.80',
+      rawComposition: 'Tablet 5mg',
+      ingredients: [{ name: 'Medroxy Progesterone Acetate', strength: '5mg' }],
       existingSo: '1488(E) 27-03-2025',
     },
     {
@@ -137,11 +146,12 @@ export async function parseDrugceiling2(): Promise<{
       unit: '1 Tablet',
       priceUnit: 'per tablet',
       priceStr: '5.66',
+      rawComposition: 'Tablet 450mg',
+      ingredients: [{ name: 'Rifampicin', strength: '450mg' }],
       existingSo: '1488(E) 27-03-2025',
     },
   ];
 
-  // Verify against text layer (with normalized whitespace)
   const fullText = (p3 + ' ' + p4).replace(/\s+/g, ' ');
 
   for (const entry of rawEntries) {
@@ -164,6 +174,10 @@ export async function parseDrugceiling2(): Promise<{
       dosageForm: entry.dosageForm,
       strength: entry.strength,
       priceUnit: entry.priceUnit,
+      priceType: 'CEILING' as const,
+      manufacturer: null,
+      rawComposition: entry.rawComposition,
+      ingredients: entry.ingredients,
       effectiveDate: '2026-04-01',
       validUntil: null,
       instrumentNumber: 'S.O. 1582(E)',

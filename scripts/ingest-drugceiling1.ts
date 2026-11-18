@@ -1,7 +1,7 @@
 /**
  * Ingestion script for Drugceiling1.pdf
  * Official Source: NPPA Order S.O. 5975(E) dated 24th December, 2025.
- * Retail price fixation for 37 scheduled formulations.
+ * Retail price fixation for 37 scheduled formulations under DPCO 2013 paragraph 5.
  */
 
 import fs from 'node:fs';
@@ -14,6 +14,11 @@ const { PDFParse } = require('pdf-parse');
 
 const PDF_PATH = path.resolve(process.cwd(), 'docs/sources/raw/Drugceiling1.pdf');
 
+export const IngredientSchema = z.object({
+  name: z.string().min(1),
+  strength: z.string().min(1),
+});
+
 export const NppaCeilingRecordSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
@@ -23,6 +28,10 @@ export const NppaCeilingRecordSchema = z.object({
   dosageForm: z.string().min(1),
   strength: z.string().min(1),
   priceUnit: z.string().min(1),
+  priceType: z.enum(['CEILING', 'RETAIL']).default('RETAIL'),
+  manufacturer: z.string().nullable().default(null),
+  rawComposition: z.string().default(''),
+  ingredients: z.array(IngredientSchema).default([]),
   effectiveDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   validUntil: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
   instrumentNumber: z.string().nullable(),
@@ -61,7 +70,9 @@ function deduceDosageAndPriceUnit(name: string, unit: string): { dosageForm: str
   else if (normName.includes('ointment')) dosageForm = 'Ointment';
 
   let priceUnit = 'per unit';
-  if (normUnit.includes('tablet')) priceUnit = 'per tablet';
+  if (normUnit.includes('pack of 500 ml') || normUnit.includes('500 ml')) priceUnit = 'per 500 mL pack';
+  else if (normUnit.includes('ampoule')) priceUnit = 'per 1 ml ampoule';
+  else if (normUnit.includes('tablet')) priceUnit = 'per tablet';
   else if (normUnit.includes('capsule')) priceUnit = 'per capsule';
   else if (normUnit.includes('vial')) priceUnit = 'per vial';
   else if (normUnit.includes('ml')) priceUnit = 'per ml';
@@ -69,6 +80,44 @@ function deduceDosageAndPriceUnit(name: string, unit: string): { dosageForm: str
   else if (normUnit.includes('pack')) priceUnit = 'per pack';
 
   return { dosageForm, priceUnit };
+}
+
+export function extractStructuredIngredients(rawComp: string, formulationName: string): Array<{ name: string; strength: string }> {
+  const ingredients: Array<{ name: string; strength: string }> = [];
+  
+  const drugNames = formulationName
+    .replace(/\s+(?:Tablets|Capsules|Syrup|Suspension|Injection|Ointment|Oral Solution).*$/i, '')
+    .split(/&|,|\band\b/i)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  for (const drug of drugNames) {
+    const escaped = drug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const pattern = new RegExp(`${escaped}[^\\d]*?(\\d+(?:\\.\\d+)?\\s*(?:mg|mcg|IU|GM|g|%\\s*w\\/[vw])?)`, 'i');
+    const m = rawComp.match(pattern);
+    if (m) {
+      ingredients.push({
+        name: drug,
+        strength: m[1].replace(/\s+/g, '').trim(),
+      });
+    } else {
+      const eqPattern = new RegExp(`Eq\\.\\s*to\\s+${escaped}[^\\d]*?(\\d+(?:\\.\\d+)?\\s*(?:mg|mcg|IU|GM|g|%\\s*w\\/[vw])?)`, 'i');
+      const eqM = rawComp.match(eqPattern);
+      if (eqM) {
+        ingredients.push({
+          name: drug,
+          strength: eqM[1].replace(/\s+/g, '').trim(),
+        });
+      } else {
+        ingredients.push({
+          name: drug,
+          strength: 'unspecified',
+        });
+      }
+    }
+  }
+
+  return ingredients;
 }
 
 export async function parseDrugceiling1(): Promise<{
@@ -199,7 +248,6 @@ export async function parseDrugceiling1(): Promise<{
         /^(?:1\s+ml\s+AMPOULE)/i.test(line)
       ) {
         unitLineIdx = l;
-        // Strip company info if attached to unit line
         unit = line.replace(/M\/s.*$/i, '').trim();
         break;
       }
@@ -215,11 +263,13 @@ export async function parseDrugceiling1(): Promise<{
 
     let nameLines: string[] = [];
     let compLines: string[] = [];
+    let mfgLines: string[] = [];
 
     if (compStartIdx !== -1) {
       nameLines = rawLines.slice(0, compStartIdx);
       if (unitLineIdx !== -1 && unitLineIdx > compStartIdx) {
         compLines = rawLines.slice(compStartIdx, unitLineIdx);
+        mfgLines = rawLines.slice(unitLineIdx + 1);
       } else {
         compLines = rawLines.slice(compStartIdx);
       }
@@ -229,9 +279,12 @@ export async function parseDrugceiling1(): Promise<{
     }
 
     const name = nameLines.join(' ').replace(/\s+/g, ' ').trim();
-    const strength = compLines.join(' ').replace(/\s+/g, ' ').trim();
+    const rawComposition = compLines.join(' ').replace(/\s+/g, ' ').trim();
+    const manufacturer = mfgLines.length > 0 ? mfgLines.join(' ').replace(/\s+/g, ' ').trim() : null;
     const pageNum = i <= 9 ? 8 : i <= 19 ? 9 : i <= 28 ? 10 : 11;
     const { dosageForm, priceUnit } = deduceDosageAndPriceUnit(name, unit);
+    const ingredients = extractStructuredIngredients(rawComposition, name);
+    const strength = ingredients.map((ing) => `${ing.name} ${ing.strength}`).join(' + ') || rawComposition;
 
     const recordCandidate = {
       id: `NPPA-2025-5975-${String(i).padStart(2, '0')}`,
@@ -240,8 +293,12 @@ export async function parseDrugceiling1(): Promise<{
       ceilingPaise: pricePaise,
       unit,
       dosageForm,
-      strength: strength || 'As per notification',
+      strength,
       priceUnit,
+      priceType: 'RETAIL' as const,
+      manufacturer,
+      rawComposition,
+      ingredients,
       effectiveDate: '2025-12-24',
       validUntil: null,
       instrumentNumber: 'S.O. 5975(E)',
@@ -282,7 +339,6 @@ if (process.argv[1] && process.argv[1].includes('ingest-drugceiling1')) {
         existing = JSON.parse(fs.readFileSync(outPath, 'utf8'));
       } catch {}
     }
-    // Keep any records from other sourceFiles (e.g. DrugCeiling2.pdf)
     const filtered = existing.filter((r) => r.sourceFile !== 'Drugceiling1.pdf');
     const combined = [...records, ...filtered];
     fs.writeFileSync(outPath, JSON.stringify(combined, null, 2) + '\n');

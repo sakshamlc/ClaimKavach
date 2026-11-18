@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { runAudit } from '../../src/lib/audit/engine';
-import { MedicalBill, AuditFinding } from '../../src/lib/audit/types';
+import { MedicalBill, AuditFinding, getReferenceDataBadge } from '../../src/lib/audit/types';
+import { ImplantCeilingRecord } from '../../src/lib/audit/regulatory';
 import { getDemoReferenceData } from '../fixtures/regulatory';
 
 const demoRefData = getDemoReferenceData();
@@ -365,7 +366,7 @@ describe('Phase 3 Audit Engine: Determinism, Golden-File Synthetic Bills & Centr
         items: [
           {
             id: 'R1',
-            description: 'Aceclofenac & Paracetamol Tablets',
+            description: 'Aceclofenac 100mg + Paracetamol 325mg Tablets (Softdeal Pharmaceutical)',
             category: 'pharmacy',
             quantity: 10,
             unitRatePaise: 800, // 8.00 vs ceiling 5.46 (546 paise)
@@ -381,8 +382,187 @@ describe('Phase 3 Audit Engine: Determinism, Golden-File Synthetic Bills & Centr
       expect(report.findings.length).toBeGreaterThan(0);
       const nppaFinding = report.findings.find((f) => f.ruleId === 'R-NPPA-01');
       expect(nppaFinding).toBeDefined();
-      expect(nppaFinding?.verdict).toBe('LIKELY_ISSUE'); // unverified official record => capped at LIKELY_ISSUE
+      expect(nppaFinding?.verdict).toBe('LIKELY_ISSUE'); // unverified official record & RETAIL => LIKELY_ISSUE
       expect(nppaFinding?.amount).toBe(2540); // (800 - 546) * 10 = 2540
+    });
+
+    it('7. Honest Coverage Reporting: with real data and empty knee/annexure/bundling data, verifies that unrepresented categories produce NOT_CHECKED and coverage numbers reflect it honestly', () => {
+      const multiCategoryBill: MedicalBill = {
+        id: 'HONEST-COVERAGE-BILL',
+        billDate: '2026-05-15',
+        hospital: { name: 'City Hospital' },
+        stay: {
+          admissionDate: '2026-05-10',
+          dischargeDate: '2026-05-15',
+          lengthOfStayNights: 5,
+        },
+        items: [
+          {
+            id: 'PHARM-01',
+            description: 'Acetyl Salicylic Acid 300mg Tablet',
+            category: 'pharmacy',
+            quantity: 10,
+            unitRatePaise: 50, // Ceiling is 28 paise
+            totalBilledPaise: 500,
+            date: '2026-05-11',
+          },
+          {
+            id: 'STENT-01',
+            description: 'Bare Metal Stents',
+            category: 'implant',
+            quantity: 1,
+            unitRatePaise: 1500000, // Ceiling is 1076215 paise
+            totalBilledPaise: 1500000,
+            date: '2026-05-12',
+          },
+          {
+            id: 'KNEE-01',
+            description: 'Total Knee Replacement Femoral Component',
+            category: 'implant',
+            quantity: 1,
+            unitRatePaise: 6000000,
+            totalBilledPaise: 6000000,
+            date: '2026-05-12',
+          },
+          {
+            id: 'NURSE-01',
+            description: 'Routine Nursing Charges',
+            category: 'nursing',
+            quantity: 5,
+            unitRatePaise: 100000,
+            totalBilledPaise: 500000,
+            date: '2026-05-13',
+          },
+          {
+            id: 'DEDUCT-01',
+            description: 'Digital Clinical Thermometer',
+            category: 'consumable',
+            quantity: 1,
+            unitRatePaise: 25000,
+            totalBilledPaise: 25000,
+            deductedPaise: 25000,
+            date: '2026-05-13',
+          },
+          {
+            id: 'ADMIN-01',
+            description: 'Hospital Registration Fee',
+            category: 'admin_fee',
+            quantity: null,
+            unitRatePaise: null,
+            totalBilledPaise: null,
+          },
+        ],
+        totalBilledPaise: 8025500,
+      };
+
+      const report = runAudit(multiCategoryBill);
+
+      expect(report.coverage.total).toBe(6);
+      expect(report.coverage.arithmeticChecked).toBe(5);
+      // Strictly 2 items checked against loaded regulatory data (PHARM-01 and STENT-01)
+      expect(report.coverage.regulatoryChecked).toBe(2);
+
+      // Knee implant produces no regulatory finding because knee data is unsourced
+      const kneeFinding = report.findings.find((f) => f.itemId === 'KNEE-01' && f.ruleId === 'R-NPPA-01');
+      expect(kneeFinding).toBeUndefined();
+
+      // Nursing charge produces no bundling finding because bundling data is unsourced
+      const bundlingFinding = report.findings.find((f) => f.itemId === 'NURSE-01');
+      expect(bundlingFinding).toBeUndefined();
+
+      // Deducted item produces NEEDS_REVIEW ("No reference data loaded...")
+      const deductionFinding = report.findings.find((f) => f.itemId === 'DEDUCT-01');
+      expect(deductionFinding).toBeDefined();
+      expect(deductionFinding?.verdict).toBe('NEEDS_REVIEW');
+      expect(deductionFinding?.explanation.en).toContain('No reference data loaded');
+
+      // Unpriced admin fee is in notCheckedItems
+      expect(report.notCheckedItems).toBeDefined();
+      const unpricedItem = report.notCheckedItems?.find((i) => i.id === 'ADMIN-01');
+      expect(unpricedItem).toBeDefined();
+    });
+
+    it('8. Stent Test: synthetic bill with coronary stent billed above ceiling yields LIKELY_ISSUE while records are verified:false, and CONFIRMED_OVERCHARGE only when fixture copy has verified:true and valid date', () => {
+      const stentBill: MedicalBill = {
+        id: 'SYNTHETIC-STENT-BILL',
+        isSynthetic: true,
+        billDate: '2026-05-15',
+        hospital: { name: 'Metro Cardiac Care' },
+        stay: {
+          admissionDate: '2026-05-14',
+          dischargeDate: '2026-05-16',
+          lengthOfStayNights: 2,
+        },
+        items: [
+          {
+            id: 'STENT-ITEM-01',
+            description: 'Drug Eluting Stents (DES) including metallic DES and Bioresorbable Vascular Scaffold (BVS)/ Biodegradable Stents',
+            category: 'implant',
+            quantity: 1,
+            unitRatePaise: 4500000, // ₹45,000 (above ₹39,186.03 ceiling)
+            totalBilledPaise: 4500000,
+            date: '2026-05-15',
+            verified: true,
+          },
+        ],
+        totalBilledPaise: 4500000,
+      };
+
+      // 1. Audit against default production data (where verified is false)
+      const unverifiedReport = runAudit(stentBill);
+      const unverifiedFinding = unverifiedReport.findings.find(
+        (f) => f.ruleId === 'R-NPPA-01' && f.itemId === 'STENT-ITEM-01'
+      );
+      expect(unverifiedFinding).toBeDefined();
+      // Engine guard caps at LIKELY_ISSUE because record.verified is false!
+      expect(unverifiedFinding?.verdict).toBe('LIKELY_ISSUE');
+      expect(unverifiedFinding?.amount).toBe(4500000 - 3918603);
+      expect(unverifiedFinding?.citation.kind).toBe('REGULATORY');
+      if (unverifiedFinding?.citation.kind === 'REGULATORY') {
+        expect(unverifiedFinding.citation.verified).toBe(false);
+      }
+      expect(getReferenceDataBadge(unverifiedFinding!)).toBe('Unverified reference data');
+      expect(unverifiedReport.totals.confirmed).toBe(0);
+      expect(unverifiedReport.totals.likely).toBe(4500000 - 3918603);
+
+      // 2. Audit against a test fixture copy where verified: true
+      const verifiedStentRecords: ImplantCeilingRecord[] = [
+        {
+          id: 'NPPA-STENT-1587-02',
+          name: 'Drug Eluting Stents (DES) including metallic DES and Bioresorbable Vascular Scaffold (BVS)/ Biodegradable Stents',
+          normalizedName: 'drug eluting stents des including metallic des and bioresorbable vascular scaffold bvs biodegradable stents',
+          ceilingPaise: 3918603,
+          implantType: 'coronary_stent',
+          subtype: 'drug_eluting',
+          specification: 'Drug Eluting Stents (DES) including metallic DES and Bioresorbable Vascular Scaffold (BVS) / Biodegradable Stents',
+          effectiveDate: '2026-04-01',
+          validUntil: null,
+          instrumentNumber: 'S.O. 1587(E)',
+          instrumentDate: '2026-03-25',
+          gstTreatment: 'EXCLUDED',
+          source: 'NPPA S.O. 1587(E)',
+          sourceFile: 'Drugceiling3.pdf',
+          sourceUrl: 'https://www.nppa.gov.in',
+          version: '1.0.0',
+          verified: true, // VERIFIED: TRUE!
+          sourceRef: 'Page 3, Sl. No. 2',
+        },
+      ];
+
+      const verifiedReport = runAudit(stentBill, { implantCeilings: verifiedStentRecords });
+      const verifiedFinding = verifiedReport.findings.find(
+        (f) => f.ruleId === 'R-NPPA-01' && f.itemId === 'STENT-ITEM-01'
+      );
+      expect(verifiedFinding).toBeDefined();
+      // Exact match + verified:true + valid date => CONFIRMED_OVERCHARGE!
+      expect(verifiedFinding?.verdict).toBe('CONFIRMED_OVERCHARGE');
+      expect(verifiedFinding?.amount).toBe(4500000 - 3918603);
+      if (verifiedFinding?.citation.kind === 'REGULATORY') {
+        expect(verifiedFinding.citation.verified).toBe(true);
+      }
+      expect(getReferenceDataBadge(verifiedFinding!)).toBeNull();
+      expect(verifiedReport.totals.confirmed).toBe(4500000 - 3918603);
+      expect(verifiedReport.totals.likely).toBe(0);
     });
   });
 });

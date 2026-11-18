@@ -194,6 +194,10 @@ describe('Phase 3 Unit Tests: Pure Audit Rules', () => {
       dosageForm: 'Tablet',
       strength: '100mg',
       priceUnit: 'per tablet',
+      priceType: 'CEILING',
+      manufacturer: null,
+      rawComposition: 'DEMO Composition 100mg',
+      ingredients: [{ name: 'DEMO Drug Alpha', strength: '100mg' }],
       effectiveDate: '2024-01-01',
       validUntil: null,
       instrumentNumber: null,
@@ -205,6 +209,17 @@ describe('Phase 3 Unit Tests: Pure Audit Rules', () => {
       version: 'DEMO.1',
       verified: false,
       sourceRef: 'Table A, Row 1',
+    };
+
+    const retailDemoRecord: NppaCeilingRecord = {
+      ...demoRecord,
+      id: 'REC-RETAIL-01',
+      name: 'DEMO Retail Drug 100mg',
+      normalizedName: 'demo retail drug 100mg',
+      priceType: 'RETAIL',
+      manufacturer: 'M/s Akums Drugs & Pharmaceuticals Ltd. / M/s Emcure Pharmaceuticals Ltd.',
+      source: 'NPPA Retail Price Order',
+      sourceRef: 'Page 8, Sl. No. 1',
     };
 
     it('positive: flags overcharge when name, strength, dosageForm and priceUnit match', () => {
@@ -219,6 +234,7 @@ describe('Phase 3 Unit Tests: Pure Audit Rules', () => {
       const finding = evaluateNppaCeilingRule(item, demoRecord, true);
       expect(finding).not.toBeNull();
       expect(finding?.ruleId).toBe('R-NPPA-01');
+      expect(finding?.verdict).toBe('CONFIRMED_OVERCHARGE');
       expect(finding?.amount).toBe(50000);
       expect(finding?.explanation.en).toContain('GST treatment in reference record: EXCLUDED');
       // Must NOT contain remembered legal claims
@@ -250,6 +266,68 @@ describe('Phase 3 Unit Tests: Pure Audit Rules', () => {
       };
       const finding = evaluateNppaCeilingRule(itemCapsule, demoRecord, false);
       expect(finding).toBeNull();
+    });
+
+    it('name-only match test: missing strength yields NEEDS_REVIEW ("possible match, confirm product")', () => {
+      const itemNameOnly: LineItem = {
+        id: 'MED-NAME-ONLY',
+        description: 'DEMO Drug Alpha Tablet', // No strength specified
+        category: 'pharmacy',
+        quantity: 10,
+        unitRatePaise: 15000,
+        totalBilledPaise: 150000,
+      };
+      const finding = evaluateNppaCeilingRule(itemNameOnly, demoRecord, true);
+      expect(finding).not.toBeNull();
+      expect(finding?.verdict).toBe('NEEDS_REVIEW');
+      expect(finding?.explanation.en).toContain('possible match, confirm product');
+    });
+
+    it('retail priceType: yields NEEDS_REVIEW when manufacturer does not match', () => {
+      const itemWrongMfr: LineItem = {
+        id: 'MED-RETAIL-WRONG',
+        description: 'DEMO Retail Drug 100mg Tablet (Cipla Ltd)',
+        category: 'pharmacy',
+        quantity: 10,
+        unitRatePaise: 15000,
+        totalBilledPaise: 150000,
+      };
+      const finding = evaluateNppaCeilingRule(itemWrongMfr, retailDemoRecord, true);
+      expect(finding).not.toBeNull();
+      expect(finding?.verdict).toBe('NEEDS_REVIEW');
+      expect(finding?.title).toBe('Manufacturer-Specific Retail Price Review');
+      expect(finding?.explanation.en).toContain('applies specifically to manufacturer');
+    });
+
+    it('retail priceType: yields LIKELY_ISSUE (never CONFIRMED_OVERCHARGE) when manufacturer matches', () => {
+      const itemMatchingMfr: LineItem = {
+        id: 'MED-RETAIL-MATCH',
+        description: 'DEMO Retail Drug 100mg Tablet (Emcure)',
+        category: 'pharmacy',
+        quantity: 10,
+        unitRatePaise: 15000,
+        totalBilledPaise: 150000,
+      };
+      // Even with isExactMatch = true, RETAIL records can NEVER produce CONFIRMED_OVERCHARGE
+      const finding = evaluateNppaCeilingRule(itemMatchingMfr, retailDemoRecord, true);
+      expect(finding).not.toBeNull();
+      expect(finding?.verdict).toBe('LIKELY_ISSUE');
+      expect(finding?.amount).toBe(50000);
+    });
+
+    it('unit mismatch test: unconfirmed billing unit yields NEEDS_REVIEW', () => {
+      const itemStripUnit: LineItem = {
+        id: 'MED-STRIP',
+        description: 'DEMO Drug Alpha 100mg Tablet Strip', // Dosage form is tablet, but billed unit is Strip vs per tablet
+        category: 'pharmacy',
+        quantity: 1,
+        unitRatePaise: 15000,
+        totalBilledPaise: 15000,
+      };
+      const finding = evaluateNppaCeilingRule(itemStripUnit, demoRecord, true);
+      expect(finding).not.toBeNull();
+      expect(finding?.verdict).toBe('NEEDS_REVIEW');
+      expect(finding?.title).toBe('Ceiling Price Unit Verification Required');
     });
   });
 

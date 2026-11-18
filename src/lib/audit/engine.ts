@@ -37,7 +37,7 @@ import {
   BaseRegulatoryRecord,
 } from './regulatory';
 import { addPaise, subtractPaise } from './currency';
-import { findBestMatch } from './matching';
+import { findBestMatch, findBestDrugMatch } from './matching';
 
 import { evaluateMathRule } from './rules/mathRule';
 import { evaluateTotalRule } from './rules/totalRule';
@@ -126,7 +126,7 @@ export function runAudit(
 
     // Pharmacy statutory ceiling (R-NPPA-01)
     if (item.category === 'pharmacy' && nppaCeilings.length > 0) {
-      const match = findBestMatch(item.description, nppaCeilings, 0.65);
+      const match = findBestDrugMatch(item.description, nppaCeilings, 0.65);
       if (match.record) {
         const itemStrength = extractStrength(item.description);
         const recordStrength = extractStrength(match.record.strength);
@@ -254,6 +254,14 @@ export function runAudit(
   }
 
   // 6. Calculate unmerged totals
+  // Fair Amount Definition & Accounting Principles:
+  // Fair Amount = Billed - (Confirmed Overcharge + Likely Issue)
+  // Subtracted:
+  //   - Confirmed Overcharge: Statutory price ceiling breaches and verified arithmetic errors.
+  //   - Likely Issue: Bundling discrepancies, duplicate items, unverified ceiling findings.
+  // Not Subtracted:
+  //   - Needs Review: Disclosures, unit ambiguities, policy-dependent proportionate deductions.
+  //   - Valid Exclusion: Legitimate non-payable items (patient out-of-pocket liabilities).
   let confirmedTotal = 0;
   let likelyTotal = 0;
   let needsReviewTotal = 0;

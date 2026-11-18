@@ -183,6 +183,25 @@ export function isDemoDataFinding(finding: AuditFinding): boolean {
 }
 
 /**
+ * Returns the human-readable verification status badge label for an audit finding.
+ * For unverified real reference records: "Unverified reference data".
+ * For test fixtures with DEMO IDs: "DEMO DATA".
+ */
+export function getReferenceDataBadge(finding: AuditFinding): string | null {
+  if (finding.citation.kind === 'REGULATORY' && !finding.citation.verified) {
+    if (
+      finding.citation.sourceRef?.includes('DEMO') ||
+      finding.itemId?.includes('DEMO') ||
+      finding.citation.instrument?.includes('DEMO')
+    ) {
+      return 'DEMO DATA';
+    }
+    return 'Unverified reference data';
+  }
+  return null;
+}
+
+/**
  * Financial breakdown totals across the 5 unmerged report metric cards.
  * Amounts in integer paise. Never combine tiers into a single figure.
  *

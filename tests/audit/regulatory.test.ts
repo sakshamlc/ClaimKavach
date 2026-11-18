@@ -12,7 +12,7 @@ import {
   RegulatoryLoadError,
   BaseRegulatoryRecord,
 } from '../../src/lib/audit/regulatory';
-import { LineItem, Verdict } from '../../src/lib/audit/types';
+import { LineItem, Verdict, getReferenceDataBadge } from '../../src/lib/audit/types';
 import { verifySourcesOnDisk } from '../../scripts/verify-sources';
 
 import * as fs from 'fs';
@@ -145,12 +145,16 @@ describe('Phase 2 Regulatory Loaders, Zod Validation & Integrity Guards', () => 
   });
 
   describe('3. Loud Failure on Malformed or Missing Files', () => {
-    it('throws RegulatoryLoadError on null or empty array', () => {
+    it('throws RegulatoryLoadError on null or empty array for mandatory datasets, and allows empty array for unsourced Annexure/bundling', () => {
       expect(() => loadNppaCeilings(null)).toThrow(RegulatoryLoadError);
       expect(() => loadNppaCeilings([])).toThrow(RegulatoryLoadError);
-      expect(() => loadImplantCeilings([])).toThrow(RegulatoryLoadError);
-      expect(() => loadAnnexure1Classifications([])).toThrow(RegulatoryLoadError);
-      expect(() => loadRoomBundlingRecords([])).toThrow(RegulatoryLoadError);
+      expect(() => loadImplantCeilings(null)).toThrow(RegulatoryLoadError);
+      expect(() => loadAnnexure1Classifications(null)).toThrow(RegulatoryLoadError);
+      expect(() => loadRoomBundlingRecords(null)).toThrow(RegulatoryLoadError);
+
+      // Unsourced datasets remain valid empty arrays until officially sourced
+      expect(loadAnnexure1Classifications([])).toEqual([]);
+      expect(loadRoomBundlingRecords([])).toEqual([]);
     });
 
     it('throws ZodError on malformed records missing mandatory provenance fields', () => {
@@ -270,12 +274,47 @@ describe('Phase 2 Regulatory Loaders, Zod Validation & Integrity Guards', () => 
       for (const rec of loadedNppa) {
         expect(rec.verified).toBe(false);
         expect(rec.sourceFile).toMatch(/Drugceiling1\.pdf|DrugCeiling2\.pdf/);
+        expect(rec.rawComposition).toBeDefined();
+        expect(rec.ingredients.length).toBeGreaterThan(0);
+        if (rec.sourceFile === 'Drugceiling1.pdf') {
+          expect(rec.priceType).toBe('RETAIL');
+          expect(rec.manufacturer).toBeTruthy();
+        } else {
+          expect(rec.priceType).toBe('CEILING');
+          expect(rec.manufacturer).toBeNull();
+        }
       }
+
+      // Check pack unit fix
+      const packRecord = loadedNppa.find((r) => r.id === 'NPPA-2025-5975-24');
+      expect(packRecord).toBeDefined();
+      expect(packRecord?.unit).toBe('1 pack of 500 mL');
+      expect(packRecord?.priceUnit).toBe('per 500 mL pack');
 
       for (const rec of loadedImplants) {
         expect(rec.verified).toBe(false);
         expect(rec.sourceFile).toBe('Drugceiling3.pdf');
       }
+    });
+
+    it('returns "Unverified reference data" badge for real unverified findings and "DEMO DATA" for fixtures', () => {
+      const realFinding: any = {
+        ruleId: 'R-NPPA-01',
+        citation: { kind: 'REGULATORY', verified: false, sourceRef: 'Page 8, Sl. No. 1' },
+      };
+      expect(getReferenceDataBadge(realFinding)).toBe('Unverified reference data');
+
+      const demoFinding: any = {
+        ruleId: 'R-NPPA-01',
+        citation: { kind: 'REGULATORY', verified: false, sourceRef: 'TODO DEMO' },
+      };
+      expect(getReferenceDataBadge(demoFinding)).toBe('DEMO DATA');
+
+      const verifiedFinding: any = {
+        ruleId: 'R-NPPA-01',
+        citation: { kind: 'REGULATORY', verified: true },
+      };
+      expect(getReferenceDataBadge(verifiedFinding)).toBeNull();
     });
   });
 });
