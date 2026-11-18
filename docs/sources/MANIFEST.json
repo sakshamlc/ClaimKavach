@@ -1,5 +1,56 @@
 {
   "schemaVersion": "1.0.0",
-  "updatedAt": "2026-11-17T01:26:00Z",
-  "sources": []
+  "updatedAt": "2026-11-18T22:00:00Z",
+  "sources": [
+    {
+      "filename": "Drugceiling1.pdf",
+      "title": "ORDER - Retail price fixation for formulations",
+      "instrumentNumber": "S.O. 5975(E)",
+      "instrumentDate": "2025-12-24",
+      "effectiveDate": "2025-12-24",
+      "sha256": "e34f5ea3cc531ba15dfb310bfcadf2a6c5c4a302fbcd6a7eb33999e2fb92620d",
+      "sourceUrl": null,
+      "verified": false
+    },
+    {
+      "filename": "DrugCeiling2.pdf",
+      "title": "ORDER - Price Revision as per Annual Wholesale Price Index (WPI) @ 0.64956% increase",
+      "instrumentNumber": "S.O. 1582(E)",
+      "instrumentDate": "2026-03-25",
+      "effectiveDate": "2026-04-01",
+      "sha256": "2edae1205ae68a4a449084eb02fa22b6b60df73401d26f5fbe5ec4ba5fe38ffe",
+      "sourceUrl": null,
+      "verified": false
+    },
+    {
+      "filename": "Drugceiling3.pdf",
+      "title": "ORDER - Revision of ceiling prices of Coronary Stents with WPI @ 0.64956%",
+      "instrumentNumber": "S.O. 1587(E)",
+      "instrumentDate": "2026-03-25",
+      "effectiveDate": "2026-04-01",
+      "sha256": "cac64fbf7b2291cfefeee5cdc36615f6b8898cb04ab65e5bb56f03ce43469041",
+      "sourceUrl": null,
+      "verified": false
+    },
+    {
+      "filename": "Drugceiling4.pdf",
+      "title": "ORDER - Extension of ceiling prices of Orthopaedic Knee Implants for Knee Replacement System",
+      "instrumentNumber": "S.O. 6222(E)",
+      "instrumentDate": "2026-11-13",
+      "effectiveDate": "2026-11-15",
+      "sha256": "6b14b0f1c6fa0754aab29553f6c427b0188479e6e87ea10cc8f7875e39082daf",
+      "sourceUrl": null,
+      "verified": false
+    },
+    {
+      "filename": "Drugceiling5.pdf",
+      "title": "Master Circular on IRDAI (Insurance Products) Regulations 2024- Health Insurance",
+      "instrumentNumber": "IRDAI/HLT/CIR/PRO/84/5/2024",
+      "instrumentDate": "2024-05-29",
+      "effectiveDate": "2024-05-29",
+      "sha256": "fdc70264ce307e0c0ead2de442881c907a03a638477c03a7aaf473d3cc139134",
+      "sourceUrl": null,
+      "verified": false
+    }
+  ]
 }

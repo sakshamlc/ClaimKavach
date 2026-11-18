@@ -1,0 +1,38 @@
+[
+  {
+    "id": "DEMO-BND-01",
+    "name": "DEMO Bundled Service Alpha",
+    "normalizedName": "demo bundled service alpha",
+    "bundledWith": "room_rent",
+    "description": "Fictional demo service bundled with room tariff",
+    "effectiveDate": "2024-01-01",
+    "validUntil": null,
+    "instrumentNumber": null,
+    "instrumentDate": null,
+    "gstTreatment": "UNKNOWN",
+    "source": "DEMO DATA (Unverified Placeholder)",
+    "sourceFile": "irdai_annexure_1.pdf",
+    "sourceUrl": "URL unverified, locate and record the real one",
+    "version": "DEMO.1",
+    "verified": false,
+    "sourceRef": "TODO"
+  },
+  {
+    "id": "DEMO-BND-02",
+    "name": "DEMO Bundled Service Beta",
+    "normalizedName": "demo bundled service beta",
+    "bundledWith": "icu",
+    "description": "Fictional demo service bundled with ICU tariff",
+    "effectiveDate": "2024-01-01",
+    "validUntil": null,
+    "instrumentNumber": null,
+    "instrumentDate": null,
+    "gstTreatment": "UNKNOWN",
+    "source": "DEMO DATA (Unverified Placeholder)",
+    "sourceFile": "irdai_annexure_1.pdf",
+    "sourceUrl": "URL unverified, locate and record the real one",
+    "version": "DEMO.1",
+    "verified": false,
+    "sourceRef": "TODO"
+  }
+]

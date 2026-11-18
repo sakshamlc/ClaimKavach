@@ -1,8 +1,8 @@
 [
   {
-    "id": "DEMO-BND-01",
-    "name": "DEMO Bundled Service Alpha",
-    "normalizedName": "demo bundled service alpha",
+    "id": "PENDING-BND-01",
+    "name": "Pending Bundled Service Alpha",
+    "normalizedName": "pending bundled service alpha",
     "bundledWith": "room_rent",
     "description": "Fictional demo service bundled with room tariff",
     "effectiveDate": "2024-01-01",
@@ -10,17 +10,17 @@
     "instrumentNumber": null,
     "instrumentDate": null,
     "gstTreatment": "UNKNOWN",
-    "source": "DEMO DATA (Unverified Placeholder)",
-    "sourceFile": "irdai_annexure_1.pdf",
-    "sourceUrl": "URL unverified, locate and record the real one",
-    "version": "DEMO.1",
+    "source": "PENDING OFFICIAL INGESTION (Annexure schedule not attached in Drugceiling5.pdf)",
+    "sourceFile": "Drugceiling5.pdf",
+    "sourceUrl": "https://irdai.gov.in",
+    "version": "PENDING.1",
     "verified": false,
-    "sourceRef": "TODO"
+    "sourceRef": "Drugceiling5.pdf (Annexure Pending)"
   },
   {
-    "id": "DEMO-BND-02",
-    "name": "DEMO Bundled Service Beta",
-    "normalizedName": "demo bundled service beta",
+    "id": "PENDING-BND-02",
+    "name": "Pending Bundled Service Beta",
+    "normalizedName": "pending bundled service beta",
     "bundledWith": "icu",
     "description": "Fictional demo service bundled with ICU tariff",
     "effectiveDate": "2024-01-01",
@@ -28,11 +28,11 @@
     "instrumentNumber": null,
     "instrumentDate": null,
     "gstTreatment": "UNKNOWN",
-    "source": "DEMO DATA (Unverified Placeholder)",
-    "sourceFile": "irdai_annexure_1.pdf",
-    "sourceUrl": "URL unverified, locate and record the real one",
-    "version": "DEMO.1",
+    "source": "PENDING OFFICIAL INGESTION (Annexure schedule not attached in Drugceiling5.pdf)",
+    "sourceFile": "Drugceiling5.pdf",
+    "sourceUrl": "https://irdai.gov.in",
+    "version": "PENDING.1",
     "verified": false,
-    "sourceRef": "TODO"
+    "sourceRef": "Drugceiling5.pdf (Annexure Pending)"
   }
 ]

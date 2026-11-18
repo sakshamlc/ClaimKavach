@@ -1,0 +1,42 @@
+[
+  {
+    "id": "DEMO-IMP-01",
+    "name": "DEMO Device Alpha",
+    "normalizedName": "demo device alpha",
+    "ceilingPaise": 1000000,
+    "implantType": "demo_stent",
+    "subtype": "demo_bare_metal",
+    "specification": "Fictional Demo Device Model Alpha",
+    "effectiveDate": "2024-01-01",
+    "validUntil": null,
+    "instrumentNumber": null,
+    "instrumentDate": null,
+    "gstTreatment": "UNKNOWN",
+    "source": "DEMO DATA (Unverified Placeholder)",
+    "sourceFile": "nppa_stents.pdf",
+    "sourceUrl": "URL unverified, locate and record the real one",
+    "version": "DEMO.1",
+    "verified": false,
+    "sourceRef": "TODO"
+  },
+  {
+    "id": "DEMO-IMP-02",
+    "name": "DEMO Device Beta",
+    "normalizedName": "demo device beta",
+    "ceilingPaise": 2000000,
+    "implantType": "demo_knee",
+    "subtype": "demo_femoral",
+    "specification": "Fictional Demo Device Model Beta",
+    "effectiveDate": "2024-01-01",
+    "validUntil": null,
+    "instrumentNumber": null,
+    "instrumentDate": null,
+    "gstTreatment": "UNKNOWN",
+    "source": "DEMO DATA (Unverified Placeholder)",
+    "sourceFile": "nppa_knee_implants.pdf",
+    "sourceUrl": "URL unverified, locate and record the real one",
+    "version": "DEMO.1",
+    "verified": false,
+    "sourceRef": "TODO"
+  }
+]

@@ -15,10 +15,13 @@ import {
 import { LineItem, Verdict } from '../../src/lib/audit/types';
 import { verifySourcesOnDisk } from '../../scripts/verify-sources';
 
-import nppaSeedData from '../../src/data/regulatory/nppaCeilings.json';
-import implantSeedData from '../../src/data/regulatory/implants.json';
-import annexure1SeedData from '../../src/data/regulatory/annexure1.json';
-import roomBundlingSeedData from '../../src/data/regulatory/roomBundling.json';
+import * as fs from 'fs';
+import * as path from 'path';
+
+import nppaSeedData from '../fixtures/regulatory/nppaCeilings.json';
+import implantSeedData from '../fixtures/regulatory/implants.json';
+import annexure1SeedData from '../fixtures/regulatory/annexure1.json';
+import roomBundlingSeedData from '../fixtures/regulatory/roomBundling.json';
 
 describe('Phase 2 Regulatory Loaders, Zod Validation & Integrity Guards', () => {
   describe('1. Seed Data Validation & Structure (Pure Loaders, No Manifest Read in Trust Zone)', () => {
@@ -231,6 +234,48 @@ describe('Phase 2 Regulatory Loaders, Zod Validation & Integrity Guards', () => 
       }
 
       expect(auditItem(itemWithNullQty)).toBe('NOT_CHECKED');
+    });
+  });
+
+  describe('7. Production Regulatory Invariants', () => {
+    it('ensures src/data/regulatory/ contains no records with id starting with "DEMO"', () => {
+      const regDir = path.resolve(__dirname, '../../src/data/regulatory');
+      const files = fs.readdirSync(regDir).filter((f) => f.endsWith('.json'));
+      expect(files.length).toBeGreaterThan(0);
+
+      for (const file of files) {
+        const filePath = path.join(regDir, file);
+        const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+        expect(Array.isArray(data)).toBe(true);
+        for (const record of data) {
+          expect(record.id.startsWith('DEMO')).toBe(false);
+        }
+      }
+    });
+
+    it('validates official ingested NPPA ceilings and Implants schema conformance', () => {
+      const nppaOfficial = JSON.parse(
+        fs.readFileSync(path.resolve(__dirname, '../../src/data/regulatory/nppaCeilings.json'), 'utf8')
+      );
+      const implantOfficial = JSON.parse(
+        fs.readFileSync(path.resolve(__dirname, '../../src/data/regulatory/implants.json'), 'utf8')
+      );
+
+      const loadedNppa = loadNppaCeilings(nppaOfficial);
+      const loadedImplants = loadImplantCeilings(implantOfficial);
+
+      expect(loadedNppa.length).toBe(43);
+      expect(loadedImplants.length).toBe(2);
+
+      for (const rec of loadedNppa) {
+        expect(rec.verified).toBe(false);
+        expect(rec.sourceFile).toMatch(/Drugceiling1\.pdf|DrugCeiling2\.pdf/);
+      }
+
+      for (const rec of loadedImplants) {
+        expect(rec.verified).toBe(false);
+        expect(rec.sourceFile).toBe('Drugceiling3.pdf');
+      }
     });
   });
 });

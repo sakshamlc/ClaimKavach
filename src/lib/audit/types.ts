@@ -54,6 +54,11 @@ export interface LineItem {
   mrpPaise?: number | null;        // Printed MRP if specified on packaging/bill
   deductedPaise?: number | null;   // Amount deducted by insurer/TPA if reviewing settlement sheet
   deductionReason?: string;        // TPA deduction clause/code
+  discountPaise?: number | null;   // Extracted item-level discount in paise
+  taxPaise?: number | null;        // Extracted item-level tax/GST in paise
+  confidence?: number | null;      // Extraction confidence score (0 to 1)
+  userEdited?: boolean;            // Flagged true if user verified or corrected this line item
+  verified?: boolean;              // Flagged true if line item is validated by human reviewer
   notes?: string;
 }
 
@@ -100,6 +105,7 @@ export interface MedicalBill {
   items: LineItem[];
   totalBilledPaise: number;
   policyContext?: PolicyContext;
+  hasUnextractedDiscountOrTax?: boolean; // Set true if bill contains discount/tax columns that were not extracted
   isSynthetic?: boolean;
 }
 
@@ -179,13 +185,24 @@ export function isDemoDataFinding(finding: AuditFinding): boolean {
 /**
  * Financial breakdown totals across the 5 unmerged report metric cards.
  * Amounts in integer paise. Never combine tiers into a single figure.
+ *
+ * Fair Amount Definition:
+ * - Fair Amount = billed - (confirmed + likely).
+ * - What is subtracted:
+ *     1. confirmed: Statutory ceiling breaches and verified arithmetic errors.
+ *     2. likely: Suspected duplicate items, bundling discrepancies, and unbundled services.
+ * - What is NOT subtracted:
+ *     1. needsReview: Disclosures, unit ambiguities, policy-dependent proportionate deductions.
+ *        These items require manual policy/chart verification before any financial adjustment.
+ *     2. validExclusion: Legitimate exclusions supported by regulatory lists (e.g. non-payable toiletries).
+ *        These are valid patient out-of-pocket liabilities and remain in the patient payable balance.
  */
 export interface ReportTotals {
   billed: number;      // Total billed amount
   fair: number;        // Fair amount: billed - (confirmed + likely)
-  confirmed: number;   // Statutory ceilings + arithmetic errors
+  confirmed: number;   // Statutory ceilings + verified arithmetic errors
   likely: number;      // Duplicates, bundling, Annexure-I discrepancies
-  needsReview: number; // Disclosures / specifications required
+  needsReview: number; // Disclosures / specifications required (not subtracted from fair)
 }
 
 /**

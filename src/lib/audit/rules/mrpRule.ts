@@ -1,13 +1,12 @@
 /**
  * Rule: R-NPPA-02 (Maximum Retail Price Enforcement)
  *
- * Checks whether the hospital billed unit price exceeds the printed Maximum Retail Price (MRP).
- * Under the Legal Metrology Act and DPCO 2013, charging above MRP on packaged goods
- * is strictly prohibited.
+ * Checks whether the billed unit price exceeds the printed Maximum Retail Price (MRP).
+ * Neutral wording: compares billed price against the MRP printed on the bill/packaging.
  *
  * Verdict:
  * - CONFIRMED_OVERCHARGE if unitRatePaise > mrpPaise
- * - Returns null (NOT_CHECKED) if unitRatePaise, mrpPaise, or quantity is null
+ * - Returns null (NOT_CHECKED) if unitRatePaise, mrpPaise, or quantity is null/undefined
  */
 
 import { LineItem, AuditFinding } from '../types';
@@ -41,17 +40,17 @@ export function evaluateMrpRule(item: LineItem): AuditFinding | null {
     amount: totalOvercharge,
     citation: {
       kind: 'REGULATORY',
-      instrument: 'Legal Metrology (Packaged Commodities) / DPCO',
-      section: 'Maximum Retail Price Enforcement',
+      instrument: 'Maximum Retail Price printed on package/bill',
+      section: 'MRP Comparison',
       url: 'https://consumeraffairs.nic.in',
-      effectiveDate: '2013-05-15',
+      effectiveDate: '2024-01-01',
       verified: true,
-      sourceRef: 'Rule 18 / DPCO Para 26',
+      sourceRef: 'Printed Packaging MRP',
     },
     title: 'Billed Price Exceeds Printed MRP',
     explanation: {
-      en: `Billed unit rate (${formatINR(item.unitRatePaise)}) exceeds the manufacturer's printed Maximum Retail Price (${formatINR(item.mrpPaise)}) by ${formatINR(unitDifference)} per unit (total questioned: ${formatINR(totalOvercharge)}). Charging above printed MRP is prohibited under statutory regulations.`,
-      hi: `बिल की दर (${formatINR(item.unitRatePaise)}) निर्माता के अधिकतम खुदरा मूल्य (MRP: ${formatINR(item.mrpPaise)}) से ${formatINR(unitDifference)} प्रति इकाई अधिक है (कुल संदेहास्पद: ${formatINR(totalOvercharge)})। मुद्रित एमआरपी से अधिक शुल्क लेना विधिक रूप से प्रतिबंधित है।`,
+      en: `Billed price (${formatINR(item.unitRatePaise)}) exceeds the MRP (${formatINR(item.mrpPaise)}) printed on the bill/packaging by ${formatINR(unitDifference)} per unit (total: ${formatINR(totalOvercharge)}).`,
+      hi: `बिल की दर (${formatINR(item.unitRatePaise)}) बिल/पैकेजिंग पर मुद्रित एमआरपी (${formatINR(item.mrpPaise)}) से ${formatINR(unitDifference)} अधिक है (कुल: ${formatINR(totalOvercharge)})।`,
     },
     suggestedAction: 'Request bill adjustment to match the printed MRP on the drug/device packaging.',
   };

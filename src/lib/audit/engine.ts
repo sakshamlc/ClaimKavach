@@ -42,7 +42,7 @@ import { findBestMatch } from './matching';
 import { evaluateMathRule } from './rules/mathRule';
 import { evaluateTotalRule } from './rules/totalRule';
 import { evaluateDuplicateRule } from './rules/duplicateRule';
-import { evaluateNppaCeilingRule } from './rules/nppaCeilingRule';
+import { evaluateNppaCeilingRule, extractStrength, extractDosageForm } from './rules/nppaCeilingRule';
 import { evaluateMrpRule } from './rules/mrpRule';
 import { evaluateAnnexureDeductionRule } from './rules/annexureDeductionRule';
 import { evaluateBundlingRule } from './rules/bundlingRule';
@@ -92,7 +92,7 @@ export function runAudit(
   const checkedRegulatoryItemIds = new Set<string>();
 
   // 2. Bill-level arithmetic checks
-  const totalFinding = evaluateTotalRule(bill);
+  const totalFinding = evaluateTotalRule(bill, { confidenceThreshold: 0.9 });
   if (totalFinding) {
     rawFindings.push({ finding: totalFinding, isExactMatch: true });
   }
@@ -107,7 +107,10 @@ export function runAudit(
     // Arithmetic check (R-MATH-01)
     if (item.quantity !== null && item.unitRatePaise !== null && item.totalBilledPaise !== null) {
       checkedArithmeticItemIds.add(item.id);
-      const mathFinding = evaluateMathRule(item);
+      const mathFinding = evaluateMathRule(item, {
+        confidenceThreshold: 0.9,
+        hasUnextractedDiscountOrTax: bill.hasUnextractedDiscountOrTax,
+      });
       if (mathFinding) {
         rawFindings.push({ finding: mathFinding, isExactMatch: true, item });
       }
@@ -125,7 +128,18 @@ export function runAudit(
     if (item.category === 'pharmacy' && nppaCeilings.length > 0) {
       const match = findBestMatch(item.description, nppaCeilings, 0.65);
       if (match.record) {
-        checkedRegulatoryItemIds.add(item.id);
+        const itemStrength = extractStrength(item.description);
+        const recordStrength = extractStrength(match.record.strength);
+        const itemForm = extractDosageForm(item.description);
+        const recordForm = extractDosageForm(match.record.dosageForm);
+        const specMatches =
+          (!itemStrength || !recordStrength || itemStrength === recordStrength) &&
+          (!itemForm || !recordForm || itemForm === recordForm);
+
+        if (specMatches) {
+          checkedRegulatoryItemIds.add(item.id);
+        }
+
         const ceilingFinding = evaluateNppaCeilingRule(item, match.record, match.isExact);
         if (ceilingFinding) {
           rawFindings.push({
@@ -161,7 +175,7 @@ export function runAudit(
       if (match.record) {
         checkedRegulatoryItemIds.add(item.id);
       }
-      const deductionFinding = evaluateAnnexureDeductionRule(item, match.record);
+      const deductionFinding = evaluateAnnexureDeductionRule(item, match.record, annexure1.length > 0);
       if (deductionFinding) {
         rawFindings.push({
           finding: deductionFinding,
