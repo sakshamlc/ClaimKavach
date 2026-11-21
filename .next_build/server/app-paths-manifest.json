@@ -1,15 +1,15 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
-  "/fix/page": "app/fix/page.js",
   "/demo/page": "app/demo/page.js",
-  "/consent/page": "app/consent/page.js",
+  "/fix/page": "app/fix/page.js",
   "/goal/page": "app/goal/page.js",
-  "/upload/page": "app/upload/page.js",
+  "/consent/page": "app/consent/page.js",
+  "/report/page": "app/report/page.js",
   "/review/page": "app/review/page.js",
   "/sources/page": "app/sources/page.js",
-  "/report/page": "app/report/page.js",
   "/verify/page": "app/verify/page.js",
-  "/page": "app/page.js",
+  "/upload/page": "app/upload/page.js",
   "/api/extract/route": "app/api/extract/route.js",
-  "/letter/[findingId]/page": "app/letter/[findingId]/page.js"
+  "/letter/[findingId]/page": "app/letter/[findingId]/page.js",
+  "/page": "app/page.js"
 }
