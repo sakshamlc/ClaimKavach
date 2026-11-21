@@ -151,7 +151,8 @@ describe('Phase 5 & 6: ClaimKavach UI Logic, Store & Dispute Verification', () =
       /निश्चितपणे/i,
     ];
 
-    const BROAD_LEGAL_TERMS_REGEX = /(?:\b(Rule|Section|Para|Regulations?|Act|Order|DPCO|Gazette)\b|\bS\.O\.)/i;
+    const BROAD_LEGAL_TERMS_REGEX = /(?:\b(Rule|Rules|Section|Para|Regulations?|Act|Order|DPCO|Gazette|Ombudsman Rules)\b|\bS\.O\.)/i;
+    const HINDI_LEGAL_TERMS_REGEX = /(?:^|[^\p{L}\p{N}])(नियम|धारा|अधिनियम|आदेश|विनियम|राजपत्र|लोकपाल नियम)(?:[^\p{L}\p{N}]|$)/u;
 
     function stripFindingAndCitationData(text: string, report: AuditReport): string {
       let cleaned = text;
@@ -178,60 +179,95 @@ describe('Phase 5 & 6: ClaimKavach UI Logic, Store & Dispute Verification', () =
       return cleaned;
     }
 
-    it('ensures all rendered dispute drafts contain zero banned phrases', () => {
+    it('ensures all rendered dispute drafts contain zero banned phrases in EN and HI', () => {
       for (const sample of ['sample1', 'sample2'] as const) {
         useClaimStore.getState().loadSample(sample);
         const report = useClaimStore.getState().executeAudit()!;
         const bill = useClaimStore.getState().bill!;
 
-        const drafts = generateAllDisputeDrafts(bill, report);
-        expect(drafts.length).toBe(4);
+        for (const lang of ['en', 'hi'] as const) {
+          const drafts = generateAllDisputeDrafts(bill, report, lang);
+          expect(drafts.length).toBe(4);
 
-        for (const draft of drafts) {
-          for (const pattern of BANNED_PATTERNS) {
-            const matches = pattern.test(draft.text);
-            expect(
-              matches,
-              `Banned phrase matching pattern ${pattern} found in ${draft.label}: "${draft.text.slice(0, 80)}..."`
-            ).toBe(false);
+          for (const draft of drafts) {
+            for (const pattern of BANNED_PATTERNS) {
+              const matches = pattern.test(draft.text);
+              expect(
+                matches,
+                `Banned phrase matching pattern ${pattern} found in ${draft.label} (${lang}): "${draft.text.slice(0, 80)}..."`
+              ).toBe(false);
+            }
           }
         }
       }
     });
 
-    it('ensures dispute templates contain zero ungrounded citations: Rule, Section, Para, Regulation(s), Act, Order, DPCO, Gazette, S.O. unless from citation data', () => {
+    it('ensures dispute templates contain zero ungrounded citations: Rule, Rules, Section, Para, Regulation(s), Act, Order, DPCO, Gazette, S.O., Ombudsman Rules unless from citation data', () => {
       for (const sample of ['sample1', 'sample2', 'sample3'] as const) {
         useClaimStore.getState().loadSample(sample);
         const report = useClaimStore.getState().executeAudit()!;
         const bill = useClaimStore.getState().bill!;
 
-        const drafts = generateAllDisputeDrafts(bill, report);
-
-        for (const draft of drafts) {
+        // Check English drafts
+        const enDrafts = generateAllDisputeDrafts(bill, report, 'en');
+        for (const draft of enDrafts) {
           const strippedBoilerplate = stripFindingAndCitationData(draft.text, report);
           const match = strippedBoilerplate.match(BROAD_LEGAL_TERMS_REGEX);
           expect(
             match,
-            `Ungrounded legal term "${match?.[0]}" found in template boilerplate of ${draft.label} for ${sample}`
+            `Ungrounded English legal term "${match?.[0]}" found in template boilerplate of ${draft.label} for ${sample}`
+          ).toBeNull();
+        }
+
+        // Check Hindi drafts
+        const hiDrafts = generateAllDisputeDrafts(bill, report, 'hi');
+        for (const draft of hiDrafts) {
+          const strippedBoilerplate = stripFindingAndCitationData(draft.text, report);
+          const hindiMatch = strippedBoilerplate.match(HINDI_LEGAL_TERMS_REGEX);
+          expect(
+            hindiMatch,
+            `Ungrounded Hindi legal term "${hindiMatch?.[0]}" found in template boilerplate of ${draft.label} for ${sample}`
+          ).toBeNull();
+
+          const enMatch = strippedBoilerplate.match(BROAD_LEGAL_TERMS_REGEX);
+          expect(
+            enMatch,
+            `Ungrounded English legal term "${enMatch?.[0]}" found in Hindi template boilerplate of ${draft.label} for ${sample}`
           ).toBeNull();
         }
       }
     });
 
-    it('scanner negative test: catches injected ungrounded legal citations if present in boilerplate', () => {
-      const injectedCases = [
+    it('scanner negative test: catches injected ungrounded legal citations in English and Hindi', () => {
+      const injectedEnCases = [
         'Under Rule 6 of IRDAI grievance norms',
+        'Pursuant to Ombudsman Rules, 2017',
         'As per Section 45 of the Insurance Act',
         'Refer to Para 4 of the guidelines',
         'Subject to Regulation 12 of the Policyholder Regulations',
         'Issued under DPCO 2013 order',
         'Notified in Gazette notification',
         'Pursuant to S.O. 1234(E)',
+        'Subject to Health Insurance Rules',
       ];
 
-      for (const testStr of injectedCases) {
+      for (const testStr of injectedEnCases) {
         const match = testStr.match(BROAD_LEGAL_TERMS_REGEX);
-        expect(match, `Expected scanner to catch citation in: "${testStr}"`).not.toBeNull();
+        expect(match, `Expected English scanner to catch citation in: "${testStr}"`).not.toBeNull();
+      }
+
+      const injectedHiCases = [
+        'बीमा लोकपाल नियम 2017 के अनुसार',
+        'बीमा अधिनियम 1938 की धारा 45',
+        'अधिनियम के प्रावधानों के अंतर्गत',
+        'सरकारी आदेश संख्या 5975',
+        'आईआरडीएआई विनियम 2024 के तहत',
+        'आधिकारिक राजपत्र में प्रकाशित',
+      ];
+
+      for (const testStr of injectedHiCases) {
+        const match = testStr.match(HINDI_LEGAL_TERMS_REGEX);
+        expect(match, `Expected Hindi scanner to catch citation in: "${testStr}"`).not.toBeNull();
       }
     });
   });

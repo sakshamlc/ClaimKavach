@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import type { AuditFinding, Verdict } from '@/lib/audit/types';
 import { getReferenceDataBadge } from '@/lib/audit/types';
 import { formatINR } from '@/lib/audit/currency';
+import { Badge, Card, Tabs, type BadgeVariant } from '@/components/ui';
 import {
   ChevronDown,
   ChevronUp,
@@ -16,60 +17,37 @@ import {
   ShieldAlert,
   ExternalLink,
   Info,
+  Scale,
+  Building,
+  CheckCircle2,
+  FileCheck,
+  Volume2,
 } from 'lucide-react';
 
 interface FindingsTableProps {
   findings: AuditFinding[];
+  language?: 'en' | 'hi';
+  activePlayingFindingId?: string | null;
+  onPlayFinding?: (index: number) => void;
 }
 
-export function FindingsTable({ findings }: FindingsTableProps) {
+export function FindingsTable({
+  findings,
+  language = 'en',
+  activePlayingFindingId,
+  onPlayFinding,
+}: FindingsTableProps) {
   const [selectedFilter, setSelectedFilter] = useState<'ALL' | Verdict>('ALL');
-  const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({});
-
-  const toggleExpand = (key: string) => {
-    setExpandedIds((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
+  const [selectedFindingIndex, setSelectedFindingIndex] = useState<number>(0);
+  const [expandedMobileKey, setExpandedMobileKey] = useState<string | null>(null);
 
   const filteredFindings = findings.filter((f) => {
     if (selectedFilter === 'ALL') return true;
     return f.verdict === selectedFilter;
   });
 
-  const getVerdictStyle = (verdict: Verdict) => {
-    switch (verdict) {
-      case 'CONFIRMED_OVERCHARGE':
-        return {
-          bg: 'bg-rose-50 border-rose-200 text-rose-800',
-          icon: <AlertOctagon className="w-3.5 h-3.5 text-rose-600" />,
-          label: 'Confirmed Overcharge',
-        };
-      case 'LIKELY_ISSUE':
-        return {
-          bg: 'bg-amber-50 border-amber-200 text-amber-800',
-          icon: <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />,
-          label: 'Likely Issue',
-        };
-      case 'NEEDS_REVIEW':
-        return {
-          bg: 'bg-sky-50 border-sky-200 text-sky-800',
-          icon: <HelpCircle className="w-3.5 h-3.5 text-sky-600" />,
-          label: 'Needs Review',
-        };
-      case 'VALID_EXCLUSION':
-        return {
-          bg: 'bg-emerald-50 border-emerald-200 text-emerald-800',
-          icon: <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />,
-          label: 'Valid Exclusion',
-        };
-      case 'NOT_CHECKED':
-      default:
-        return {
-          bg: 'bg-slate-50 border-slate-200 text-slate-700',
-          icon: <Info className="w-3.5 h-3.5 text-slate-500" />,
-          label: 'Not Checked',
-        };
-    }
-  };
+  // Ensure selected index is within bounds of filtered list
+  const activeFinding = filteredFindings[selectedFindingIndex] || filteredFindings[0] || null;
 
   const counts: Record<string, number> = {
     ALL: findings.length,
@@ -79,237 +57,337 @@ export function FindingsTable({ findings }: FindingsTableProps) {
     VALID_EXCLUSION: findings.filter((f) => f.verdict === 'VALID_EXCLUSION').length,
   };
 
+  const getBadgeVariant = (verdict: Verdict): BadgeVariant => {
+    switch (verdict) {
+      case 'CONFIRMED_OVERCHARGE':
+        return 'confirmed';
+      case 'LIKELY_ISSUE':
+        return 'likely';
+      case 'NEEDS_REVIEW':
+        return 'needs-review';
+      case 'VALID_EXCLUSION':
+        return 'valid-exclusion';
+      case 'NOT_CHECKED':
+      default:
+        return 'not-checked';
+    }
+  };
+
+  const formatVerdictLabel = (verdict: Verdict) => {
+    switch (verdict) {
+      case 'CONFIRMED_OVERCHARGE':
+        return 'Confirmed Overcharge';
+      case 'LIKELY_ISSUE':
+        return 'Likely Issue';
+      case 'NEEDS_REVIEW':
+        return 'Needs Review';
+      case 'VALID_EXCLUSION':
+        return 'Valid Exclusion';
+      case 'NOT_CHECKED':
+        return 'Not Checked';
+    }
+  };
+
+  const tabs = [
+    { id: 'ALL', label: 'All Findings', count: counts.ALL },
+    { id: 'CONFIRMED_OVERCHARGE', label: 'Confirmed', count: counts.CONFIRMED_OVERCHARGE },
+    { id: 'LIKELY_ISSUE', label: 'Likely Issues', count: counts.LIKELY_ISSUE },
+    { id: 'NEEDS_REVIEW', label: 'Needs Review', count: counts.NEEDS_REVIEW },
+    { id: 'VALID_EXCLUSION', label: 'Valid Exclusions', count: counts.VALID_EXCLUSION },
+  ];
+
   return (
     <div className="space-y-4">
-      {/* Filter Tabs */}
-      <div className="flex flex-wrap items-center gap-1.5 border-b border-border pb-2">
-        {(['ALL', 'CONFIRMED_OVERCHARGE', 'LIKELY_ISSUE', 'NEEDS_REVIEW', 'VALID_EXCLUSION'] as const).map(
-          (tab) => {
-            const count = counts[tab] || 0;
-            const active = selectedFilter === tab;
-            let label = tab === 'ALL' ? 'All Findings' : tab.replace(/_/g, ' ');
+      {/* Horizontally scrollable filter tabs */}
+      <Tabs
+        tabs={tabs}
+        activeTab={selectedFilter}
+        onChange={(id) => {
+          setSelectedFilter(id as any);
+          setSelectedFindingIndex(0);
+        }}
+        ariaLabel="Filter audit findings by verdict tier"
+      />
 
-            return (
-              <button
-                key={tab}
-                type="button"
-                onClick={() => setSelectedFilter(tab)}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 ${
-                  active
-                    ? 'bg-primary text-white shadow-xs'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                }`}
-              >
-                <span>{label}</span>
-                <span
-                  className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                    active ? 'bg-white/20 text-white' : 'bg-white text-slate-600'
-                  }`}
-                >
-                  {count}
-                </span>
-              </button>
-            );
-          }
-        )}
-      </div>
-
-      {/* Findings List */}
       {filteredFindings.length === 0 ? (
-        <div className="bg-surface rounded-xl p-8 text-center border border-dashed border-border text-muted text-sm">
+        <Card className="p-8 text-center border-dashed text-text-muted text-small">
           No findings in this category.
-        </div>
+        </Card>
       ) : (
-        <div className="space-y-3">
-          {filteredFindings.map((finding, idx) => {
-            const uniqueKey = `${finding.ruleId}-${finding.itemId}-${idx}`;
-            const isExpanded = !!expandedIds[uniqueKey];
-            const verdictInfo = getVerdictStyle(finding.verdict);
-            const refBadge = getReferenceDataBadge(finding);
+        <>
+          {/* DESKTOP TWO-PANE LAYOUT (>= 1024px) */}
+          <div className="hidden lg:grid lg:grid-cols-12 gap-6 items-start">
+            {/* Left Pane: Line Items List (Scrollable, 5 cols) */}
+            <div className="lg:col-span-5 space-y-2.5 max-h-[620px] overflow-y-auto pr-1">
+              {filteredFindings.map((finding, idx) => {
+                const isSelected = activeFinding === finding;
+                const findingKey = `${finding.ruleId}-${finding.itemId}`;
+                const isActivePlaying = activePlayingFindingId === findingKey;
+                const refBadge = getReferenceDataBadge(finding);
+                const badgeVariant = getBadgeVariant(finding.verdict);
 
-            return (
-              <div
-                key={uniqueKey}
-                className="bg-surface rounded-xl border border-border shadow-xs hover:border-slate-300 transition-all overflow-hidden"
-              >
-                {/* Finding Header Card */}
-                <div
-                  onClick={() => toggleExpand(uniqueKey)}
-                  className="p-4 cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-3 hover:bg-slate-50/50"
-                >
-                  <div className="space-y-1.5 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      {/* Verdict Pill */}
-                      <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold border ${verdictInfo.bg}`}
-                      >
-                        {verdictInfo.icon}
-                        <span>{verdictInfo.label}</span>
-                      </span>
-
-                      {/* Rule ID */}
-                      <span className="font-mono text-[11px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
-                        {finding.ruleId}
-                      </span>
-
-                      {/* Reference Verification Status Badge */}
-                      {refBadge ? (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-300">
-                          <ShieldAlert className="w-3 h-3 text-amber-600" />
-                          <span>{refBadge}</span>
+                return (
+                  <div
+                    key={`${finding.ruleId}-${finding.itemId}-${idx}`}
+                    id={`finding-row-${findingKey}`}
+                    onClick={() => setSelectedFindingIndex(idx)}
+                    className={`p-4 rounded-card border transition-all duration-150 cursor-pointer text-left select-none ${
+                      isActivePlaying
+                        ? 'border-accent-teal bg-accent-teal-subtle/40 shadow-popover ring-2 ring-accent-teal'
+                        : isSelected
+                        ? 'border-primary bg-primary-soft shadow-card ring-2 ring-primary/20'
+                        : 'border-border bg-surface hover:bg-surface-subtle shadow-card'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <Badge variant={badgeVariant} size="sm">
+                        {formatVerdictLabel(finding.verdict)}
+                      </Badge>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onPlayFinding?.(idx);
+                          }}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-bold text-accent-teal bg-accent-teal-subtle hover:bg-accent-teal hover:text-white rounded-chip border border-accent-teal/30 transition-colors cursor-pointer min-h-[28px]"
+                          title="Listen to this finding"
+                          aria-label="Listen to this finding"
+                        >
+                          <Volume2 className="w-3 h-3" />
+                          <span>{language === 'hi' ? 'सुनें' : 'Listen'}</span>
+                        </button>
+                        <span className="font-mono text-caption text-text-subtle font-semibold">
+                          {finding.ruleId}
                         </span>
-                      ) : finding.citation.kind === 'REGULATORY' && finding.citation.verified ? (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300">
-                          <ShieldCheck className="w-3 h-3 text-emerald-600" />
-                          <span>Verified Reference Data</span>
-                        </span>
-                      ) : null}
+                      </div>
                     </div>
 
-                    <h4 className="text-sm font-bold text-slate-900">
+                    <h4 className="text-small font-bold text-text truncate">
                       {finding.title || finding.explanation.en}
                     </h4>
 
-                    <div className="text-xs text-muted">
-                      Item ID: <span className="font-mono text-slate-700">{finding.itemId}</span>
-                    </div>
-                  </div>
-
-                  {/* Amounts & Expand Toggle */}
-                  <div className="flex items-center justify-between md:justify-end gap-4 border-t md:border-t-0 pt-2 md:pt-0">
-                    <div className="text-right">
+                    <div className="flex items-center justify-between text-caption text-text-muted mt-2 pt-2 border-t border-border-subtle">
+                      <span>Item: <strong className="font-mono text-text">{finding.itemId}</strong></span>
                       {finding.amount > 0 && (
-                        <div>
-                          <span className="text-[10px] text-muted uppercase font-semibold block">
-                            Questioned Excess
-                          </span>
-                          <span className="text-base font-extrabold text-rose-600">
-                            {formatINR(finding.amount)}
-                          </span>
-                        </div>
-                      )}
-                      {finding.actual !== undefined && finding.expected !== undefined && (
-                        <div className="text-[11px] text-slate-500">
-                          Billed: {formatINR(finding.actual)} vs Benchmark: {formatINR(finding.expected)}
-                        </div>
+                        <span className="font-bold text-tier-confirmed-fg font-mono text-small">
+                          {formatINR(finding.amount)}
+                        </span>
                       )}
                     </div>
-
-                    <button
-                      type="button"
-                      className="p-1 text-slate-400 hover:text-slate-600"
-                      aria-label="Toggle details"
-                    >
-                      {isExpanded ? (
-                        <ChevronUp className="w-5 h-5" />
-                      ) : (
-                        <ChevronDown className="w-5 h-5" />
-                      )}
-                    </button>
                   </div>
-                </div>
+                );
+              })}
+            </div>
 
-                {/* Expandable Citation Drawer */}
-                {isExpanded && (
-                  <div className="border-t border-border bg-slate-50/70 p-4 space-y-4 text-xs text-slate-700">
-                    {/* Bilingual Explanations */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-white p-3 rounded-lg border border-slate-200">
-                      <div>
-                        <span className="font-bold text-slate-900 block mb-1">
-                          English Explanation:
+            {/* Right Pane: Evidence Panel for Selected Finding (7 cols) */}
+            <div className="lg:col-span-7">
+              {activeFinding && (
+                <Card className="p-6 space-y-5 shadow-card sticky top-24">
+                  {/* Header Row */}
+                  <div className="space-y-2 pb-4 border-b border-border">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant={getBadgeVariant(activeFinding.verdict)}>
+                        {formatVerdictLabel(activeFinding.verdict)}
+                      </Badge>
+                      <span className="font-mono text-caption px-2 py-0.5 rounded-chip bg-surface-subtle border border-border text-text-muted font-bold">
+                        {activeFinding.ruleId}
+                      </span>
+                      {getReferenceDataBadge(activeFinding) ? (
+                        <Badge variant="unverified">
+                          {getReferenceDataBadge(activeFinding)}
+                        </Badge>
+                      ) : activeFinding.citation.kind === 'REGULATORY' && activeFinding.citation.verified ? (
+                        <Badge variant="valid-exclusion">Verified Reference Data</Badge>
+                      ) : null}
+                    </div>
+
+                    <h3 className="text-h3 font-bold text-text">
+                      {activeFinding.title || activeFinding.explanation.en}
+                    </h3>
+
+                    <div className="text-caption text-text-muted">
+                      Line Item ID: <span className="font-mono text-text font-bold">{activeFinding.itemId}</span>
+                    </div>
+                  </div>
+
+                  {/* Billed vs Benchmark Two-Column Comparison Table */}
+                  <div className="bg-surface-subtle rounded-card p-4 border border-border space-y-3">
+                    <span className="text-caption font-bold text-text uppercase tracking-wider block">
+                      Financial Comparison
+                    </span>
+                    <div className="grid grid-cols-2 gap-4 text-small">
+                      <div className="p-3 bg-surface rounded-chip border border-border space-y-1">
+                        <span className="text-caption text-text-muted block">Billed Charge</span>
+                        <span className="text-h3 font-bold text-text font-mono">
+                          {activeFinding.actual !== undefined ? formatINR(activeFinding.actual) : 'As stated'}
                         </span>
-                        <p className="leading-relaxed text-slate-700">{finding.explanation.en}</p>
                       </div>
-                      <div>
-                        <span className="font-bold text-slate-900 block mb-1">
-                          हिंदी व्याख्या (Hindi Explanation):
+                      <div className="p-3 bg-surface rounded-chip border border-border space-y-1">
+                        <span className="text-caption text-text-muted block">Reference Benchmark / Ceiling</span>
+                        <span className="text-h3 font-bold text-tier-valid-exclusion-fg font-mono">
+                          {activeFinding.expected !== undefined ? formatINR(activeFinding.expected) : '0'}
                         </span>
-                        <p className="leading-relaxed text-slate-700">{finding.explanation.hi}</p>
                       </div>
                     </div>
 
-                    {/* Statutory Citation Details */}
-                    <div className="space-y-2">
-                      <div className="font-bold text-slate-900 flex items-center gap-1.5 text-xs">
-                        <FileText className="w-3.5 h-3.5 text-slate-600" />
-                        <span>Statutory Citation & Benchmark Reference</span>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-[11px]">
-                        <div className="bg-white p-2 rounded border border-slate-200">
-                          <span className="text-muted block text-[10px]">Citation Kind</span>
-                          <span className="font-semibold text-slate-800">{finding.citation.kind}</span>
-                        </div>
-
-                        <div className="bg-white p-2 rounded border border-slate-200">
-                          <span className="text-muted block text-[10px]">Instrument / Gazette</span>
-                          <span className="font-semibold text-slate-800">
-                            {finding.citation.instrument}
-                            {finding.citation.kind === 'REGULATORY' && finding.citation.instrumentNumber
-                              ? ` (${finding.citation.instrumentNumber})`
-                              : ''}
-                          </span>
-                        </div>
-
-                        {finding.citation.kind === 'REGULATORY' && (
-                          <>
-                            <div className="bg-white p-2 rounded border border-slate-200">
-                              <span className="text-muted block text-[10px]">Source Document</span>
-                              <span className="font-mono text-slate-800">
-                                {finding.citation.sourceFile || 'N/A'}
-                              </span>
-                            </div>
-
-                            <div className="bg-white p-2 rounded border border-slate-200">
-                              <span className="text-muted block text-[10px]">Document Reference</span>
-                              <span className="text-slate-800">
-                                {finding.citation.sourceRef || finding.citation.section || 'N/A'}
-                              </span>
-                            </div>
-
-                            <div className="bg-white p-2 rounded border border-slate-200">
-                              <span className="text-muted block text-[10px]">Effective Date</span>
-                              <span className="text-slate-800">{finding.citation.effectiveDate}</span>
-                            </div>
-
-                            <div className="bg-white p-2 rounded border border-slate-200">
-                              <span className="text-muted block text-[10px]">Valid Until</span>
-                              <span className="text-slate-800">
-                                {finding.citation.validUntil || 'Indefinite / Current'}
-                              </span>
-                            </div>
-
-                            <div className="bg-white p-2 rounded border border-slate-200">
-                              <span className="text-muted block text-[10px]">GST Treatment</span>
-                              <span className="text-slate-800">
-                                {finding.citation.gstTreatment || 'N/A'}
-                              </span>
-                            </div>
-
-                            <div className="bg-white p-2 rounded border border-slate-200">
-                              <span className="text-muted block text-[10px]">Verified Status</span>
-                              <span className="text-slate-800">
-                                {finding.citation.verified ? 'Verified (PASS)' : 'Unverified reference data'}
-                              </span>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Suggested Dispute Action */}
-                    {finding.suggestedAction && (
-                      <div className="bg-emerald-50/60 border border-emerald-200 p-3 rounded-lg text-emerald-900">
-                        <span className="font-bold block mb-0.5">Recommended Next Step:</span>
-                        <p>{finding.suggestedAction}</p>
+                    {activeFinding.amount > 0 && (
+                      <div className="flex items-center justify-between pt-2 border-t border-border-subtle text-small">
+                        <span className="font-semibold text-text">Questioned Discrepancy Amount:</span>
+                        <span className="font-bold text-tier-confirmed-fg font-mono text-body">
+                          {formatINR(activeFinding.amount)}
+                        </span>
                       </div>
                     )}
                   </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+
+                  {/* Bilingual Detailed Explanation */}
+                  <div className="space-y-2">
+                    <span className="text-caption font-bold text-text uppercase tracking-wider block">
+                      Rule Explanation
+                    </span>
+                    <p className="text-small text-text leading-relaxed bg-surface p-3.5 rounded-chip border border-border">
+                      {activeFinding.explanation.en}
+                    </p>
+                    {activeFinding.explanation.hi && (
+                      <p className="text-small text-text-muted leading-relaxed bg-surface p-3.5 rounded-chip border border-border font-devanagari">
+                        {activeFinding.explanation.hi}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Source Citation as printed */}
+                  <div className="p-3.5 bg-surface-subtle/50 rounded-chip border border-border text-caption space-y-1">
+                    <span className="font-bold text-text block">Official Regulatory Citation:</span>
+                    <div className="text-text-muted leading-relaxed font-mono">
+                      {activeFinding.citation.kind === 'REGULATORY' ? (
+                        <>
+                          <div>Instrument: {activeFinding.citation.instrument || 'Government Gazette'}</div>
+                          {activeFinding.citation.instrumentNumber && <div>S.O. Number: {activeFinding.citation.instrumentNumber}</div>}
+                          {activeFinding.citation.sourceRef && <div>Source Ref: {activeFinding.citation.sourceRef}</div>}
+                        </>
+                      ) : (
+                        <div>Arithmetic rule: {activeFinding.citation.instrument || activeFinding.citation.section || 'Bill arithmetic reconciliation'}</div>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+              )}
+            </div>
+          </div>
+
+          {/* MOBILE LIST OF CARDS VIEW (< 1024px) */}
+          <div className="lg:hidden space-y-3">
+            {filteredFindings.map((finding, idx) => {
+              const uniqueKey = `${finding.ruleId}-${finding.itemId}-${idx}`;
+              const findingKey = `${finding.ruleId}-${finding.itemId}`;
+              const isActivePlaying = activePlayingFindingId === findingKey;
+              const isExpanded = expandedMobileKey === uniqueKey;
+              const refBadge = getReferenceDataBadge(finding);
+
+              return (
+                <Card
+                  key={uniqueKey}
+                  id={`finding-row-${findingKey}`}
+                  className={`p-4 space-y-3 transition-all ${
+                    isActivePlaying
+                      ? 'border-accent-teal bg-accent-teal-subtle/30 shadow-popover ring-2 ring-accent-teal'
+                      : ''
+                  }`}
+                >
+                  <div
+                    onClick={() => setExpandedMobileKey(isExpanded ? null : uniqueKey)}
+                    className="cursor-pointer space-y-2 select-none"
+                  >
+                    <div className="flex items-center justify-between">
+                      <Badge variant={getBadgeVariant(finding.verdict)} size="sm">
+                        {formatVerdictLabel(finding.verdict)}
+                      </Badge>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onPlayFinding?.(idx);
+                          }}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-bold text-accent-teal bg-accent-teal-subtle hover:bg-accent-teal hover:text-white rounded-chip border border-accent-teal/30 transition-colors cursor-pointer min-h-[28px]"
+                          title="Listen to this finding"
+                          aria-label="Listen to this finding"
+                        >
+                          <Volume2 className="w-3 h-3" />
+                          <span>{language === 'hi' ? 'सुनें' : 'Listen'}</span>
+                        </button>
+                        <span className="font-mono text-caption text-text-subtle font-semibold">
+                          {finding.ruleId}
+                        </span>
+                      </div>
+                    </div>
+
+                    <h4 className="text-small font-bold text-text">
+                      {finding.title || finding.explanation.en}
+                    </h4>
+
+                    <div className="flex items-center justify-between text-caption text-text-muted pt-1">
+                      <span>Item: <strong className="font-mono text-text">{finding.itemId}</strong></span>
+                      {finding.amount > 0 && (
+                        <span className="font-bold text-tier-confirmed-fg font-mono text-small">
+                          {formatINR(finding.amount)}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-border-subtle text-caption text-primary font-semibold">
+                      <span>{isExpanded ? 'Hide Evidence' : 'View Evidence &amp; Citation'}</span>
+                      {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </div>
+                  </div>
+
+                  {/* Expanded Evidence on Mobile */}
+                  {isExpanded && (
+                    <div className="pt-3 border-t border-border space-y-3 text-small">
+                      {refBadge && (
+                        <Badge variant="unverified" size="sm">
+                          {refBadge}
+                        </Badge>
+                      )}
+
+                      <div className="p-3 bg-surface-subtle rounded-chip border border-border space-y-2">
+                        <div className="flex justify-between text-caption">
+                          <span className="text-text-muted">Billed Amount:</span>
+                          <span className="font-bold font-mono text-text">
+                            {finding.actual !== undefined ? formatINR(finding.actual) : 'As stated'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-caption">
+                          <span className="text-text-muted">Benchmark / Ceiling:</span>
+                          <span className="font-bold font-mono text-tier-valid-exclusion-fg">
+                            {finding.expected !== undefined ? formatINR(finding.expected) : '0'}
+                          </span>
+                        </div>
+                        {finding.amount > 0 && (
+                          <div className="flex justify-between text-caption pt-1 border-t border-border-subtle">
+                            <span className="font-semibold text-text">Questioned Amount:</span>
+                            <span className="font-bold font-mono text-tier-confirmed-fg">
+                              {formatINR(finding.amount)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      <p className="text-caption text-text leading-relaxed">
+                        {finding.explanation.en}
+                      </p>
+
+                      <div className="text-[11px] text-text-subtle font-mono p-2 bg-surface-subtle rounded border border-border">
+                        Citation: {finding.citation.kind === 'REGULATORY' ? finding.citation.instrument : 'Arithmetic verification'}
+                      </div>
+                    </div>
+                  )}
+                </Card>
+              );
+            })}
+          </div>
+        </>
       )}
     </div>
   );

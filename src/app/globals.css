@@ -3,20 +3,23 @@
 @tailwind utilities;
 
 :root {
-  --color-primary: #1F4E8C;
-  --color-primary-hover: #173B6B;
+  --color-primary: #1B4B82;
+  --color-primary-hover: #143862;
+  --color-primary-soft: #EEF4FB;
+  --color-accent-teal: #0F766E;
   --color-surface: #FFFFFF;
-  --color-background: #F6F8FB;
-  --color-text: #1B1F24;
-  --color-muted: #5A6572;
-  --color-success-fg: #1E7A46;
-  --color-success-bg: #E6F4EA;
-  --color-warning-fg: #8A5A00;
-  --color-warning-bg: #FFF4DB;
-  --color-danger-fg: #B3261E;
-  --color-danger-bg: #FDECEA;
-  --color-info-fg: #1F5F8B;
-  --color-info-bg: #E6F1F8;
+  --color-surface-muted: #F5F7FA;
+  --color-text: #0F1B2D;
+  --color-muted: #475569;
+  --color-border: #D8DEE8;
+  --color-success-fg: #067647;
+  --color-success-bg: #ECFDF3;
+  --color-warning-fg: #B54708;
+  --color-warning-bg: #FFF6ED;
+  --color-danger-fg: #B42318;
+  --color-danger-bg: #FEF3F2;
+  --color-info-fg: #175CD3;
+  --color-info-bg: #EFF8FF;
 }
 
 * {
@@ -25,18 +28,61 @@
 
 html {
   font-size: 16px;
+  scroll-behavior: smooth;
 }
 
 body {
-  background-color: var(--color-background);
+  background-color: var(--color-surface-muted);
   color: var(--color-text);
-  line-height: 1.6;
+  line-height: 1.625;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
+/* Global 2px Primary Focus Ring with 2px offset */
+*:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Reduced Motion Support */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Print Stylesheet */
+@media print {
+  @page {
+    size: A4;
+    margin: 15mm 15mm 15mm 15mm;
+  }
+
+  body {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    font-size: 11pt;
+    line-height: 1.4;
+  }
+
+  /* Hide navigation, actions, header banners */
+  header, footer, nav, .print\:hidden {
+    display: none !important;
+  }
+
+  /* Prevent card splitting across page breaks */
+  .card-print-block, section, article {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Ensure text contrast on paper */
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
   }
 }

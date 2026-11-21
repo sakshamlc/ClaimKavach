@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { NextRequest } from 'next/server';
-import { middleware, config } from '../src/middleware';
+import { middleware, config, buildCspHeader } from '../src/middleware';
 
 describe('Middleware & CSP Security Headers', () => {
   it('1. Applies Cache-Control: no-store and strict CSP with worker-src blob: for pdf.js worker', () => {
@@ -17,11 +17,25 @@ describe('Middleware & CSP Security Headers', () => {
     expect(csp).toBeDefined();
     expect(csp).toContain("worker-src 'self' blob:");
     expect(csp).toContain("default-src 'self'");
-    expect(csp).toContain("script-src 'self' 'unsafe-eval' 'unsafe-inline'");
+    expect(csp).toContain("connect-src 'self'");
+    expect(csp).not.toContain('generativelanguage.googleapis.com');
     expect(csp).toContain("frame-ancestors 'none'");
   });
 
-  it('2. Matcher excludes _next/static, _next/image, favicon.ico and image assets', () => {
+  it('2. Excludes unsafe-eval in production and includes it in development', () => {
+    const prodCsp = buildCspHeader('production');
+    expect(prodCsp).toContain("script-src 'self' 'unsafe-inline'");
+    expect(prodCsp).not.toContain("'unsafe-eval'");
+    expect(prodCsp).toContain("connect-src 'self'");
+    expect(prodCsp).not.toContain('generativelanguage.googleapis.com');
+
+    const devCsp = buildCspHeader('development');
+    expect(devCsp).toContain("script-src 'self' 'unsafe-eval' 'unsafe-inline'");
+    expect(devCsp).toContain("connect-src 'self'");
+    expect(devCsp).not.toContain('generativelanguage.googleapis.com');
+  });
+
+  it('3. Matcher excludes _next/static, _next/image, favicon.ico and image assets', () => {
     // Next.js anchors matcher strings with ^ and $ internally
     const pattern = new RegExp(`^${config.matcher[0]}$`);
 

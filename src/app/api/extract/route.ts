@@ -9,6 +9,10 @@ import sample1Stent from '@/data/samples/sample1-stent.json';
 import sample2Bundling from '@/data/samples/sample2-bundling-tpa.json';
 import sample3Clean from '@/data/samples/sample3-clean.json';
 
+export const runtime = 'nodejs';
+export const maxDuration = 60;
+export const dynamic = 'force-dynamic';
+
 const medicalSampleMap: Record<string, any> = {
   '1': sample1Stent,
   'sample1': sample1Stent,
@@ -142,7 +146,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 6. Config Validation: GEMINI_MODEL must be explicitly set outside mock mode
+    // 6. Config Validation: GEMINI_MODEL must be configured
     if (!process.env.GEMINI_MODEL) {
       return NextResponse.json(
         {
@@ -158,8 +162,26 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 7. Upstream Gemini Call
+    // 7. Key Validation: Server key or client-provided x-gemini-key
     const clientKey = req.headers.get('x-gemini-key') || undefined;
+    const effectiveKey = clientKey || process.env.GEMINI_API_KEY;
+
+    if (!effectiveKey) {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'CONFIG_ERROR',
+            message: 'GEMINI_API_KEY is not configured on the server and no custom key was provided.',
+          },
+        },
+        {
+          status: 500,
+          headers: { 'Cache-Control': 'no-store' },
+        }
+      );
+    }
+
+    // 7. Upstream Gemini Call
     try {
       const extracted = await extractMedicalBillWithGemini(buffer, detectedMime, clientKey);
       return NextResponse.json(extracted, {
@@ -185,7 +207,7 @@ export async function POST(req: NextRequest) {
         {
           error: {
             code: 'UPSTREAM',
-            message: `Extraction service error: ${msg}`,
+            message: 'Extraction service error: Upstream Gemini service failed or rejected request.',
           },
         },
         {

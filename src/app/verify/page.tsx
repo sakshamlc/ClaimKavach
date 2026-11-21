@@ -14,6 +14,15 @@ import {
   addPaise,
 } from '@/lib/audit/currency';
 import {
+  Stepper,
+  Button,
+  Card,
+  Badge,
+  Alert,
+  SectionHeader,
+  StickyActionBar,
+} from '@/components/ui';
+import {
   CheckCircle2,
   AlertCircle,
   AlertTriangle,
@@ -24,6 +33,9 @@ import {
   Sparkles,
   Calculator,
   ShieldAlert,
+  ChevronDown,
+  ChevronUp,
+  SlidersHorizontal,
 } from 'lucide-react';
 
 const CATEGORIES: { value: ItemCategory; label: string }[] = [
@@ -54,23 +66,26 @@ export default function VerifyPage() {
 
   const t = claimTranslations[language] || claimTranslations.en;
 
+  // Track expanded cards on mobile
+  const [expandedMobileItems, setExpandedMobileItems] = useState<Record<string, boolean>>({});
+
+  const toggleMobileExpand = (id: string) => {
+    setExpandedMobileItems((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
   if (!bill) {
     return (
-      <div className="min-h-screen bg-background flex flex-col font-sans">
+      <div className="min-h-screen bg-surface-muted flex flex-col font-sans text-text">
         <Header />
-        <main className="flex-1 max-w-2xl mx-auto px-4 py-16 text-center space-y-4">
-          <AlertCircle className="w-12 h-12 text-slate-400 mx-auto" />
-          <h2 className="text-xl font-bold text-slate-800">No Active Bill Found</h2>
-          <p className="text-sm text-slate-600">
+        <main className="flex-1 max-w-content mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center space-y-4">
+          <AlertCircle className="w-12 h-12 text-text-subtle mx-auto" />
+          <h2 className="text-h2 font-bold text-text">No Active Bill Found</h2>
+          <p className="text-small text-text-muted">
             Please select a synthetic sample bill or upload a hospital invoice to begin.
           </p>
-          <button
-            type="button"
-            onClick={() => router.push('/upload')}
-            className="px-5 py-2.5 bg-primary text-white text-sm font-bold rounded-xl"
-          >
+          <Button onClick={() => router.push('/upload')}>
             Go to Upload
-          </button>
+          </Button>
         </main>
         <Footer />
       </div>
@@ -107,334 +122,567 @@ export default function VerifyPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col font-sans">
+    <div className="min-h-screen bg-surface-muted flex flex-col font-sans text-text pb-28 sm:pb-12">
       <Header />
+      <Stepper currentStep={2} />
 
-      <main className="flex-1 max-w-5xl mx-auto px-4 py-8 w-full space-y-6">
-        {/* Header & Meta */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-              {t.verifyTitle}
-            </h1>
-            <p className="text-sm text-slate-600 mt-1">
-              {t.verifySubtitle}
-            </p>
-          </div>
+      <main className="flex-1 max-w-content mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-6">
+        {/* Page Header */}
+        <SectionHeader
+          title={t.verifyTitle}
+          description={t.verifySubtitle}
+          action={
+            <Button
+              onClick={handleRunAudit}
+              rightIcon={<ArrowRight className="w-4 h-4" />}
+            >
+              <span>{t.runAuditBtn}</span>
+            </Button>
+          }
+        />
 
-          <button
-            type="button"
-            onClick={handleRunAudit}
-            className="flex items-center gap-2 px-5 py-3 bg-primary hover:bg-primary-hover text-white text-sm font-bold rounded-xl shadow-md transition-all self-start sm:self-auto cursor-pointer"
-          >
-            <span>{t.runAuditBtn}</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
+        {/* Missing Bill Date Warning */}
+        {!bill.billDate && (
+          <Alert variant="warning" title="Invoice Date Missing">
+            Hospital invoice date has not been set. Date-dependent statutory ceiling checks (NPPA annual revisions, validity windows) will default to <strong>NEEDS_REVIEW</strong> unless an invoice date is provided.
+          </Alert>
+        )}
 
         {/* Invoice Metadata Header Bar */}
-        <div className="bg-surface rounded-xl border border-border p-4 shadow-xs grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+        <Card className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-4 text-small">
           <div>
-            <span className="text-muted block text-[11px] font-semibold uppercase tracking-wider">
+            <span className="text-text-muted block text-caption font-semibold uppercase tracking-wider">
               {t.hospitalLabel}
             </span>
-            <span className="font-bold text-slate-900 text-sm mt-0.5 block truncate">
+            <span className="font-bold text-text text-body mt-0.5 block truncate">
               {bill.hospital.name || 'Hospital Invoice'}
             </span>
-            <span className="text-[11px] text-slate-500">
+            <span className="text-caption text-text-subtle">
               {bill.hospital.city ? `${bill.hospital.city}, ${bill.hospital.state || 'India'}` : 'Location unstated'}
             </span>
           </div>
 
           <div>
-            <span className="text-muted block text-[11px] font-semibold uppercase tracking-wider">
+            <span className="text-text-muted block text-caption font-semibold uppercase tracking-wider">
               {t.stayLabel}
             </span>
-            <span className="font-bold text-slate-900 text-sm mt-0.5 block">
+            <span className="font-bold text-text text-body mt-0.5 block">
               {bill.stay.admissionDate && bill.stay.dischargeDate
                 ? `${bill.stay.admissionDate} to ${bill.stay.dischargeDate}`
                 : `${bill.stay.lengthOfStayNights} Nights`}
             </span>
-            <span className="text-[11px] text-slate-500">
+            <span className="text-caption text-text-subtle">
               Ward/Room: {bill.stay.roomType || 'Standard'}
             </span>
           </div>
 
           <div>
-            <span className="text-muted block text-[11px] font-semibold uppercase tracking-wider">
+            <label
+              htmlFor="verify-bill-date"
+              className="text-text-muted block text-caption font-semibold uppercase tracking-wider cursor-pointer"
+            >
               {t.billDateLabel}
-            </span>
+            </label>
             <div className="flex items-center gap-1.5 mt-0.5">
               <input
+                id="verify-bill-date"
                 type="date"
                 value={bill.billDate || ''}
                 onChange={(e) => updateBillDate(e.target.value)}
-                className="px-2.5 py-1 text-xs border border-slate-300 rounded font-mono font-medium text-slate-800"
+                className="px-2.5 py-1 text-small border border-border rounded-input font-mono font-medium text-text min-h-[44px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-hidden"
               />
             </div>
-            <span className="text-[10px] text-slate-500 mt-0.5 block">
+            <span className="text-[11px] text-text-subtle mt-0.5 block">
               Used for DPCO/NPPA ceiling validity window
             </span>
           </div>
-        </div>
+        </Card>
 
-        {/* Live Grand Total Reconciliation Bar */}
+        {/* Live Grand Total Reconciliation Bar (Desktop & Tablet) */}
         <div
-          className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs transition-all ${
+          className={`p-4 rounded-card border flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-small transition-all shadow-card ${
             isGrandTotalMatched
-              ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
-              : 'bg-amber-50 border-amber-300 text-amber-900'
+              ? 'bg-tier-valid-exclusion-bg/40 border-tier-valid-exclusion-border text-tier-valid-exclusion-fg'
+              : 'bg-tier-likely-bg/40 border-tier-likely-border text-tier-likely-fg'
           }`}
         >
           <div className="flex items-center gap-3">
             {isGrandTotalMatched ? (
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+              <CheckCircle2 className="w-5 h-5 text-tier-valid-exclusion-fg shrink-0" />
             ) : (
-              <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
+              <AlertTriangle className="w-5 h-5 text-tier-likely-fg shrink-0" />
             )}
             <div>
-              <span className="font-bold text-sm block">
+              <span className="font-bold text-body block text-text">
                 {isGrandTotalMatched ? t.reconciledTitle : t.reconcileDiffTitle}
               </span>
-              <span className="text-[11px] opacity-90 block">
+              <span className="text-caption text-text-muted block">
                 Calculated Line Sum: <strong>{formatINR(calculatedSumPaise)}</strong> | Stated Bill Total: <strong>{formatINR(statedGrandTotalPaise)}</strong>
               </span>
             </div>
           </div>
 
-          {!isGrandTotalMatched && (
-            <div className="font-bold text-amber-950 bg-white px-3 py-1 rounded-lg border border-amber-300 self-start sm:self-auto">
-              Difference: {formatINR(grandTotalDiffPaise)}
-            </div>
-          )}
-        </div>
-
-        {/* Line Items Table */}
-        <div className="bg-surface rounded-xl border border-border shadow-xs overflow-hidden">
-          <div className="p-4 border-b border-border flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-slate-900 text-sm">{t.lineItemsTitle} ({bill.items.length})</span>
-              <span className="text-[11px] text-muted hidden sm:inline">
-                {t.lineItemsSub}
+          <div className="flex items-center gap-4 text-small font-mono self-start sm:self-auto">
+            {!isGrandTotalMatched && (
+              <div className="text-right">
+                <span className="text-caption uppercase text-tier-likely-fg block font-sans">
+                  {language === 'hi' ? 'अंतर' : 'Discrepancy'}
+                </span>
+                <span className="font-bold text-tier-likely-fg text-body">
+                  {formatINR(grandTotalDiffPaise)}
+                </span>
+              </div>
+            )}
+            <div className="text-right">
+              <span className="text-caption uppercase text-text-muted block font-sans">
+                {language === 'hi' ? 'गणना योग' : 'Calculated Sum'}
+              </span>
+              <span className="font-bold text-text text-body">
+                {formatINR(calculatedSumPaise)}
               </span>
             </div>
-
-            <button
-              type="button"
-              onClick={handleAddNewItem}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg border border-slate-300 transition-colors cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>{t.addItemBtn}</span>
-            </button>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs text-left">
-              <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200">
-                <tr>
-                  <th className="py-2.5 px-3 w-10">{t.colIndex}</th>
-                  <th className="py-2.5 px-3 min-w-[260px]">{t.colDesc}</th>
-                  <th className="py-2.5 px-3 w-36">{t.colCategory}</th>
-                  <th className="py-2.5 px-3 w-20 text-right">{t.colQty}</th>
-                  <th className="py-2.5 px-3 w-28 text-right">{t.colRate}</th>
-                  <th className="py-2.5 px-3 w-28 text-right">{t.colTotal}</th>
-                  <th className="py-2.5 px-3 w-28 text-center">{t.colChecked}</th>
-                  <th className="py-2.5 px-3 w-12 text-center">{t.colAction}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-800">
-                {bill.items.map((item, idx) => {
-                  const isLowConfidence =
-                    (item.confidence !== null && item.confidence !== undefined && item.confidence < 0.85) ||
-                    item.quantity === null ||
-                    item.unitRatePaise === null;
-
-                  return (
-                    <tr
-                      key={item.id}
-                      className={`hover:bg-slate-50/50 transition-colors ${
-                        isLowConfidence ? 'bg-amber-50/30' : ''
-                      }`}
-                    >
-                      {/* Row Index */}
-                      <td className="py-2.5 px-3 font-mono text-slate-400 text-[11px] align-top">
-                        {idx + 1}
-                      </td>
-
-                      {/* Description + Structured Brand / Mfg / Marketer Inputs */}
-                      <td className="py-2.5 px-3 space-y-1.5 align-top">
-                        <input
-                          type="text"
-                          value={item.description}
-                          onChange={(e) => updateLineItem(item.id, { description: e.target.value })}
-                          className="w-full px-2 py-1 border border-slate-200 rounded text-slate-900 font-medium focus:border-primary focus:ring-1 focus:ring-primary"
-                          placeholder="Item Description"
-                        />
-
-                        {/* Structured Brand, Manufacturer, Marketer inputs for Retail Formulation Match */}
-                        <div className="grid grid-cols-3 gap-1 text-[11px]">
-                          <input
-                            type="text"
-                            placeholder="Brand (optional)"
-                            value={item.brand || ''}
-                            onChange={(e) => updateLineItem(item.id, { brand: e.target.value || null })}
-                            className="px-1.5 py-0.5 border border-slate-200 rounded text-slate-700 placeholder:text-slate-400"
-                            title="Brand name printed on bill/packaging"
-                          />
-                          <input
-                            type="text"
-                            placeholder="Manufacturer"
-                            value={item.manufacturer || ''}
-                            onChange={(e) => updateLineItem(item.id, { manufacturer: e.target.value || null })}
-                            className="px-1.5 py-0.5 border border-slate-200 rounded text-slate-700 placeholder:text-slate-400"
-                            title="Manufacturer for retail formulation match"
-                          />
-                          <input
-                            type="text"
-                            placeholder="Marketer"
-                            value={item.marketer || ''}
-                            onChange={(e) => updateLineItem(item.id, { marketer: e.target.value || null })}
-                            className="px-1.5 py-0.5 border border-slate-200 rounded text-slate-700 placeholder:text-slate-400"
-                            title="Marketer for retail formulation match"
-                          />
-                        </div>
-
-                        {isLowConfidence && (
-                          <span className="text-[10px] text-amber-700 font-semibold block">
-                            Low confidence or missing details; verify on bill
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Category */}
-                      <td className="py-2.5 px-3 align-top">
-                        <select
-                          value={item.category}
-                          onChange={(e) =>
-                            updateLineItem(item.id, { category: e.target.value as ItemCategory })
-                          }
-                          className="w-full px-2 py-1 border border-slate-200 rounded text-slate-900 bg-white"
-                        >
-                          {CATEGORIES.map((c) => (
-                            <option key={c.value} value={c.value}>
-                              {c.label}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-
-                      {/* Quantity */}
-                      <td className="py-2.5 px-3 text-right align-top">
-                        <input
-                          type="number"
-                          step="any"
-                          value={item.quantity ?? ''}
-                          onChange={(e) =>
-                            updateLineItem(item.id, {
-                              quantity: e.target.value ? parseFloat(e.target.value) : null,
-                            })
-                          }
-                          className="w-16 px-2 py-1 border border-slate-200 rounded text-right font-mono text-slate-900"
-                        />
-                      </td>
-
-                      {/* Unit Rate */}
-                      <td className="py-2.5 px-3 text-right align-top">
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={item.unitRatePaise !== null && item.unitRatePaise !== undefined ? fromPaise(item.unitRatePaise) : ''}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            updateLineItem(item.id, {
-                              unitRatePaise: val ? toPaise(parseFloat(val)) : null,
-                            });
-                          }}
-                          className="w-24 px-2 py-1 border border-slate-200 rounded text-right font-mono text-slate-900"
-                        />
-                      </td>
-
-                      {/* Total Billed */}
-                      <td className="py-2.5 px-3 text-right align-top">
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={
-                            item.totalBilledPaise !== null && item.totalBilledPaise !== undefined
-                              ? fromPaise(item.totalBilledPaise)
-                              : ''
-                          }
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            updateLineItem(item.id, {
-                              totalBilledPaise: val ? toPaise(parseFloat(val)) : null,
-                            });
-                          }}
-                          className="w-24 px-2 py-1 border border-slate-200 rounded text-right font-mono font-bold text-slate-900"
-                        />
-                      </td>
-
-                      {/* User Checked Toggle */}
-                      <td className="py-2.5 px-3 text-center align-top">
-                        <label className="inline-flex items-center gap-1.5 cursor-pointer text-[11px]">
-                          <input
-                            type="checkbox"
-                            checked={!!item.userEdited}
-                            onChange={() => toggleUserEdited(item.id)}
-                            className="rounded border-slate-300 text-primary focus:ring-primary"
-                          />
-                          <span
-                            className={
-                              item.userEdited
-                                ? 'text-emerald-700 font-semibold'
-                                : 'text-slate-400'
-                            }
-                          >
-                            {item.userEdited ? t.checkedStatus : t.uncheckedStatus}
-                          </span>
-                        </label>
-                      </td>
-
-                      {/* Delete Action */}
-                      <td className="py-2.5 px-3 text-center align-top">
-                        <button
-                          type="button"
-                          onClick={() => removeLineItem(item.id)}
-                          className="text-slate-400 hover:text-rose-600 p-1 cursor-pointer"
-                          title="Remove item"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
           </div>
         </div>
 
-        {/* Footer Actions */}
-        <div className="flex items-center justify-between pt-4">
-          <button
-            type="button"
-            onClick={() => router.push('/upload')}
-            className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 cursor-pointer"
-          >
-            &larr; {t.backBtn}
-          </button>
+        {/* Items Table Header Action Bar */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h2 className="text-h3 font-bold text-text">
+              {t.lineItemsTitle} ({bill.items.length})
+            </h2>
+            <span className="text-caption text-text-muted hidden sm:inline">
+              &bull; Review descriptions, rates, quantities, and verify matching formulations
+            </span>
+          </div>
 
-          <button
-            type="button"
-            onClick={handleRunAudit}
-            className="flex items-center gap-2 px-6 py-3.5 bg-primary hover:bg-primary-hover text-white text-sm font-bold rounded-xl shadow-md transition-all cursor-pointer focus:ring-4 focus:ring-primary/20"
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleAddNewItem}
+            leftIcon={<Plus className="w-4 h-4" />}
           >
-            <span>{t.runAuditBtn}</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
+            {t.addItemBtn}
+          </Button>
+        </div>
+
+        {/* DESKTOP TABLE VIEW: Sticky header, sticky first column, zebra rows, min 44px height */}
+        <div className="hidden sm:block">
+          <div className="bg-surface rounded-card border border-border shadow-card overflow-hidden">
+            <div className="overflow-x-auto max-h-[640px]">
+              <table className="w-full text-small text-left border-collapse">
+                <thead className="bg-surface-subtle text-text font-bold border-b border-border sticky top-0 z-20 shadow-none">
+                  <tr>
+                    <th scope="col" className="py-3 px-3 w-12 text-center bg-surface-subtle sticky left-0 z-20 border-r border-border">
+                      {t.colIndex}
+                    </th>
+                    <th scope="col" className="py-3 px-3 min-w-[280px] bg-surface-subtle">
+                      {t.colDesc}
+                    </th>
+                    <th scope="col" className="py-3 px-3 w-40 bg-surface-subtle">
+                      {t.colCategory}
+                    </th>
+                    <th scope="col" className="py-3 px-3 w-24 text-right bg-surface-subtle">
+                      {t.colQty}
+                    </th>
+                    <th scope="col" className="py-3 px-3 w-32 text-right bg-surface-subtle">
+                      {t.colRate}
+                    </th>
+                    <th scope="col" className="py-3 px-3 w-32 text-right bg-surface-subtle">
+                      {t.colTotal}
+                    </th>
+                    <th scope="col" className="py-3 px-3 w-32 text-center bg-surface-subtle">
+                      {t.colChecked}
+                    </th>
+                    <th scope="col" className="py-3 px-3 w-16 text-center bg-surface-subtle">
+                      {t.colAction}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border text-text">
+                  {bill.items.map((item, idx) => {
+                    const isLowConfidence =
+                      (item.confidence !== null && item.confidence !== undefined && item.confidence < 0.85) ||
+                      item.quantity === null ||
+                      item.unitRatePaise === null;
+
+                    return (
+                      <tr
+                        key={item.id}
+                        className={`min-h-[44px] transition-colors duration-150 odd:bg-surface even:bg-surface-subtle/40 hover:bg-surface-subtle ${
+                          isLowConfidence ? 'bg-amber-50/50' : ''
+                        }`}
+                      >
+                        {/* Sticky Column: Row Index */}
+                        <td className="py-3 px-3 font-mono text-text-subtle text-caption text-center align-top sticky left-0 z-10 bg-inherit border-r border-border">
+                          {idx + 1}
+                        </td>
+
+                        {/* Description + Structured Manufacturer / Marketer Inputs */}
+                        <td className="py-3 px-3 space-y-1.5 align-top">
+                          <input
+                            type="text"
+                            value={item.description}
+                            onChange={(e) => updateLineItem(item.id, { description: e.target.value })}
+                            className="w-full px-2.5 py-1.5 border border-border rounded-input text-text font-medium focus-visible:ring-2 focus-visible:ring-primary min-h-[44px]"
+                            placeholder="Item Description"
+                          />
+
+                          {/* Secondary Structured Formulation Inputs */}
+                          <div className="grid grid-cols-3 gap-1.5 text-[11px]">
+                            <input
+                              type="text"
+                              placeholder="Brand (optional)"
+                              value={item.brand || ''}
+                              onChange={(e) => updateLineItem(item.id, { brand: e.target.value || null })}
+                              className="px-2 py-1 border border-border rounded-input text-text placeholder:text-text-subtle"
+                              title="Brand name printed on bill/packaging"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Manufacturer"
+                              value={item.manufacturer || ''}
+                              onChange={(e) => updateLineItem(item.id, { manufacturer: e.target.value || null })}
+                              className="px-2 py-1 border border-border rounded-input text-text placeholder:text-text-subtle"
+                              title="Manufacturer for retail formulation match"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Marketer"
+                              value={item.marketer || ''}
+                              onChange={(e) => updateLineItem(item.id, { marketer: e.target.value || null })}
+                              className="px-2 py-1 border border-border rounded-input text-text placeholder:text-text-subtle"
+                              title="Marketer for retail formulation match"
+                            />
+                          </div>
+
+                          {/* Low Confidence Indicator with Text + Icon (not color alone) */}
+                          {isLowConfidence && (
+                            <div className="flex items-center gap-1.5 text-caption font-semibold text-unverified-fg bg-unverified-bg px-2 py-0.5 rounded-chip border border-unverified-border w-fit">
+                              <AlertTriangle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                              <span>Low confidence; verify on printed invoice</span>
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Category */}
+                        <td className="py-3 px-3 align-top">
+                          <select
+                            value={item.category}
+                            onChange={(e) =>
+                              updateLineItem(item.id, { category: e.target.value as ItemCategory })
+                            }
+                            className="w-full px-2.5 py-2 border border-border rounded-input text-text bg-surface min-h-[44px]"
+                          >
+                            {CATEGORIES.map((c) => (
+                              <option key={c.value} value={c.value}>
+                                {c.label}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+
+                        {/* Quantity */}
+                        <td className="py-3 px-3 text-right align-top">
+                          <input
+                            type="number"
+                            step="any"
+                            value={item.quantity ?? ''}
+                            onChange={(e) =>
+                              updateLineItem(item.id, {
+                                quantity: e.target.value ? parseFloat(e.target.value) : null,
+                              })
+                            }
+                            className="w-20 px-2.5 py-1.5 border border-border rounded-input text-right font-mono text-text min-h-[44px]"
+                          />
+                        </td>
+
+                        {/* Unit Rate */}
+                        <td className="py-3 px-3 text-right align-top">
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={item.unitRatePaise !== null && item.unitRatePaise !== undefined ? fromPaise(item.unitRatePaise) : ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              updateLineItem(item.id, {
+                                unitRatePaise: val ? toPaise(parseFloat(val)) : null,
+                              });
+                            }}
+                            className="w-28 px-2.5 py-1.5 border border-border rounded-input text-right font-mono text-text min-h-[44px]"
+                          />
+                        </td>
+
+                        {/* Total Billed */}
+                        <td className="py-3 px-3 text-right align-top">
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={
+                              item.totalBilledPaise !== null && item.totalBilledPaise !== undefined
+                                ? fromPaise(item.totalBilledPaise)
+                                : ''
+                            }
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              updateLineItem(item.id, {
+                                totalBilledPaise: val ? toPaise(parseFloat(val)) : null,
+                              });
+                            }}
+                            className="w-28 px-2.5 py-1.5 border border-border rounded-input text-right font-mono font-bold text-text min-h-[44px]"
+                          />
+                        </td>
+
+                        {/* User Checked Toggle */}
+                        <td className="py-3 px-3 text-center align-top">
+                          <label className="inline-flex items-center justify-center gap-1.5 cursor-pointer text-caption select-none min-h-[44px] min-w-[44px]">
+                            <input
+                              type="checkbox"
+                              checked={!!item.userEdited}
+                              onChange={() => toggleUserEdited(item.id)}
+                              className="rounded-chip border-border text-primary focus:ring-primary h-4 w-4"
+                            />
+                            <span className={item.userEdited ? 'font-bold text-primary' : 'text-text-muted'}>
+                              {item.userEdited ? 'Checked' : 'Check'}
+                            </span>
+                          </label>
+                        </td>
+
+                        {/* Action: Delete */}
+                        <td className="py-3 px-3 text-center align-top">
+                          <button
+                            type="button"
+                            onClick={() => removeLineItem(item.id)}
+                            className="p-2 text-text-subtle hover:text-tier-confirmed-fg rounded-chip transition-colors focus-visible:ring-2 focus-visible:ring-primary min-h-[44px] min-w-[44px] inline-flex items-center justify-center cursor-pointer"
+                            title="Delete line item"
+                            aria-label={`Delete line item ${idx + 1}`}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        {/* MOBILE STACKED CARDS VIEW: No horizontal page overflow */}
+        <div className="sm:hidden space-y-4">
+          {bill.items.map((item, idx) => {
+            const isExpanded = !!expandedMobileItems[item.id];
+            const isLowConfidence =
+              (item.confidence !== null && item.confidence !== undefined && item.confidence < 0.85) ||
+              item.quantity === null ||
+              item.unitRatePaise === null;
+
+            return (
+              <Card
+                key={item.id}
+                className={`p-4 space-y-3 ${isLowConfidence ? 'border-amber-300 bg-amber-50/20' : ''}`}
+              >
+                {/* Header row: Index & Delete */}
+                <div className="flex items-center justify-between pb-2 border-b border-border">
+                  <div className="flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-surface-subtle text-text-muted flex items-center justify-center text-caption font-mono font-bold">
+                      {idx + 1}
+                    </span>
+                    <span className="text-caption font-mono text-text-muted">
+                      {item.id}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <label className="inline-flex items-center gap-1.5 cursor-pointer text-caption min-h-[44px] px-2">
+                      <input
+                        type="checkbox"
+                        checked={!!item.userEdited}
+                        onChange={() => toggleUserEdited(item.id)}
+                        className="rounded-chip border-border text-primary focus:ring-primary h-4 w-4"
+                      />
+                      <span className={item.userEdited ? 'font-bold text-primary' : 'text-text-muted'}>
+                        {item.userEdited ? 'Checked' : 'Verify'}
+                      </span>
+                    </label>
+
+                    <button
+                      type="button"
+                      onClick={() => removeLineItem(item.id)}
+                      className="p-2 text-text-subtle hover:text-tier-confirmed-fg rounded-chip min-h-[44px] min-w-[44px] inline-flex items-center justify-center"
+                      aria-label={`Remove item ${idx + 1}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Description Input */}
+                <div>
+                  <label htmlFor={`mobile-desc-${item.id}`} className="block text-caption font-semibold text-text-muted mb-1">
+                    {t.colDesc}
+                  </label>
+                  <input
+                    id={`mobile-desc-${item.id}`}
+                    type="text"
+                    value={item.description}
+                    onChange={(e) => updateLineItem(item.id, { description: e.target.value })}
+                    className="w-full px-3 py-2 text-small border border-border rounded-input font-medium text-text min-h-[44px]"
+                  />
+                </div>
+
+                {/* Category Select */}
+                <div>
+                  <label htmlFor={`mobile-cat-${item.id}`} className="block text-caption font-semibold text-text-muted mb-1">
+                    {t.colCategory}
+                  </label>
+                  <select
+                    id={`mobile-cat-${item.id}`}
+                    value={item.category}
+                    onChange={(e) =>
+                      updateLineItem(item.id, { category: e.target.value as ItemCategory })
+                    }
+                    className="w-full px-3 py-2 text-small border border-border rounded-input bg-surface text-text min-h-[44px]"
+                  >
+                    {CATEGORIES.map((c) => (
+                      <option key={c.value} value={c.value}>
+                        {c.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Quantity & Unit Rate & Total Billed in 3 Columns */}
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <label htmlFor={`mobile-qty-${item.id}`} className="block text-caption font-semibold text-text-muted mb-1">
+                      {t.colQty}
+                    </label>
+                    <input
+                      id={`mobile-qty-${item.id}`}
+                      type="number"
+                      step="any"
+                      value={item.quantity ?? ''}
+                      onChange={(e) =>
+                        updateLineItem(item.id, {
+                          quantity: e.target.value ? parseFloat(e.target.value) : null,
+                        })
+                      }
+                      className="w-full px-2 py-2 text-small border border-border rounded-input text-right font-mono min-h-[44px]"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor={`mobile-rate-${item.id}`} className="block text-caption font-semibold text-text-muted mb-1">
+                      {t.colRate}
+                    </label>
+                    <input
+                      id={`mobile-rate-${item.id}`}
+                      type="number"
+                      step="0.01"
+                      value={item.unitRatePaise !== null && item.unitRatePaise !== undefined ? fromPaise(item.unitRatePaise) : ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        updateLineItem(item.id, {
+                          unitRatePaise: val ? toPaise(parseFloat(val)) : null,
+                        });
+                      }}
+                      className="w-full px-2 py-2 text-small border border-border rounded-input text-right font-mono min-h-[44px]"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor={`mobile-total-${item.id}`} className="block text-caption font-semibold text-text-muted mb-1">
+                      {t.colTotal}
+                    </label>
+                    <input
+                      id={`mobile-total-${item.id}`}
+                      type="number"
+                      step="0.01"
+                      value={
+                        item.totalBilledPaise !== null && item.totalBilledPaise !== undefined
+                          ? fromPaise(item.totalBilledPaise)
+                          : ''
+                      }
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        updateLineItem(item.id, {
+                          totalBilledPaise: val ? toPaise(parseFloat(val)) : null,
+                        });
+                      }}
+                      className="w-full px-2 py-2 text-small border border-border rounded-input text-right font-mono font-bold min-h-[44px]"
+                    />
+                  </div>
+                </div>
+
+                {/* Low Confidence Callout */}
+                {isLowConfidence && (
+                  <div className="flex items-center gap-1.5 text-caption font-semibold text-unverified-fg bg-unverified-bg p-2 rounded-chip border border-unverified-border">
+                    <AlertTriangle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                    <span>Low confidence; verify against printed bill details</span>
+                  </div>
+                )}
+
+                {/* Expand / Collapse Secondary Details (Brand, Manufacturer, Marketer) */}
+                <div className="pt-2 border-t border-border-subtle">
+                  <button
+                    type="button"
+                    onClick={() => toggleMobileExpand(item.id)}
+                    className="flex items-center justify-between w-full text-caption font-semibold text-text-muted hover:text-text min-h-[44px]"
+                  >
+                    <span>Formulation Details (Brand, Manufacturer)</span>
+                    {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </button>
+
+                  {isExpanded && (
+                    <div className="space-y-2 pt-2">
+                      <input
+                        type="text"
+                        placeholder="Brand name printed on bill"
+                        value={item.brand || ''}
+                        onChange={(e) => updateLineItem(item.id, { brand: e.target.value || null })}
+                        className="w-full px-2.5 py-1.5 text-small border border-border rounded-input min-h-[44px]"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Manufacturer name"
+                        value={item.manufacturer || ''}
+                        onChange={(e) => updateLineItem(item.id, { manufacturer: e.target.value || null })}
+                        className="w-full px-2.5 py-1.5 text-small border border-border rounded-input min-h-[44px]"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Marketer name"
+                        value={item.marketer || ''}
+                        onChange={(e) => updateLineItem(item.id, { marketer: e.target.value || null })}
+                        className="w-full px-2.5 py-1.5 text-small border border-border rounded-input min-h-[44px]"
+                      />
+                    </div>
+                  )}
+                </div>
+              </Card>
+            );
+          })}
         </div>
       </main>
+
+      {/* MOBILE STICKY ACTION & RECONCILE BAR */}
+      <StickyActionBar>
+        <div className="flex flex-col text-caption font-mono">
+          <span className="text-text-muted">Total: {formatINR(calculatedSumPaise)}</span>
+          <span className={isGrandTotalMatched ? 'text-tier-valid-exclusion-fg font-bold' : 'text-tier-likely-fg font-bold'}>
+            {isGrandTotalMatched ? 'Reconciled' : `Diff: ${formatINR(grandTotalDiffPaise)}`}
+          </span>
+        </div>
+
+        <Button
+          onClick={handleRunAudit}
+          size="md"
+          rightIcon={<ArrowRight className="w-4 h-4" />}
+        >
+          <span>{t.runAuditBtn}</span>
+        </Button>
+      </StickyActionBar>
 
       <Footer />
     </div>

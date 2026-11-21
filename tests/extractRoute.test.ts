@@ -119,4 +119,44 @@ describe('POST /api/extract Route & Gate 2 Verification', () => {
     const data11 = await res11.json();
     expect(data11.error.code).toBe('RATE_LIMIT');
   });
+
+  it('6. Returns 500 CONFIG_ERROR when GEMINI_API_KEY is missing and no custom key provided', async () => {
+    process.env.EXTRACT_MOCK = '0';
+    const origKey = process.env.GEMINI_API_KEY;
+    const origModel = process.env.GEMINI_MODEL;
+    delete process.env.GEMINI_API_KEY;
+    process.env.GEMINI_MODEL = 'gemini-1.5-pro';
+
+    try {
+      const req = createExtractRequest(VALID_PNG_BYTES, 'test.png', 'hospital_bill', '10.0.0.50');
+      const res = await POST(req);
+      expect(res.status).toBe(500);
+      const data = await res.json();
+      expect(data.error.code).toBe('CONFIG_ERROR');
+      expect(data.error.message).toContain('GEMINI_API_KEY is not configured on the server and no custom key was provided');
+    } finally {
+      process.env.GEMINI_API_KEY = origKey;
+      process.env.GEMINI_MODEL = origModel;
+    }
+  });
+
+  it('7. EXTRACT_MOCK=1 is strictly ignored when NODE_ENV is production', async () => {
+    process.env.EXTRACT_MOCK = '1';
+    const origNodeEnv = process.env.NODE_ENV;
+    const origKey = process.env.GEMINI_API_KEY;
+    (process.env as any).NODE_ENV = 'production';
+    delete process.env.GEMINI_API_KEY;
+
+    try {
+      const req = createExtractRequest(VALID_PNG_BYTES, 'test.png', 'hospital_bill', '10.0.0.51');
+      const res = await POST(req);
+      // In production without key, it ignores mock and fails with CONFIG_ERROR
+      expect(res.status).toBe(500);
+      const data = await res.json();
+      expect(data.error.code).toBe('CONFIG_ERROR');
+    } finally {
+      (process.env as any).NODE_ENV = origNodeEnv;
+      process.env.GEMINI_API_KEY = origKey;
+    }
+  });
 });

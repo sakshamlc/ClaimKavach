@@ -57,4 +57,14 @@
 | **Report** (`tabDisputePack`) | `Dispute Notice Pack (4 Drafts)` | `विवाद पत्रक (4 प्रारूप)` | **needs native review** |
 | **Dispute** (`verifyBeforeSendingTitle`) | `Verify Before Sending Notice` | `भेजने से पूर्व आधिकारिक पुष्टि करें` | **needs native review** |
 | **Dispute** (`verifyBeforeSendingText`) | `Statutory dispute timelines, ombudsman jurisdictional boundaries, and grievance procedures are subject to periodic regulatory updates. Please verify the current complaint procedure and filing window on the official IRDAI portal (irdai.gov.in), Bima Bharosa (bimabharosa.irdai.gov.in), and the Council for Insurance Ombudsmen (cioins.co.in) before submitting.` | `शिकायत की समय-सीमा, लोकपाल का क्षेत्रीय अधिकार क्षेत्र और शिकायत प्रक्रियाएं समय-समय पर संशोधित हो सकती हैं। कृपया भेजने से पहले आधिकारिक आईआरडीएआई पोर्टल (irdai.gov.in), बीमा भरोसा (bimabharosa.irdai.gov.in), और बीमा लोकपाल परिषद (cioins.co.in) पर नवीनतम प्रक्रिया की पुष्टि अवश्य करें।` | **needs native review** |
+| **Sources** (`sourcesTitle`) | `Official Regulatory Sources & Trust Manifest` | `आधिकारिक विनियामक स्रोत एवं ट्रस्ट मेनिफेस्ट` | **needs native review** |
+| **Sources** (`sourcesSubtitle`) | `Review official government gazette sources, SHA-256 cryptographic hashes, and verification audit logs.` | `आधिकारिक सरकारी राजपत्र स्रोतों, SHA-256 क्रिप्टोग्राफ़िक हैश और सत्यापन ऑडिट लॉग की समीक्षा करें।` | **needs native review** |
+| **Sources** (`unverifiedNoticeTitle`) | `Zero Unverified Data Trust Policy` | `शून्य असत्यापित डेटा ट्रस्ट नीति` | **needs native review** |
+| **Sources** (`sourcesSha`) | `SHA-256 Digest` | `SHA-256 डाइजेस्ट` | **needs native review** |
+| **Sources** (`sourcesCopySha`) | `Copy Hash` | `हैश कॉपी करें` | **needs native review** |
+| **Sources** (`sourcesCopied`) | `Copied!` | `कॉपी किया गया!` | **needs native review** |
+| **Sources** (`sourcesStatusVerified`) | `Human Verified (PASS)` | `मानव सत्यापित (सफल)` | **needs native review** |
+| **Sources** (`sourcesStatusUnverified`) | `Unverified (Demo Mode)` | `असत्यापित (डेमो मोड)` | **needs native review** |
+| **Sources** (`unsourcedTitle`) | `Notice on Un-Sourced Clinical & Regulatory Categories` | `असोर्स की गई विनियामक श्रेणियों पर सूचना` | **needs native review** |
+| **Sources** (`backHome`) | `Back to Audit Tool` | `ऑडिट टूल पर वापस जाएं` | **needs native review** |
 

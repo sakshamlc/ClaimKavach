@@ -17,16 +17,30 @@ An automated download attempt was initiated.
 
 ---
 
-## 2. Official Sources Required for Manual Drop-in
+## 2. Official Sources Required (Needs manual download)
 
-Please download the following statutory documents directly from official government portals (`.gov.in` / `.nic.in`) and place them into `docs/sources/raw/`. Read S.O. numbers, dates, and ceiling amounts directly from the official PDF documents:
+The following statutory source documents are required for complete regulatory coverage. Ingestion scripts process **only** files present in `docs/sources/raw/`. Missing source files must be manually downloaded directly from official government portals (`.gov.in` / `.nic.in`) and dropped into `docs/sources/raw/`:
 
-| Statutory Instrument | Drop-in Filename | Official Domains | What to Record from Document | Status |
-|---|---|---|---|---|
-| **NPPA Scheduled Drug Ceilings** | `docs/sources/raw/nppa_drug_ceilings.pdf` | `egazette.gov.in`, `pharma-dept.gov.in` / `pharmaceuticals.gov.in`, `nppaindia.nic.in` (flagged by browser; use as last resort, never bypass warnings) | Latest annual WPI revision plus later amendment orders; record ceiling price, unit, `gstTreatment: "EXCLUDED"` | **PENDING DROP-IN** |
-| **NPPA Coronary Stent Ceilings** | `docs/sources/raw/nppa_stents.pdf` | `egazette.gov.in`, `pharma-dept.gov.in` / `pharmaceuticals.gov.in`, `nppaindia.nic.in` | Latest revision, effective 1 April 2026; read the exact S.O. number and date as printed in the PDF | **PENDING DROP-IN** |
-| **NPPA Knee Implant Ceilings** | `docs/sources/raw/nppa_knee_implants.pdf` | `egazette.gov.in`, `pharma-dept.gov.in` / `pharmaceuticals.gov.in`, `nppaindia.nic.in` | Knee implant ceiling order and its latest extension (S.O. 6222(E) validUntil: 2027-01-15); need S.O. 5190(E) dated 14 Nov 2025 for the price table | **PENDING DROP-IN** (need S.O. 5190(E) dated 14 Nov 2025 for the price table) |
-| **IRDAI Annexure-I Non-Payable & Subsumed Items** | `docs/sources/raw/irdai_annexure_1.pdf` | `irdai.gov.in` | Master Circular with Annexure of non-payable and subsumed items (decide between 2020 and 2024 master circulars from the document itself; record `sourceDocument`) | **PENDING DROP-IN** |
+### 2.1 Missing Parent Documents for Ingestion
+1. **NPPA Knee Implants Root Price Table (S.O. 5190(E) & S.O. 2668(E))**:
+   - `Drugceiling4.pdf` contains **S.O. 6222(E)** dated 13 Nov 2026, which is an extension order valid until 2027-01-15.
+   - S.O. 6222(E) does **not** print an itemized price table. Instead, it explicitly references:
+     - **S.O. 5190(E)** dated 14 November 2025 (preceding ceiling revision)
+     - **S.O. 2668(E)** dated 16 August 2017 (original knee replacement system ceiling price notification)
+   - *Status:* **Needs manual download**. Drop into `docs/sources/raw/` as `nppa_knee_so5190e.pdf`. Until ingested, knee implants remain honestly reported as `NOT_CHECKED` with date-aware extension notes.
+
+2. **IRDAI Master Circular Annexure-I Itemized Non-Payables & Subsumed Schedules**:
+   - `Drugceiling5.pdf` contains the IRDAI Master Circular on Insurance Products 2024 narrative text (`IRDAI/HLT/CIR/PRO/84/5/2024`), but does not contain the standalone itemized table schedules (List I to IV of Non-Payable items).
+   - *Status:* **Needs manual download**. Drop official Annexure-I schedule PDF into `docs/sources/raw/irdai_annexure_1.pdf`. Until ingested, Annexure-I checks remain `NOT_CHECKED`.
+
+### 2.2 Sourced Documents Currently on Disk in `docs/sources/raw/`
+| File | Instrument Number | Date | Effective Date | Ingested Records | Current Verification Status |
+|---|---|---|---|---|---|
+| `Drugceiling1.pdf` | S.O. 5975(E) | 2025-12-24 | 2025-12-24 | 37 Retail Formulations | `verified: false` |
+| `DrugCeiling2.pdf` | S.O. 1582(E) | 2026-03-25 | 2026-04-01 | 6 Scheduled Formulations | `verified: false` |
+| `Drugceiling3.pdf` | S.O. 1587(E) | 2026-03-25 | 2026-04-01 | 2 Coronary Stent Types | `verified: false` |
+| `Drugceiling4.pdf` | S.O. 6222(E) | 2026-11-13 | 2026-11-15 | 0 (Extension order only; validUntil: 2027-01-15) | `verified: false` |
+| `Drugceiling5.pdf` | IRDAI/HLT/CIR/PRO/84/5/2024 | 2024-05-29 | 2024-05-29 | 0 (Circular text only; annexures pending) | `verified: false` |
 
 > **Official Portal Access Rules:**
 > - Prefer `egazette.gov.in` and `pharma-dept.gov.in` / `pharmaceuticals.gov.in`.

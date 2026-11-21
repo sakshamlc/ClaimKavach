@@ -29,51 +29,54 @@ export function Header() {
   };
 
   return (
-    <header className="border-b border-border bg-surface sticky top-0 z-40 shadow-xs">
+    <header className="border-b border-border bg-surface/95 backdrop-blur-xs sticky top-0 z-40 shadow-card">
       {/* Top Disclaimer Banner */}
-      <div className="bg-info-bg text-info-fg text-xs px-4 py-1.5 text-center font-medium border-b border-sky-100 flex items-center justify-center gap-2">
-        <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+      <div className="bg-primary-subtle text-primary text-caption px-4 py-1.5 text-center font-medium border-b border-border-subtle flex items-center justify-center gap-2">
+        <span className="inline-block w-2 h-2 rounded-full bg-tier-valid-exclusion-fg animate-pulse" />
         <span>{t.bannerMemory}</span>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+      <div className="max-w-content mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
         {/* Brand */}
-        <Link href="/" className="flex items-center gap-2 group">
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-xs">
-            <ShieldAlert className="w-6 h-6 text-white" />
+        <Link
+          href="/"
+          className="flex items-center gap-2.5 group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-chip"
+        >
+          <div className="w-10 h-10 rounded-card bg-primary flex items-center justify-center text-primary-contrast shadow-card shrink-0">
+            <ShieldAlert className="w-6 h-6 text-primary-contrast" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-xl text-primary leading-tight font-sans tracking-tight">
-                {language === 'hi' ? 'ClaimKavach' : 'ClaimKavach'}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-bold text-h3 text-primary leading-tight font-sans tracking-tight">
+                ClaimKavach
               </span>
-              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-300">
+              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-chip bg-surface-subtle text-text-muted border border-border">
                 {t.badgeStatutory}
               </span>
               {(selectedSampleKey || bill?.isSynthetic) && (
-                <span className="bg-amber-50 text-amber-800 border border-amber-300 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                  <Sparkles className="w-2.5 h-2.5 text-amber-600" />
+                <span className="bg-amber-50 text-amber-900 border border-amber-200 text-[10px] font-bold px-2 py-0.5 rounded-chip flex items-center gap-1">
+                  <Sparkles className="w-2.5 h-2.5 text-amber-700" />
                   {t.badgeSynthetic}
                 </span>
               )}
             </div>
-            <p className="text-muted text-xs hidden sm:block leading-tight mt-0.5">
+            <p className="text-text-muted text-caption hidden sm:block leading-tight mt-0.5">
               {t.appTagline}
             </p>
           </div>
         </Link>
 
         {/* Right Controls: Language Switcher & Clear Data */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           {/* Language Toggle Button */}
           <button
             type="button"
             onClick={toggleLanguage}
-            className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg border border-slate-300 transition-colors"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 text-small font-semibold bg-surface-subtle hover:bg-surface text-text rounded-chip border border-border shadow-card transition-all duration-150 ease-out min-h-[44px] min-w-[44px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-hidden cursor-pointer"
             title="Toggle English / हिंदी"
-            aria-label="Toggle language"
+            aria-label="Toggle language between English and Hindi"
           >
-            <Languages className="w-3.5 h-3.5 text-slate-600" />
+            <Languages className="w-4 h-4 text-text-muted" />
             <span>{language === 'en' ? 'हिंदी' : 'English'}</span>
           </button>
 
@@ -82,10 +85,11 @@ export function Header() {
             <button
               type="button"
               onClick={handleClear}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg transition-colors min-h-[36px]"
+              className="flex items-center justify-center gap-1.5 px-3 py-2 text-small font-semibold text-tier-confirmed-fg hover:bg-tier-confirmed-bg bg-tier-confirmed-bg/50 border border-tier-confirmed-border rounded-chip transition-all duration-150 ease-out min-h-[44px] min-w-[44px] focus-visible:ring-2 focus-visible:ring-tier-confirmed-fg focus-visible:ring-offset-2 focus-visible:outline-hidden cursor-pointer"
               title="Wipe in-memory bill data immediately"
+              aria-label="Clear all bill data from memory"
             >
-              <Trash2 className="w-3.5 h-3.5" />
+              <Trash2 className="w-4 h-4" />
               <span>{t.clearData}</span>
             </button>
           )}

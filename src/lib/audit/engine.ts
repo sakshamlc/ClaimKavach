@@ -298,8 +298,11 @@ export function runAudit(
     )
     .map((item) => {
       if (/knee/i.test(item.description) && !checkedRegulatoryItemIds.has(item.id)) {
-        const kneeNote =
-          "Knee implant ceiling order S.O. 6222(E) is valid until 2027-01-15 (extending S.O. 5190(E)), but root price table from S.O. 5190(E) / S.O. 2668(E) has not been ingested; item is NOT_CHECKED.";
+        const effectiveDate = item.date || bill.billDate;
+        const isExpired = effectiveDate ? effectiveDate > '2027-01-15' : false;
+        const kneeNote = isExpired
+          ? "Knee implant ceiling extension order S.O. 6222(E) expired on 2027-01-15 unless renewed by subsequent notification; root price table from S.O. 5190(E) / S.O. 2668(E) has not been ingested; item is NOT_CHECKED."
+          : "Knee implant ceiling order S.O. 6222(E) is valid until 2027-01-15 (extending S.O. 5190(E)), but root price table from S.O. 5190(E) / S.O. 2668(E) has not been ingested; item is NOT_CHECKED.";
         return {
           ...item,
           notes: item.notes ? `${item.notes} | ${kneeNote}` : kneeNote,

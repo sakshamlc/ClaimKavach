@@ -608,5 +608,43 @@ describe('Phase 3 Audit Engine: Determinism, Golden-File Synthetic Bills & Centr
       expect(stentFinding?.verdict).toBe('NEEDS_REVIEW');
       expect(stentFinding?.explanation.en).toContain('prior to regulatory effectiveDate');
     });
+
+    it('Knee Implant Expiration Guard: items after 2027-01-15 note expired extension order in notCheckedItems', () => {
+      const activeKneeBill: MedicalBill = {
+        id: 'KNEE-ACTIVE',
+        isSynthetic: true,
+        billDate: '2026-12-01',
+        billedPriceIncludesGst: false,
+        hospital: { name: 'Orthopaedic Centre' },
+        stay: { admissionDate: '2026-11-29', dischargeDate: '2026-12-01', lengthOfStayNights: 2 },
+        items: [
+          {
+            id: 'KNEE-01',
+            description: 'Total Knee Replacement Femoral Component',
+            category: 'implant',
+            quantity: 1,
+            unitRatePaise: 4500000,
+            totalBilledPaise: 4500000,
+          },
+        ],
+        totalBilledPaise: 4500000,
+      };
+
+      const activeReport = runAudit(activeKneeBill);
+      const activeKneeItem = activeReport.notCheckedItems?.find((i) => i.id === 'KNEE-01');
+      expect(activeKneeItem).toBeDefined();
+      expect(activeKneeItem?.notes).toContain('valid until 2027-01-15');
+
+      const expiredKneeBill: MedicalBill = {
+        ...activeKneeBill,
+        id: 'KNEE-EXPIRED',
+        billDate: '2027-02-10', // After 2027-01-15
+      };
+
+      const expiredReport = runAudit(expiredKneeBill);
+      const expiredKneeItem = expiredReport.notCheckedItems?.find((i) => i.id === 'KNEE-01');
+      expect(expiredKneeItem).toBeDefined();
+      expect(expiredKneeItem?.notes).toContain('expired on 2027-01-15 unless renewed');
+    });
   });
 });

@@ -154,27 +154,47 @@ export async function processPdfOrImage(
     }
 
     progress(1, 1, 'Extracting document...');
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('docType', docType);
+    let data: any = null;
+    let lastError: any = null;
 
-    const headers: Record<string, string> = {};
-    if (options?.apiKey) {
-      headers['x-gemini-key'] = options.apiKey;
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('docType', docType);
+
+        const headers: Record<string, string> = {};
+        if (options?.apiKey) {
+          headers['x-gemini-key'] = options.apiKey;
+        }
+
+        const res = await fetch('/api/extract', {
+          method: 'POST',
+          body: formData,
+          headers,
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          const code = err.error?.code || 'UPSTREAM';
+          const msg = err.error?.message || `Extraction failed with HTTP ${res.status}`;
+          throw new Error(`[${code}] ${msg}`);
+        }
+
+        data = await res.json();
+        break;
+      } catch (e: any) {
+        lastError = e;
+        if (attempt === 1) {
+          await new Promise((r) => setTimeout(r, 600));
+        }
+      }
     }
 
-    const res = await fetch('/api/extract', {
-      method: 'POST',
-      body: formData,
-      headers,
-    });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message || `Extraction failed with status ${res.status}`);
+    if (!data) {
+      throw lastError || new Error('Extraction failed.');
     }
 
-    const data = await res.json();
     if (Array.isArray(data.items)) {
       data.items = dedupeRepeatedHeaders(data.items);
     }
@@ -252,39 +272,76 @@ export async function processPdfOrImage(
   }
 
   const extractedBatches: any[] = [];
+  const batchWarnings: string[] = [];
+  let totalProcessedPages = 0;
 
   for (let bIdx = 0; bIdx < batches.length; bIdx++) {
     const batchPages = batches[bIdx];
     progress(bIdx + 1, batches.length, `Extracting batch ${bIdx + 1} of ${batches.length}...`);
 
-    // We send page by page or combined blob
-    for (const pageBlob of batchPages) {
-      const formData = new FormData();
-      formData.append('file', pageBlob, `page.jpg`);
-      formData.append('docType', docType);
+    for (let pIdx = 0; pIdx < batchPages.length; pIdx++) {
+      totalProcessedPages++;
+      const pageNum = totalProcessedPages;
+      const pageBlob = batchPages[pIdx];
 
-      const headers: Record<string, string> = {};
-      if (options?.apiKey) {
-        headers['x-gemini-key'] = options.apiKey;
+      let pageExtracted: any = null;
+      let lastPageError: any = null;
+
+      // Retry failed batch/page once
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        try {
+          const formData = new FormData();
+          formData.append('file', pageBlob, `page_${pageNum}.jpg`);
+          formData.append('docType', docType);
+
+          const headers: Record<string, string> = {};
+          if (options?.apiKey) {
+            headers['x-gemini-key'] = options.apiKey;
+          }
+
+          const res = await fetch('/api/extract', {
+            method: 'POST',
+            body: formData,
+            headers,
+          });
+
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            const code = err.error?.code || 'UPSTREAM';
+            const msg = err.error?.message || `Extraction failed on page ${pageNum} with status ${res.status}`;
+            throw new Error(`[${code}] ${msg}`);
+          }
+
+          pageExtracted = await res.json();
+          break;
+        } catch (e: any) {
+          lastPageError = e;
+          if (attempt === 1) {
+            await new Promise((r) => setTimeout(r, 600));
+          }
+        }
       }
 
-      const res = await fetch('/api/extract', {
-        method: 'POST',
-        body: formData,
-        headers,
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error?.message || `Extraction failed on batch ${bIdx + 1}`);
+      if (pageExtracted) {
+        extractedBatches.push(pageExtracted);
+      } else {
+        batchWarnings.push(
+          `Page ${pageNum} failed to extract (${lastPageError?.message || 'Upstream error'}). Partial results from other pages are displayed.`
+        );
       }
-
-      const extracted = await res.json();
-      extractedBatches.push(extracted);
     }
+  }
+
+  if (extractedBatches.length === 0) {
+    throw new Error(
+      batchWarnings[0] || 'Extraction failed for all pages of this document. Please check the API key and try again.'
+    );
   }
 
   progress(batches.length, batches.length, 'Merging results and deduplicating headers...');
   const merged = mergeExtractedBatches(extractedBatches);
+  if (batchWarnings.length > 0) {
+    merged.warnings = [...(merged.warnings || []), ...batchWarnings];
+  }
   return merged;
 }

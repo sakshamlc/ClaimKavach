@@ -30,6 +30,8 @@ ClaimKavach is designed around strict data minimization and patient confidential
   All responses emit `Cache-Control: no-store, no-cache, must-revalidate`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, and `Content-Security-Policy` with `frame-ancestors 'none'`.
 - **Zero LocalStorage Leakage:**  
   The browser's `localStorage` is never used to persist medical records, line item charges, or patient names.
+- **On-Device Audio Read-Aloud:**  
+  Voice read-aloud uses the browser Web Speech API (`speechSynthesis`). All audio synthesis runs directly on the user's device using local speech engines unless the operating system's selected voice is marked remote/online, in which case ClaimKavach displays an explicit privacy notice requiring confirmation before proceeding.
 
 ---
 
@@ -51,16 +53,19 @@ ClaimKavach enforces strict unmerged financial reporting across 5 metric cards:
 ## 4. Known Limitations
 
 - **Unverified Reference Data Status:**  
-  All regulatory reference records in `src/data/regulatory/` currently start with `verified: false`. Findings derived from unverified reference records are capped at `LIKELY_ISSUE` and display an *"Unverified reference data"* badge.
-- **Regulatory Scope:**  
+  All 45 regulatory reference records in `src/data/regulatory/` currently start with `verified: false`. Findings derived from unverified reference records are strictly capped at `LIKELY_ISSUE` or `NEEDS_REVIEW` and display an *"Unverified reference data"* badge. Under ClaimKavach Trust Zone policy, they can never produce a Confirmed Overcharge.
+- **Regulatory Scope (45 Production Records):**  
   The active ingested dataset covers:
-  - 6 statutory scheduled formulation ceilings: S.O. 1582(E), S.O. 1587(E), S.O. 6222(E).
-  - 2 coronary stent statutory ceilings: Bare Metal Stents and Drug Eluting Stents (S.O. 1582(E)).
-  - 37 manufacturer-specific retail formulations: S.O. 5975(E).
-- **Provisional Datasets:**  
-  Knee extension/implant ceilings, IRDAI Annexure-I non-payable item lists, and room rent bundling schedules are currently provisional reference fixtures and have not yet been linked to raw gazette PDF SHA-256 hashes.
-- **In-Memory Rate Limiting:**  
-  The extraction endpoint enforces an in-memory rate limit of 10 requests per minute per IP. Multi-page PDFs are capped at 20 pages client-side and batched into requests under 4 MB.
+  - 6 statutory scheduled formulation ceilings: S.O. 1582(E) dated 2026-03-25.
+  - 37 manufacturer-specific retail formulations: S.O. 5975(E) dated 2025-12-24.
+  - 2 coronary stent statutory ceilings: Bare Metal Stents and Drug Eluting Stents from S.O. 1587(E) dated 2026-03-25.
+- **Un-Sourced Categories Honestly Reported as NOT_CHECKED:**  
+  - **Knee Implants:** `Drugceiling4.pdf` contains extension order S.O. 6222(E) valid until 2027-01-15, but references root price tables in S.O. 5190(E) and S.O. 2668(E), which have not been ingested. Knee items are reported as `NOT_CHECKED`.
+  - **IRDAI Annexure-I & Room Bundling:** Full itemized schedules have not been ingested. Items in these categories are reported as `NOT_CHECKED` without invented data.
+- **In-Memory Rate Limiting & Serverless Characteristics:**  
+  The extraction endpoint enforces an in-memory rate limit (default 10 requests per minute per IP). In a serverless environment (e.g. Vercel), rate limit tracking is ephemeral and maintained per container instance.
+- **Document Page Cap:**  
+  PDF uploads are capped at 20 pages client-side to prevent memory exhaustion and excessive latency. Batches are partitioned into requests under 4 MB.
 
 ---
 
@@ -134,6 +139,16 @@ npm run typecheck
 # Run Next.js linter
 npm run lint
 
+# Run production smoke test against local or deployed server
+node scripts/smoke.mjs http://localhost:3000
+
 # Build for production
 npm run build
 ```
+
+---
+
+## 8. Production Deployment
+
+For complete instructions on deploying to Vercel, serverless runtime configuration, and post-deployment smoke testing, see [DEPLOY.md](file:///c:/Users/Administrator/Downloads/ClaimKavach/DEPLOY.md).
+

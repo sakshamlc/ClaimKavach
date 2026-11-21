@@ -18,9 +18,9 @@ import {
   ShieldAlert,
 } from 'lucide-react';
 
-export function generateHospitalLetter(bill: MedicalBill, report: AuditReport): string {
-  const hospitalName = bill.hospital.name || '[Hospital Name]';
-  const billId = bill.id || '[Bill Number]';
+export function generateHospitalLetter(bill: MedicalBill, report: AuditReport, lang: 'en' | 'hi' = 'en'): string {
+  const hospitalName = bill.hospital.name || (lang === 'hi' ? '[अस्पताल का नाम]' : '[Hospital Name]');
+  const billId = bill.id || (lang === 'hi' ? '[बिल संख्या]' : '[Bill Number]');
   const totalBilled = formatINR(report.totals.billed);
   const confirmedOvercharge = formatINR(report.totals.confirmed);
   const likelyOvercharge = formatINR(report.totals.likely);
@@ -31,6 +31,63 @@ export function generateHospitalLetter(bill: MedicalBill, report: AuditReport): 
   const mathFindings = report.findings.filter(
     (f) => (f.ruleId === 'R-MATH-01' || f.ruleId === 'R-TOTAL-01') && f.amount > 0
   );
+
+  if (lang === 'hi') {
+    return `प्रति,
+बिलिंग प्रभारी / चिकित्सा अधीक्षक,
+${hospitalName}
+
+दिनांक: [Date]
+विषय: इनपेशेंट बिल संख्या ${billId} के मदवार स्पष्टीकरण एवं विनियामक मूल्य सीमा समीक्षा हेतु अनुरोध
+
+आदरणीय महोदय / महोदया,
+
+मरीज का नाम: [Patient Name]
+आईपीडी संख्या: [IPD Registration Number]
+भर्ती की तारीख: ${bill.stay.admissionDate || '[Admission Date]'}
+डिस्चार्ज की तारीख: ${bill.stay.dischargeDate || '[Discharge Date]'}
+कुल बिल राशि: ${totalBilled}
+
+मैं उपरोक्त अंतिम अस्पताल चालान पर बिल किए गए विशिष्ट शुल्कों के मदवार विवरण और स्पष्टीकरण के लिए यह अनुरोध प्रस्तुत कर रहा/रही हूँ।
+
+विनियामक अधिसूचनाओं में अधिसूचित सरकारी मूल्य सीमाओं की समीक्षा के अनुसार:
+
+1. मूल्य बेंचमार्क समीक्षा:
+${
+  ceilingFindings.length > 0
+    ? ceilingFindings
+        .map(
+          (f, idx) =>
+            `   ${idx + 1}. मद: "${f.title || f.itemId}"\n      - बिल दर: ${f.actual !== undefined ? formatINR(f.actual) : 'N/A'}\n      - अधिसूचित संदर्भ सीमा: ${f.expected !== undefined ? formatINR(f.expected) : 'N/A'}\n      - प्रश्नगत अंतर: ${formatINR(f.amount)}\n      - स्रोत दस्तावेज: ${f.citation.instrument}${f.citation.kind === 'REGULATORY' && f.citation.instrumentNumber ? ` (${f.citation.instrumentNumber})` : ''}${f.citation.kind === 'REGULATORY' && f.citation.sourceRef ? `, Ref: ${f.citation.sourceRef}` : ''}`
+        )
+        .join('\n\n')
+    : '   - कृपया पुष्टि करें कि सभी अनुसूचित दवाएं एवं प्रत्यारोपण अधिसूचित सरकारी बेंचमार्क के अनुरूप हैं।'
+}
+
+${
+  mathFindings.length > 0
+    ? `2. अंकगणितीय सुसंगतता:\n` +
+      mathFindings
+        .map(
+          (f, idx) =>
+            `   ${idx + 1}. ${f.title}: बिल ${f.actual !== undefined ? formatINR(f.actual) : 'N/A'}, अपेक्षित ${f.expected !== undefined ? formatINR(f.expected) : 'N/A'} (अंतर: ${formatINR(f.amount)})`
+        )
+        .join('\n')
+    : ''
+}
+
+वैधानिक अधिसूचनाओं के अनुसार, अनुसूचित मदों पर अधिसूचित मूल्य सीमा और लागू कर से अधिक शुल्क नहीं लिया जा सकता।
+
+कृपया संशोधित बिल जारी करें और अतिरिक्त शुल्क ${confirmedOvercharge !== '₹0.00' ? confirmedOvercharge : likelyOvercharge} का [Number of Days] कार्य दिवसों में समायोजन या धनवापसी करें।
+
+सधन्यवाद,
+
+भवदीय,
+[Patient / Policyholder Name]
+फोन: [Phone Number]
+ईमेल: [Email Address]
+पता: [Postal Address]`;
+  }
 
   return `To,
 The Billing In-Charge / Medical Superintendent,
@@ -88,13 +145,63 @@ Email Address: [Email Address]
 Address: [Postal Address]`;
 }
 
-export function generateInsurerLetter(bill: MedicalBill, report: AuditReport): string {
-  const hospitalName = bill.hospital.name || '[Hospital Name]';
+export function generateInsurerLetter(bill: MedicalBill, report: AuditReport, lang: 'en' | 'hi' = 'en'): string {
+  const hospitalName = bill.hospital.name || (lang === 'hi' ? '[अस्पताल का नाम]' : '[Hospital Name]');
   const totalBilled = formatINR(report.totals.billed);
 
   const deductionFindings = report.findings.filter(
     (f) => f.ruleId === 'R-ANX-01' || f.ruleId === 'R-BUNDLE-01'
   );
+
+  if (lang === 'hi') {
+    return `प्रति,
+शिकायत निवारण अधिकारी (GRO),
+[Name of Health Insurance Company]
+[Branch / Corporate Office Address]
+
+दिनांक: [Date]
+विषय: दावा संख्या [Claim Number] / पॉलिसी संख्या [Policy Number] के लिए दावा कटौतियों के संबंध में अभ्यावेदन
+
+महोदय / महोदया,
+
+पॉलिसीधारक का नाम: [Policyholder Name]
+मरीज का नाम: [Patient Name]
+पॉलिसी संख्या: [Policy Number]
+दावा संख्या: [Claim Number]
+अस्पताल: ${hospitalName}
+कुल अस्पताल बिल: ${totalBilled}
+प्रश्नगत कटौती राशि: [Total Deducted Amount]
+
+मैं उपरोक्त अस्पताल में भर्ती के संबंध में जारी दावा निपटान पत्र पर की गई कटौतियों के संदर्भ में औपचारिक अभ्यावेदन प्रस्तुत कर रहा/रही हूँ।
+
+कटौती विवरण के अनुसार कुछ शुल्कों को अस्वीकृत किया गया है। इस संबंध में:
+
+1. गैर-देय एवं काटे गए शुल्कों का सत्यापन:
+   - कटौतियों को पॉलिसी अनुबंध की विशिष्ट बहिष्करण शर्तों या विनियामक मार्गदर्शन के अनुरूप होना चाहिए।
+   - इनपेशेंट उपचार के आवश्यक मद जो पॉलिसी शर्तों में स्पष्ट रूप से बहिष्कृत नहीं हैं, उन्हें मनमाने ढंग से नहीं काटा जाना चाहिए।
+
+${
+  deductionFindings.length > 0
+    ? `2. विशिष्ट प्रश्नगत मदें:\n` +
+      deductionFindings
+        .map(
+          (f, idx) =>
+            `   ${idx + 1}. मद: "${f.title || f.itemId}" — कटौती: ${formatINR(f.amount)}\n      स्पष्टीकरण: ${f.explanation.hi || f.explanation.en}\n      स्रोत संदर्भ: ${f.citation.instrument}${f.citation.kind === 'REGULATORY' && f.citation.sourceRef ? ` (${f.citation.sourceRef})` : ''}`
+        )
+        .join('\n\n')
+    : ''
+}
+
+मैं आपसे पॉलिसी अनुबंध के आधार पर इन कटौतियों की पुनः जांच करने और स्वीकार्य शेष राशि मेरे पंजीकृत बैंक खाते में भेजने का अनुरोध करता/करती हूँ।
+
+सधन्यवाद,
+
+भवदीय,
+[Policyholder Name]
+पॉलिसी संख्या: [Policy Number]
+पंजीकृत मोबाइल: [Mobile Number]
+पंजीकृत ईमेल: [Email Address]`;
+  }
 
   return `To,
 The Grievance Redressal Officer (GRO),
@@ -145,8 +252,27 @@ Registered Mobile: [Mobile Number]
 Registered Email: [Email Address]`;
 }
 
-export function generateBimaBharosaText(bill: MedicalBill, report: AuditReport): string {
-  const hospitalName = bill.hospital.name || '[Hospital Name]';
+export function generateBimaBharosaText(bill: MedicalBill, report: AuditReport, lang: 'en' | 'hi' = 'en'): string {
+  const hospitalName = bill.hospital.name || (lang === 'hi' ? '[अस्पताल का नाम]' : '[Hospital Name]');
+
+  if (lang === 'hi') {
+    return `बीमा भरोसा पोर्टल हेतु शिकायत सारांश (bimabharosa.irdai.gov.in):
+
+1. पॉलिसी प्रकार: स्वास्थ्य बीमा
+2. बीमा कंपनी: [Name of Insurance Company]
+3. पॉलिसी संख्या: [Policy Number]
+4. दावा संख्या: [Claim Number]
+5. अस्पताल: ${hospitalName}
+6. भर्ती की अवधि: ${bill.stay.admissionDate || '[Admission]'} से ${bill.stay.dischargeDate || '[Discharge]'}
+7. विवादित कटौती राशि: [Amount in ₹]
+
+शिकायत का विवरण:
+दावा संख्या [Claim Number] पर दावा कटौतियों के संबंध में बीमा कंपनी के शिकायत निवारण अधिकारी (GRO) से समाधान न मिलने के बाद मैं यह शिकायत दर्ज कर रहा/रही हूँ।
+
+बीमा कंपनी ने बिना पारदर्शी औचित्य के गैर-देय या आनुपातिक कटौती शीर्षों के तहत [Deducted Amount] की कटौती की। आवश्यक इनपेशेंट उपचार आपूर्ति को अनुबंधीय समर्थन के बिना अस्वीकार किया गया प्रतीत होता है।
+
+मैं दावा निपटान की समीक्षा करने और न्यायसंगत शेष दावा राशि का भुगतान कराने के लिए विनियामक हस्तक्षेप का अनुरोध करता/करती हूँ।`;
+  }
 
   return `Complaint Summary for Bima Bharosa Portal (bimabharosa.irdai.gov.in):
 
@@ -166,9 +292,50 @@ The insurer deducted [Deducted Amount] attributing charges to non-payable or pro
 I request regulatory intervention to direct the insurer to review the claim settlement and pay the lawful balance claim amount.`;
 }
 
-export function generateOmbudsmanLetter(bill: MedicalBill, report: AuditReport): string {
-  const hospitalName = bill.hospital.name || '[Hospital Name]';
+export function generateOmbudsmanLetter(bill: MedicalBill, report: AuditReport, lang: 'en' | 'hi' = 'en'): string {
+  const hospitalName = bill.hospital.name || (lang === 'hi' ? '[अस्पताल का नाम]' : '[Hospital Name]');
   const totalBilled = formatINR(report.totals.billed);
+
+  if (lang === 'hi') {
+    return `प्रति,
+बीमा लोकपाल,
+कार्यालय बीमा लोकपाल,
+[City / Regional Jurisdiction Address]
+
+दिनांक: [Date]
+विषय: स्वास्थ्य बीमा दावा कटौतियों के संबंध में औपचारिक शिकायत
+
+शिकायतकर्ता का नाम: [Complainant Name]
+बीमित / मरीज का नाम: [Patient Name]
+बीमा कंपनी: [Name of Insurer]
+पॉलिसी संख्या: [Policy Number]
+दावा संख्या: [Claim Number]
+बीमा कंपनी GRO को अभ्यावेदन की तारीख: [Date Representation Sent]
+अस्वीकृति की तारीख / अभ्यावेदन अवधि समाप्ति: [Date]
+
+आदरणीय लोकपाल,
+
+1. मामले के तथ्य:
+शिकायतकर्ता के पास [Name of Insurer] द्वारा जारी स्वास्थ्य बीमा पॉलिसी संख्या [Policy Number] है। बीमित व्यक्ति ने ${bill.stay.admissionDate || '[Date]'} से ${bill.stay.dischargeDate || '[Date]'} तक ${hospitalName} में इनपेशेंट उपचार कराया। कुल चिकित्सा बिल ${totalBilled} था।
+
+2. शिकायत का आधार:
+बीमा कंपनी ने केवल [Settled Amount] का निपटान किया और [Disputed Amount] को अस्वीकृत कर दिया। बीमा कंपनी / टीपीए द्वारा की गई कटौतियां स्वास्थ्य बीमा शर्तों और मानक दिशानिर्देशों के प्रतिकूल प्रतीत होती हैं।
+
+3. बीमा कंपनी को पूर्व अभ्यावेदन:
+शिकायतकर्ता ने [Date] को बीमा कंपनी के शिकायत निवारण अधिकारी (GRO) को यह मामला प्रस्तुत किया था। संतोषजनक समाधान के बिना अभ्यावेदन अवधि समाप्त हो चुकी है, या अभ्यावेदन को पर्याप्त औचित्य के बिना खारिज कर दिया गया।
+
+4. चाही गई राहत:
+मैं बीमा कंपनी को शिकायत निवारण मानदंडों के अनुसार लागू ब्याज सहित [Disputed Amount] की बकाया राशि का भुगतान करने का निर्देश देने का अनुरोध करता/करती हूँ।
+
+सत्यापन:
+मैं सत्यापित करता/करती हूँ कि इसी विषय पर कोई शिकायत वर्तमान में किसी भी न्यायालय या उपभोक्ता फोरम के समक्ष लंबित नहीं है।
+
+भवदीय,
+[Complainant Name]
+हस्ताक्षर: ______________________
+फोन: [Phone Number]
+ईमेल: [Email Address]`;
+  }
 
   return `To,
 The Insurance Ombudsman,
@@ -210,12 +377,12 @@ Phone: [Phone Number]
 Email: [Email Address]`;
 }
 
-export function generateAllDisputeDrafts(bill: MedicalBill, report: AuditReport) {
+export function generateAllDisputeDrafts(bill: MedicalBill, report: AuditReport, lang: 'en' | 'hi' = 'en') {
   return [
-    { id: 'hospital', label: '1. Hospital Billing Query', text: generateHospitalLetter(bill, report) },
-    { id: 'insurer', label: '2. Insurer GRO Notice', text: generateInsurerLetter(bill, report) },
-    { id: 'bima_bharosa', label: '3. Bima Bharosa Draft', text: generateBimaBharosaText(bill, report) },
-    { id: 'ombudsman', label: '4. Insurance Ombudsman', text: generateOmbudsmanLetter(bill, report) },
+    { id: 'hospital', label: lang === 'hi' ? '1. अस्पताल बिलिंग पूछताछ' : '1. Hospital Billing Query', text: generateHospitalLetter(bill, report, lang) },
+    { id: 'insurer', label: lang === 'hi' ? '2. बीमा GRO नोटिस' : '2. Insurer GRO Notice', text: generateInsurerLetter(bill, report, lang) },
+    { id: 'bima_bharosa', label: lang === 'hi' ? '3. बीमा भरोसा प्रारूप' : '3. Bima Bharosa Draft', text: generateBimaBharosaText(bill, report, lang) },
+    { id: 'ombudsman', label: lang === 'hi' ? '4. बीमा लोकपाल शिकायत' : '4. Insurance Ombudsman', text: generateOmbudsmanLetter(bill, report, lang) },
   ] as const;
 }
 
@@ -224,13 +391,30 @@ interface DisputePackProps {
   report: AuditReport;
 }
 
+function renderHighlightedText(text: string) {
+  const parts = text.split(/(\[[^\]]+\])/g);
+  return parts.map((part, i) => {
+    if (part.startsWith('[') && part.endsWith(']')) {
+      return (
+        <span
+          key={i}
+          className="bg-unverified-bg text-unverified-fg font-semibold px-1.5 py-0.5 rounded-chip border border-unverified-border inline-block my-0.5"
+        >
+          {part}
+        </span>
+      );
+    }
+    return part;
+  });
+}
+
 export function DisputePack({ bill, report }: DisputePackProps) {
   const [activeTab, setActiveTab] = useState<'hospital' | 'insurer' | 'bima_bharosa' | 'ombudsman'>('hospital');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const language = useClaimStore((state) => state.language);
   const t = claimTranslations[language] || claimTranslations.en;
 
-  const tabs = generateAllDisputeDrafts(bill, report);
+  const tabs = generateAllDisputeDrafts(bill, report, language);
   const currentDoc = tabs.find((t) => t.id === activeTab)?.text || '';
 
   const copyToClipboard = (text: string, key: string) => {
@@ -244,16 +428,16 @@ export function DisputePack({ bill, report }: DisputePackProps) {
   };
 
   return (
-    <div className="bg-surface rounded-xl border border-border p-6 space-y-6 shadow-xs font-sans">
+    <div className="bg-surface rounded-card border border-border p-6 sm:p-8 space-y-6 shadow-card font-sans">
       {/* Header & Escalation Flow */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+            <h3 className="text-h3 font-bold text-text flex items-center gap-2">
               <FileText className="w-5 h-5 text-primary" />
               <span>{t.disputeTitle}</span>
             </h3>
-            <p className="text-xs text-muted mt-0.5">
+            <p className="text-small text-text-muted mt-0.5">
               {t.disputeSubtitle}
             </p>
           </div>
@@ -261,129 +445,149 @@ export function DisputePack({ bill, report }: DisputePackProps) {
           <button
             type="button"
             onClick={handlePrint}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg border border-slate-300 transition-colors self-start sm:self-auto print:hidden cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-small font-semibold bg-surface-subtle hover:bg-surface text-text rounded-chip border border-border transition-colors self-start sm:self-auto print:hidden cursor-pointer min-h-[44px]"
           >
             <Printer className="w-4 h-4" />
             <span>{t.printDisputeBtn}</span>
           </button>
         </div>
 
-        {/* Escalation Hierarchy Flow Banner */}
-        <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-700">
-          <span className="font-bold text-slate-900 block mb-1">
+        {/* Escalation Hierarchy Flow: Horizontal 4-step on >=640px, vertical on mobile */}
+        <div className="bg-surface-subtle border border-border rounded-card p-4 space-y-2">
+          <span className="font-bold text-text block text-caption uppercase tracking-wider">
             Standard Escalation Sequence in India:
           </span>
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 text-center text-[11px] mt-2 font-medium">
-            <div className={`p-2 rounded border ${activeTab === 'hospital' ? 'bg-primary text-white border-primary' : 'bg-white border-slate-200 text-slate-700'}`}>
-              <span className="block font-bold">{t.step1Hospital}</span>
-              <span className="text-[10px] opacity-80">{t.step1HospitalSub}</span>
-            </div>
-            <div className={`p-2 rounded border ${activeTab === 'insurer' ? 'bg-primary text-white border-primary' : 'bg-white border-slate-200 text-slate-700'}`}>
-              <span className="block font-bold">{t.step2Gro}</span>
-              <span className="text-[10px] opacity-80">{t.step2GroSub}</span>
-            </div>
-            <div className={`p-2 rounded border ${activeTab === 'bima_bharosa' ? 'bg-primary text-white border-primary' : 'bg-white border-slate-200 text-slate-700'}`}>
-              <span className="block font-bold">{t.step3Bima}</span>
-              <span className="text-[10px] opacity-80">{t.step3BimaSub}</span>
-            </div>
-            <div className={`p-2 rounded border ${activeTab === 'ombudsman' ? 'bg-primary text-white border-primary' : 'bg-white border-slate-200 text-slate-700'}`}>
-              <span className="block font-bold">{t.step4Ombudsman}</span>
-              <span className="text-[10px] opacity-80">{t.step4OmbudsmanSub}</span>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 text-small font-medium">
+            <button
+              type="button"
+              onClick={() => setActiveTab('hospital')}
+              className={`p-3 rounded-chip border text-left transition-all min-h-[44px] cursor-pointer ${
+                activeTab === 'hospital'
+                  ? 'bg-primary text-primary-contrast border-primary shadow-card font-bold'
+                  : 'bg-surface border-border text-text hover:bg-surface-subtle'
+              }`}
+            >
+              <span className="block text-caption uppercase">{t.step1Hospital}</span>
+              <span className="text-[11px] opacity-90">{t.step1HospitalSub}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('insurer')}
+              className={`p-3 rounded-chip border text-left transition-all min-h-[44px] cursor-pointer ${
+                activeTab === 'insurer'
+                  ? 'bg-primary text-primary-contrast border-primary shadow-card font-bold'
+                  : 'bg-surface border-border text-text hover:bg-surface-subtle'
+              }`}
+            >
+              <span className="block text-caption uppercase">{t.step2Gro}</span>
+              <span className="text-[11px] opacity-90">{t.step2GroSub}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('bima_bharosa')}
+              className={`p-3 rounded-chip border text-left transition-all min-h-[44px] cursor-pointer ${
+                activeTab === 'bima_bharosa'
+                  ? 'bg-primary text-primary-contrast border-primary shadow-card font-bold'
+                  : 'bg-surface border-border text-text hover:bg-surface-subtle'
+              }`}
+            >
+              <span className="block text-caption uppercase">{t.step3Bima}</span>
+              <span className="text-[11px] opacity-90">{t.step3BimaSub}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('ombudsman')}
+              className={`p-3 rounded-chip border text-left transition-all min-h-[44px] cursor-pointer ${
+                activeTab === 'ombudsman'
+                  ? 'bg-primary text-primary-contrast border-primary shadow-card font-bold'
+                  : 'bg-surface border-border text-text hover:bg-surface-subtle'
+              }`}
+            >
+              <span className="block text-caption uppercase">{t.step4Ombudsman}</span>
+              <span className="text-[11px] opacity-90">{t.step4OmbudsmanSub}</span>
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Verify Before Sending Callout Box with Official Portals */}
-      <div className="bg-amber-50/70 border border-amber-300 rounded-xl p-4 text-xs text-amber-950 space-y-2">
-        <div className="flex items-center gap-2 font-bold text-amber-900">
-          <ShieldAlert className="w-4 h-4 text-amber-600" />
+      {/* Verify Before Sending Prominent Warning Alert */}
+      <div className="bg-unverified-bg border border-unverified-border rounded-card p-4 sm:p-5 text-small text-text space-y-2.5">
+        <div className="flex items-center gap-2 font-bold text-unverified-fg text-body">
+          <ShieldAlert className="w-5 h-5 shrink-0" />
           <span>{t.verifyBeforeSendingTitle}</span>
         </div>
-        <p className="leading-relaxed">
+        <p className="leading-relaxed text-small text-text max-w-prose">
           {t.verifyBeforeSendingText}
         </p>
-        <div className="text-[11px] font-semibold text-amber-900 pt-1">
+        <div className="text-caption font-semibold text-text-muted pt-1">
           links to check before sending (unverified):
         </div>
-        <div className="flex flex-wrap items-center gap-4 pt-1 font-semibold text-amber-900">
+        <div className="flex flex-wrap items-center gap-4 text-small font-semibold">
           <a
             href="https://irdai.gov.in"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 hover:underline text-primary"
+            className="inline-flex items-center gap-1.5 hover:underline text-primary"
           >
             <span>irdai.gov.in</span>
-            <ExternalLink className="w-3 h-3" />
+            <ExternalLink className="w-3.5 h-3.5" />
           </a>
           <a
             href="https://bimabharosa.irdai.gov.in"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 hover:underline text-primary"
+            className="inline-flex items-center gap-1.5 hover:underline text-primary"
           >
             <span>bimabharosa.irdai.gov.in</span>
-            <ExternalLink className="w-3 h-3" />
+            <ExternalLink className="w-3.5 h-3.5" />
           </a>
           <a
             href="https://cioins.co.in"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 hover:underline text-primary"
+            className="inline-flex items-center gap-1.5 hover:underline text-primary"
           >
             <span>cioins.co.in</span>
-            <ExternalLink className="w-3 h-3" />
+            <ExternalLink className="w-3.5 h-3.5" />
           </a>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex flex-wrap gap-1.5 border-b border-border pb-2 print:hidden">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => setActiveTab(tab.id as any)}
-            className={`px-3 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-              activeTab === tab.id
-                ? 'bg-primary text-white shadow-xs'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Document View & Copy Control */}
+      {/* Document View & Copy Control in Document-Style Card */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between text-xs text-muted print:hidden">
-          <span>
-            Highlighted brackets <code className="bg-amber-100 text-amber-900 px-1 py-0.5 rounded font-mono">[like this]</code> indicate details to verify before sending.
-          </span>
-          <button
-            type="button"
-            onClick={() => copyToClipboard(currentDoc, activeTab)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold transition-all shadow-xs cursor-pointer"
-          >
-            {copiedKey === activeTab ? (
-              <>
-                <Check className="w-3.5 h-3.5" />
-                <span>{t.copiedBtn}</span>
-              </>
-            ) : (
-              <>
-                <Copy className="w-3.5 h-3.5" />
-                <span>{t.copyDraftBtn}</span>
-              </>
-            )}
-          </button>
-        </div>
+        {/* Document-style Card: readable body font at 16px, generous line height, highlighted blanks */}
+        <div className="bg-surface rounded-card border border-border shadow-popover overflow-hidden">
+          {/* Document Top Action Bar */}
+          <div className="p-4 bg-surface-subtle border-b border-border flex items-center justify-between gap-3">
+            <span className="text-caption text-text-muted font-medium">
+              Highlighted fields <code className="bg-unverified-bg text-unverified-fg px-1.5 py-0.5 rounded-chip font-bold text-caption border border-unverified-border">[like this]</code> indicate patient information to fill in before sending.
+            </span>
 
-        {/* Rendered Text Box */}
-        <pre className="bg-slate-50 border border-slate-200 rounded-xl p-5 text-xs text-slate-800 font-mono whitespace-pre-wrap leading-relaxed overflow-x-auto shadow-inner">
-          {currentDoc}
-        </pre>
+            <button
+              type="button"
+              onClick={() => copyToClipboard(currentDoc, activeTab)}
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary-hover text-primary-contrast rounded-chip font-semibold text-small transition-all duration-150 shadow-card cursor-pointer min-h-[44px] shrink-0"
+              aria-label="Copy letter text to clipboard"
+            >
+              {copiedKey === activeTab ? (
+                <>
+                  <Check className="w-4 h-4 text-primary-contrast" />
+                  <span>{t.copiedBtn}</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-4 h-4 text-primary-contrast" />
+                  <span>{t.copyDraftBtn}</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Document Body */}
+          <div className="p-6 sm:p-8 text-body leading-relaxed text-text font-sans whitespace-pre-wrap break-words max-w-prose">
+            {renderHighlightedText(currentDoc)}
+          </div>
+        </div>
       </div>
     </div>
   );
