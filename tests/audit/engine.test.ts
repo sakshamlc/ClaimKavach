@@ -341,11 +341,11 @@ describe('Phase 3 Audit Engine: Determinism, Golden-File Synthetic Bills & Centr
         hospital: { name: 'Hospital' },
         stay: { admissionDate: '2024-01-01', dischargeDate: '2024-01-02', lengthOfStayNights: 1 },
         items: [
-          // Item 1: Complete money fields -> arithmetic checked
+          // Item 1: Complete money fields -> arithmetic checked, but matches no reference data -> in notCheckedItems
           { id: 'I1', description: 'Item 1', category: 'other', quantity: 1, unitRatePaise: 1000, totalBilledPaise: 1000 },
           // Item 2: Unpriced pharmacy -> arithmetic NOT checked, but matches DEMO drug -> regulatory checked
           { id: 'I2', description: 'DEMO Drug Alpha 100mg Tablet', category: 'pharmacy', quantity: null, unitRatePaise: null, totalBilledPaise: null },
-          // Item 3: Unpriced unknown consumable -> neither arithmetic nor regulatory checked -> in notCheckedItems
+          // Item 3: Unpriced unknown consumable -> matches no reference data -> in notCheckedItems
           { id: 'I3', description: 'Mystery Unpriced Tube', category: 'other', quantity: null, unitRatePaise: null, totalBilledPaise: null },
         ],
         totalBilledPaise: 1000,
@@ -355,10 +355,11 @@ describe('Phase 3 Audit Engine: Determinism, Golden-File Synthetic Bills & Centr
 
       expect(report.coverage.arithmeticChecked).toBe(1); // I1
       expect(report.coverage.regulatoryChecked).toBe(1); // I2
+      expect(report.coverage.notCheckedCount).toBe(2);   // I1 and I3
       expect(report.coverage.total).toBe(3);
       expect(report.notCheckedItems).toBeDefined();
-      expect(report.notCheckedItems?.length).toBe(1);
-      expect(report.notCheckedItems?.[0].id).toBe('I3');
+      expect(report.notCheckedItems?.length).toBe(2);
+      expect(report.notCheckedItems?.map((i) => i.id)).toEqual(['I1', 'I3']);
     });
 
     it('runs runAudit with default production datasets against a real formulation bill', () => {

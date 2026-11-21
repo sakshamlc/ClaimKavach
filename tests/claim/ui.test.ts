@@ -64,19 +64,35 @@ describe('Phase 5 & 6: ClaimKavach UI Logic, Store & Dispute Verification', () =
 
       const report = useClaimStore.getState().executeAudit();
       expect(report).not.toBeNull();
-      expect(report?.totals.billed).toBe(4500280); // ₹45,002.80
+      expect(report?.totals.billed).toBe(34200000); // ₹3,42,000.00
 
       // Fair Amount = Billed - Confirmed ONLY
-      // Because reference data is verified:false, the stent overcharge is LIKELY_ISSUE (not confirmed)
+      // Because reference data is verified:false, confirmed is 0
       expect(report?.totals.confirmed).toBe(0);
-      expect(report?.totals.fair).toBe(4500280); // Unaltered by unverified issues
-      expect(report?.totals.likely).toBeGreaterThan(0); // Stent excess is in likely tier
+      expect(report?.totals.fair).toBe(34200000); // Unaltered by unverified issues
+      expect(report?.totals.likely).toBeGreaterThan(0); // Duplicate CBC is in likely tier
+      expect(report?.totals.needsReview).toBeGreaterThan(0); // Stent before April 2026 is in needs review
       expect(report?.totals.ifLikelyUpheld).toBe(
         report!.totals.fair - report!.totals.likely
       );
 
       // Tiers must never be merged:
       expect(report?.totals.confirmed).not.toBe(report?.totals.likely);
+    });
+
+    it('loads Sample 1b (Stent bill after 1 April 2026), executes audit, and verifies unverified cap', () => {
+      useClaimStore.getState().loadSample('sample1b');
+      const bill = useClaimStore.getState().bill;
+      expect(bill).not.toBeNull();
+      expect(bill?.isSynthetic).toBe(true);
+
+      const report = useClaimStore.getState().executeAudit();
+      expect(report).not.toBeNull();
+      expect(report?.totals.billed).toBe(34200000);
+      expect(report?.totals.confirmed).toBe(0);
+      expect(report?.totals.likely).toBe(7126397); // 7081397 (stent) + 45000 (duplicate CBC)
+      expect(report?.totals.fair).toBe(34200000);
+      expect(report?.totals.ifLikelyUpheld).toBe(27073603);
     });
 
     it('loads Sample 2 (Bundling & TPA deductions) and produces separate bundling and annexure findings', () => {

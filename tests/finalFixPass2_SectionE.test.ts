@@ -36,12 +36,20 @@ describe('Final Fix Pass 2 - Section E: Honest Wording Scanner', () => {
   it('2. verifies ClaimKavach strings conform to honest wording requirements', () => {
     // EN
     expect(claimTranslations.en.consentText).toContain('consumer awareness, not legal or insurance advice');
-    expect(claimTranslations.en.bannerMemory).toContain("ClaimKavach doesn't store your bill");
-    expect(claimTranslations.en.bannerMemory).toContain('sent to Google Gemini for reading');
+    expect(claimTranslations.en.consentText).toContain("ClaimKavach doesn't store your bill");
+    expect(claimTranslations.en.consentText).toContain('the file is sent to Google Gemini for reading');
+    expect(claimTranslations.en.consentText).toContain('the audit runs on your device');
+    expect(claimTranslations.en.consentText).toContain(
+      "A Gemini key you type passes through the ClaimKavach server to Google and isn't stored or logged"
+    );
+    expect(claimTranslations.en.bannerMemory).toBe("We don't store your bill. Reading uses Google Gemini.");
 
     // HI
     expect(claimTranslations.hi.consentText).toContain('उपभोक्ता जागरूकता');
-    expect(claimTranslations.hi.bannerMemory).toContain('क्लेमकवच आपके बिल को संग्रहीत नहीं करता है');
-    expect(claimTranslations.hi.bannerMemory).toContain('फ़ाइल पढ़ने के लिए Google Gemini को भेजी जाती है');
+    expect(claimTranslations.hi.consentText).toContain('क्लेमकवच आपके बिल को संग्रहीत नहीं करता है');
+    expect(claimTranslations.hi.consentText).toContain('फ़ाइल पढ़ने के लिए Google Gemini को भेजी जाती है');
+    expect(claimTranslations.hi.consentText).toContain('ऑडिट आपके डिवाइस पर चलता है');
+    expect(claimTranslations.hi.consentText).toContain('ClaimKavach सर्वर के माध्यम से Google को भेजी जाती है और इसे संग्रहीत या लॉग नहीं किया जाता है');
+    expect(claimTranslations.hi.bannerMemory).toBe('हम आपका बिल सहेजते नहीं हैं। पढ़ने के लिए Google Gemini का उपयोग होता है।');
   });
 });

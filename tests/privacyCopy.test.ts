@@ -87,9 +87,23 @@ describe('Privacy Copy Verification', () => {
     expect(readmeContent).toContain("ClaimKavach doesn't store your bill");
     expect(i18nContent).toContain(expectedEnStatement);
 
+    // Verify key pass-through statement
+    const keyPathEnStatement =
+      "A Gemini key you type passes through the ClaimKavach server to Google and isn't stored or logged";
+    expect(readmeContent).toContain(keyPathEnStatement);
+    expect(i18nContent).toContain(keyPathEnStatement);
+
     // Verify Hindi statement
     const expectedHiStatement =
       'क्लेमकवच आपके बिल को संग्रहीत नहीं करता है; फ़ाइल पढ़ने के लिए Google Gemini को भेजी जाती है; ऑडिट आपके डिवाइस पर चलता है';
     expect(i18nContent).toContain(expectedHiStatement);
+    const keyPathHiStatement =
+      'आपके द्वारा दर्ज की गई Gemini कुंजी ClaimKavach सर्वर के माध्यम से Google को भेजी जाती है और इसे संग्रहीत या लॉग नहीं किया जाता है';
+    expect(readmeContent).toContain(keyPathHiStatement);
+    expect(i18nContent).toContain(keyPathHiStatement);
+
+    // Verify shortened banner
+    expect(i18nContent).toContain("We don't store your bill. Reading uses Google Gemini.");
+    expect(i18nContent).toContain('हम आपका बिल सहेजते नहीं हैं। पढ़ने के लिए Google Gemini का उपयोग होता है।');
   });
 });

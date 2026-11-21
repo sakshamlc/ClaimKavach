@@ -1,11 +1,11 @@
 import React from 'react';
-import type { LineItem } from '@/lib/audit/types';
+import type { NotCheckedItem, LineItem } from '@/lib/audit/types';
 import { formatINR } from '@/lib/audit/currency';
-import { Card, Badge } from '@/components/ui';
-import { MinusCircle, Info } from 'lucide-react';
+import { Card } from '@/components/ui';
+import { MinusCircle, Info, ArrowUpRight } from 'lucide-react';
 
 interface NotCheckedListProps {
-  items: (LineItem & { reason?: string })[];
+  items: (NotCheckedItem | (LineItem & { reason?: string; findingId?: string; findingKey?: string; findingTitle?: string }))[];
 }
 
 export function NotCheckedList({ items }: NotCheckedListProps) {
@@ -21,10 +21,10 @@ export function NotCheckedList({ items }: NotCheckedListProps) {
         </div>
         <div className="space-y-1">
           <h3 className="text-h3 font-bold text-text">
-            Items Not Checked Against Statutory Ceilings ({items.length})
+            Items Not Checked Against Reference Data ({items.length})
           </h3>
           <p className="text-small text-text-muted leading-relaxed max-w-prose">
-            These line items could not be audited against statutory schedules because either the item lacks pricing/quantity details or the corresponding statutory order (e.g., knee implant price schedules) has not yet been ingested into ClaimKavach.
+            These line items matched no reference-data record (such as statutory price ceiling orders, Annexure-I non-payable lists, or room bundling rules). Each item carries an explicit reason derived from its category and data state.
           </p>
         </div>
       </div>
@@ -48,7 +48,18 @@ export function NotCheckedList({ items }: NotCheckedListProps) {
                   {item.id}
                 </td>
                 <td className="py-2.5 px-3 font-medium">
-                  {item.description}
+                  <div>{item.description}</div>
+                  {item.findingKey && (
+                    <div className="mt-1">
+                      <a
+                        href={`#finding-row-${item.findingKey}`}
+                        className="inline-flex items-center gap-1 text-[11px] font-bold text-teal-800 hover:text-teal-900 underline"
+                      >
+                        <span>See finding ({item.findingId})</span>
+                        <ArrowUpRight className="w-3 h-3" aria-hidden="true" />
+                      </a>
+                    </div>
+                  )}
                 </td>
                 <td className="py-2.5 px-3 capitalize text-text-muted">
                   {item.category.replace(/_/g, ' ')}
@@ -59,8 +70,8 @@ export function NotCheckedList({ items }: NotCheckedListProps) {
                     : 'Unpriced'}
                 </td>
                 <td className="py-2.5 px-3">
-                  <span className="inline-flex items-center gap-1.5 text-caption font-medium text-unverified-fg bg-unverified-bg px-2.5 py-1 rounded-chip border border-unverified-border leading-normal">
-                    <Info className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                  <span className="inline-flex items-start gap-1.5 text-caption font-medium text-unverified-fg bg-unverified-bg px-2.5 py-1 rounded-chip border border-unverified-border leading-normal">
+                    <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" aria-hidden="true" />
                     <span>{item.reason || item.notes || 'No statutory reference data available for this category.'}</span>
                   </span>
                 </td>
@@ -83,6 +94,17 @@ export function NotCheckedList({ items }: NotCheckedListProps) {
               </span>
             </div>
             <div className="font-semibold text-text">{item.description}</div>
+            {item.findingKey && (
+              <div>
+                <a
+                  href={`#finding-row-${item.findingKey}`}
+                  className="inline-flex items-center gap-1 text-[11px] font-bold text-teal-800 hover:text-teal-900 underline"
+                >
+                  <span>See finding ({item.findingId})</span>
+                  <ArrowUpRight className="w-3 h-3" aria-hidden="true" />
+                </a>
+              </div>
+            )}
             <div className="text-caption text-unverified-fg bg-unverified-bg p-2 rounded-chip border border-unverified-border leading-relaxed flex items-start gap-1.5">
               <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
               <span>{item.reason || item.notes || 'No statutory reference data available for this category.'}</span>

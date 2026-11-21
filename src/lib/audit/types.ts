@@ -243,7 +243,19 @@ export interface ReportTotals {
 export interface ReportCoverage {
   arithmeticChecked: number;   // Number of line items checked for arithmetic consistency
   regulatoryChecked: number;   // Number of line items matched and checked against reference data
+  notCheckedCount: number;     // Number of line items not checked against any reference
   total: number;               // Total number of line items on bill
+}
+
+/**
+ * Line item not checked against statutory or regulatory reference data,
+ * with explicit derived reason and optional finding association.
+ */
+export interface NotCheckedItem extends LineItem {
+  reason: string;
+  findingId?: string;
+  findingKey?: string;
+  findingTitle?: string;
 }
 
 /**
@@ -256,5 +268,5 @@ export interface AuditReport {
   coverage: ReportCoverage;
   findings: AuditFinding[];
   dataVersions: Record<string, string>; // e.g. { nppa: "2024.1", irdai: "2024.1" }
-  notCheckedItems?: LineItem[];         // Line items without applicable rules
+  notCheckedItems?: (NotCheckedItem | LineItem)[];   // Line items without matching reference data
 }

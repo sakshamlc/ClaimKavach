@@ -558,7 +558,7 @@ export function DisputePack({ bill, report }: DisputePackProps) {
         {/* Document-style Card: readable body font at 16px, generous line height, highlighted blanks */}
         <div className="bg-surface rounded-card border border-border shadow-popover overflow-hidden">
           {/* Document Top Action Bar */}
-          <div className="p-4 bg-surface-subtle border-b border-border flex items-center justify-between gap-3">
+          <div className="p-4 bg-surface-subtle border-b border-border flex items-center justify-between gap-3 print:hidden">
             <span className="text-caption text-text-muted font-medium">
               Highlighted fields <code className="bg-unverified-bg text-unverified-fg px-1.5 py-0.5 rounded-chip font-bold text-caption border border-unverified-border">[like this]</code> indicate patient information to fill in before sending.
             </span>
@@ -581,6 +581,18 @@ export function DisputePack({ bill, report }: DisputePackProps) {
                 </>
               )}
             </button>
+          </div>
+
+          {/* Print-Only Audit Coverage Breakdown */}
+          <div className="hidden print:block p-4 bg-surface-subtle border-b border-border text-small text-text space-y-1">
+            <div className="font-bold text-caption uppercase tracking-wider text-text-muted">
+              ClaimKavach Audit Coverage &amp; Verification Summary
+            </div>
+            <div className="grid grid-cols-3 gap-2 font-mono text-caption">
+              <div>Arithmetic and duplicate checks: {report.coverage.arithmeticChecked} of {report.coverage.total}</div>
+              <div>Checked against reference data: {report.coverage.regulatoryChecked} of {report.coverage.total}</div>
+              <div>Not checked against any reference: {report.coverage.notCheckedCount !== undefined ? report.coverage.notCheckedCount : (report.notCheckedItems?.length || 0)}</div>
+            </div>
           </div>
 
           {/* Document Body */}

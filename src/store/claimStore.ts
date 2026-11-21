@@ -7,6 +7,7 @@ import type { ClaimLanguage } from '@/lib/claimI18n';
 
 // Import synthetic samples
 import sample1Data from '@/data/samples/sample1-stent.json';
+import sample1bData from '@/data/samples/sample1b-stent-post-april.json';
 import sample2Data from '@/data/samples/sample2-bundling-tpa.json';
 import sample3Data from '@/data/samples/sample3-clean.json';
 
@@ -30,7 +31,7 @@ export interface ClaimState {
   // Active bill & metadata
   bill: MedicalBill | null;
   fileName: string | null;
-  selectedSampleKey: 'sample1' | 'sample2' | 'sample3' | null;
+  selectedSampleKey: 'sample1' | 'sample1b' | 'sample2' | 'sample3' | null;
 
   // Optional TPA settlement upload
   tpaSettlement: any | null;
@@ -52,7 +53,7 @@ export interface ClaimState {
 
   // Actions
   setBill: (bill: MedicalBill, fileName?: string) => void;
-  loadSample: (key: 'sample1' | 'sample2' | 'sample3') => void;
+  loadSample: (key: 'sample1' | 'sample1b' | 'sample2' | 'sample3') => void;
   updateBillDate: (date: string) => void;
   updateLineItem: (id: string, updates: Partial<LineItem>) => void;
   addLineItem: (item: LineItem) => void;
@@ -140,6 +141,9 @@ export const useClaimStore = create<ClaimState>((set, get) => ({
     if (key === 'sample1') {
       rawData = sample1Data;
       label = 'sample1-stent.json';
+    } else if (key === 'sample1b') {
+      rawData = sample1bData;
+      label = 'sample1b-stent-post-april.json';
     } else if (key === 'sample2') {
       rawData = sample2Data;
       label = 'sample2-bundling-tpa.json';

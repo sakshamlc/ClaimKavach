@@ -54,6 +54,7 @@ function createMockReport(): AuditReport {
     coverage: {
       arithmeticChecked: 1,
       regulatoryChecked: 1,
+      notCheckedCount: 1,
       total: 2,
     },
     dataVersions: {

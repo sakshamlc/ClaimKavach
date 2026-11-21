@@ -129,6 +129,57 @@ export function mergeExtractedBatches(batches: any[]): any {
   return primary;
 }
 
+async function compressImageIfNeeded(file: File, onProgress: BatchProgressCallback): Promise<File | Blob> {
+  const maxMb = 4;
+  if (file.size <= maxMb * 1024 * 1024) {
+    return file;
+  }
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
+    return file;
+  }
+  onProgress(1, 1, 'Compressing photo...');
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let { width, height } = img;
+      const maxDim = 2000;
+      if (width > maxDim || height > maxDim) {
+        if (width > height) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        } else {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return resolve(file);
+      ctx.drawImage(img, 0, 0, width, height);
+      canvas.toBlob(
+        (blob) => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            resolve(file);
+          }
+        },
+        'image/jpeg',
+        0.82
+      );
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Failed to load image for photo compression.'));
+    };
+    img.src = url;
+  });
+}
+
 /**
  * Client-side processor to render PDF pages into images, enforce the 20-page cap,
  * batch images into < 4 MB requests, and merge results.
@@ -148,9 +199,12 @@ export async function processPdfOrImage(
 
   // If not PDF (single image file)
   if (!isPdf) {
-    const maxMb = 4;
-    if (file.size > maxMb * 1024 * 1024) {
-      throw new Error(`File size (${(file.size / (1024 * 1024)).toFixed(2)} MB) exceeds 4 MB maximum.`);
+    let uploadFile: File | Blob = file;
+    if (file.size > 4 * 1024 * 1024) {
+      uploadFile = await compressImageIfNeeded(file, progress);
+      if (uploadFile.size > 4 * 1024 * 1024) {
+        throw new Error(`File size (${(uploadFile.size / (1024 * 1024)).toFixed(2)} MB) exceeds 4 MB maximum.`);
+      }
     }
 
     progress(1, 1, 'Extracting document...');
@@ -160,7 +214,7 @@ export async function processPdfOrImage(
     for (let attempt = 1; attempt <= 2; attempt++) {
       try {
         const formData = new FormData();
-        formData.append('file', file);
+        formData.append('file', uploadFile, file.name || 'document.jpg');
         formData.append('docType', docType);
 
         const headers: Record<string, string> = {};

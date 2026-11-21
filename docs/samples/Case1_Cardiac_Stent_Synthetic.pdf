@@ -1,0 +1,62 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 2319 >>
+stream
+BT
+/F1 10 Tf
+20 780 Td
+14 TL
+(SAMPLE METRO CARE HOSPITAL \(SYNTHETIC DEMO\)) '
+(100% Synthetic Patient Medical Bill - For Demonstration Only) '
+(Bill No: SYN-3334    Admission: 2026-03-10    Discharge: 2026-03-14) '
+(Room Category: ICU + single private           Pre-tax / GST Excluded) '
+(----------------------------------------------------------------------------------) '
+(Sr Item Description                    Code     Unit Qty  Unit Rate     Total Date) '
+(----------------------------------------------------------------------------------) '
+(1  ICU room rent                        RM-ICU   DAY    2   12000.00  24000.00 2026-03-10) '
+(2  Private single room rent             RM-PVT   DAY    2    6000.00  12000.00 2026-03-10) '
+(3  Coronary stent - Drug Eluting Stent  IMP-DES  UNIT   1  110000.00 110000.00 2026-03-10) '
+(4  Coronary angioplasty procedure cath  PR-PTCA  UNIT   1   85000.00  85000.00 2026-03-10) '
+(5  Cardiologist consultation visit      CON-CARD VISIT  6    1500.00   9000.00 2026-03-10) '
+(6  Nursing charges \(daily\)              NUR-01   DAY    4    1200.00   4800.00 2026-03-10) '
+(7  ICU multipara monitor charges        MON-ICU  DAY    2    1500.00   3000.00 2026-03-10) '
+(8  CBC test                             LAB-CBC  TEST   1     450.00    450.00 2026-03-11) '
+(9  CBC test                             LAB-CBC  TEST   1     450.00    450.00 2026-03-11) '
+(10 Troponin test                        LAB-TRP  TEST   1    1200.00   1200.00 2026-03-10) '
+(11 ECG                                  DX-ECG   TEST   3     400.00   1200.00 2026-03-10) '
+(12 Paracetamol IV infusion 100 ml       MED-PCM  VIAL  10     120.00   1200.00 2026-03-10) '
+(13 Exam gloves and swabs \(consumables\)  CON-GLV  PACK   1    3500.00   3500.00 2026-03-10) '
+(14 Syringes, pack of 10                 CON-SYR  PACK   4     150.00    600.00 2026-03-10) '
+(15 Registration / admission fee         ADM-01   UNIT   1     500.00    500.00 2026-03-10) '
+(16 Pharmacy - general medicines         PH-GEN   UNIT   1   85100.00  85100.00 2026-03-10) '
+(----------------------------------------------------------------------------------) '
+(Stated Grand Total: INR 342000.00 \(Rupees Three Lakh Forty Two Thousand Only\)) '
+(----------------------------------------------------------------------------------) '
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000002611 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+2679
+%%EOF

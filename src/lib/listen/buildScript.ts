@@ -123,17 +123,21 @@ export function buildSpokenScript(
 
   // 3. NOT-CHECKED ITEMS SECTION
   let notCheckedText = '';
+  const arithmeticCount = report.coverage.arithmeticChecked;
+  const regulatoryCount = report.coverage.regulatoryChecked;
+  const totalCount = report.coverage.total;
+
   if (isHi) {
     if (notCheckedCount > 0) {
-      notCheckedText = `अजांची मदों पर सूचना: बिल में दर्ज ${notCheckedCount} मदों की वैधानिक अनुसूचियों से पुष्टि नहीं हो सकी क्योंकि संबंधित डिजिटल अधिसूचनाएं अभी संदर्भ डेटाबेस में उपलब्ध नहीं हैं। इन मदों की मानवीय समीक्षा आवश्यक है।`;
+      notCheckedText = `अंकगणितीय एवं दोहराव जांच: ${totalCount} में से ${arithmeticCount} मदें। विनियामक संदर्भ डेटा से जांच: ${totalCount} में से ${regulatoryCount} मदें। किसी संदर्भ से अजांची मदें: ${notCheckedCount}। अजांची मदों पर सूचना: बिल में दर्ज ${notCheckedCount} मदों की वैधानिक अनुसूचियों से पुष्टि नहीं हो सकी क्योंकि संबंधित डिजिटल अधिसूचनाएं अभी संदर्भ डेटाबेस में उपलब्ध नहीं हैं। इन मदों की मानवीय समीक्षा आवश्यक है।`;
     } else {
-      notCheckedText = `सभी बिल मदों की संदर्भ डेटाबेस से जांच की गई।`;
+      notCheckedText = `अंकगणितीय एवं दोहराव जांच: ${totalCount} में से ${arithmeticCount} मदें। विनियामक संदर्भ डेटा से जांच: ${totalCount} में से ${regulatoryCount} मदें। सभी बिल मदों की संदर्भ डेटाबेस से जांच की गई।`;
     }
   } else {
     if (notCheckedCount > 0) {
-      notCheckedText = `Notice on unchecked items: ${notCheckedCount} line items could not be verified against statutory schedules because matching digital notifications are not yet ingested in the reference database. These items require manual review.`;
+      notCheckedText = `Arithmetic and duplicate checks: ${arithmeticCount} of ${totalCount}. Checked against reference data: ${regulatoryCount} of ${totalCount}. Not checked against any reference: ${notCheckedCount}. Notice on unchecked items: ${notCheckedCount} line items could not be verified against statutory schedules because matching digital notifications are not yet ingested in the reference database. These items require manual review.`;
     } else {
-      notCheckedText = `All billed line items were matched against ingested reference databases.`;
+      notCheckedText = `Arithmetic and duplicate checks: ${arithmeticCount} of ${totalCount}. Checked against reference data: ${regulatoryCount} of ${totalCount}. All billed line items were matched against ingested reference databases.`;
     }
   }
 

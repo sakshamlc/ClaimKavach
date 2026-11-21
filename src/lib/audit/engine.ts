@@ -22,6 +22,7 @@ import {
   ReportTotals,
   ReportCoverage,
   LineItem,
+  NotCheckedItem,
 } from './types';
 import {
   NppaCeilingRecord,
@@ -47,6 +48,7 @@ import { evaluateMrpRule } from './rules/mrpRule';
 import { evaluateAnnexureDeductionRule } from './rules/annexureDeductionRule';
 import { evaluateBundlingRule } from './rules/bundlingRule';
 import { evaluatePolicyRule } from './rules/policyRule';
+import { evaluatePharmacyLumpSumRule } from './rules/pharmacyLumpSumRule';
 
 // Import default seed datasets
 import nppaSeedData from '../../data/regulatory/nppaCeilings.json';
@@ -122,6 +124,12 @@ export function runAudit(
       if (mrpFinding) {
         rawFindings.push({ finding: mrpFinding, isExactMatch: true, item });
       }
+    }
+
+    // Bill structure / Pharmacy lump sum check (R-STRUCT-01)
+    const structFinding = evaluatePharmacyLumpSumRule(item, bill.totalBilledPaise);
+    if (structFinding) {
+      rawFindings.push({ finding: structFinding, isExactMatch: true, item });
     }
 
     // Pharmacy statutory ceiling (R-NPPA-01)
@@ -290,30 +298,80 @@ export function runAudit(
   };
 
   // 7. Calculate coverage & notCheckedItems
-  const notCheckedItems = bill.items
-    .filter(
-      (item) =>
-        (!checkedArithmeticItemIds.has(item.id) && !checkedRegulatoryItemIds.has(item.id)) ||
-        (/knee/i.test(item.description) && !checkedRegulatoryItemIds.has(item.id))
-    )
+  // An item is "not checked" when it matched NO reference-data record
+  // (a price order, an Annexure entry or a bundling entry), regardless of arithmetic or duplicate checks.
+  const notCheckedItems: NotCheckedItem[] = bill.items
+    .filter((item) => !checkedRegulatoryItemIds.has(item.id))
     .map((item) => {
-      if (/knee/i.test(item.description) && !checkedRegulatoryItemIds.has(item.id)) {
+      let reason = '';
+      if (/knee/i.test(item.description)) {
         const effectiveDate = item.date || bill.billDate;
         const isExpired = effectiveDate ? effectiveDate > '2027-01-15' : false;
-        const kneeNote = isExpired
+        reason = isExpired
           ? "Knee implant ceiling extension order S.O. 6222(E) expired on 2027-01-15 unless renewed by subsequent notification; root price table from S.O. 5190(E) / S.O. 2668(E) has not been ingested; item is NOT_CHECKED."
           : "Knee implant ceiling order S.O. 6222(E) is valid until 2027-01-15 (extending S.O. 5190(E)), but root price table from S.O. 5190(E) / S.O. 2668(E) has not been ingested; item is NOT_CHECKED.";
-        return {
-          ...item,
-          notes: item.notes ? `${item.notes} | ${kneeNote}` : kneeNote,
-        };
+      } else if (item.totalBilledPaise === null || item.totalBilledPaise === undefined) {
+        reason = "Line item lacks billed price or quantity details on invoice.";
+      } else if (item.category === 'pharmacy') {
+        const isLump =
+          (item.quantity === 1 || item.quantity === null) &&
+          /lump|general|sundr|medicines/i.test(item.description);
+        reason = isLump
+          ? "Unitemized pharmacy lump sum; lacks specific formulation name and active ingredient details."
+          : "No matching active pharmaceutical ingredient / formulation in ingested NPPA DPCO schedules.";
+      } else if (item.category === 'implant') {
+        reason = "No matching implant price ceiling order in S.O. 1587(E) (only coronary stents currently ingested).";
+      } else if (item.category === 'icu') {
+        reason = /monitor/i.test(item.description)
+          ? "No statutory price ceiling order applicable to ICU monitoring equipment."
+          : "No statutory price ceiling order applicable to ICU bed charges.";
+      } else if (item.category === 'room_rent') {
+        reason = "No statutory price ceiling order applicable to room rent tariffs.";
+      } else if (item.category === 'procedure') {
+        reason = "Surgical and cath lab procedure fees are not regulated under NPPA statutory price orders.";
+      } else if (item.category === 'doctor_visit') {
+        reason = "Doctor consultation fees are not regulated under statutory price ceiling schedules.";
+      } else if (item.category === 'nursing') {
+        reason = "No statutory ceiling order; unbundled nursing care schedule not ingested.";
+      } else if (item.category === 'investigation') {
+        reason = /ecg|cardio/i.test(item.description)
+          ? "Diagnostic cardiac investigations are not regulated under DPCO statutory ceilings."
+          : "Diagnostic laboratory investigations are not regulated under DPCO statutory ceilings.";
+      } else if (item.category === 'consumable') {
+        reason = "General consumable items are not scheduled under DPCO price ceiling gazettes.";
+      } else if (item.category === 'admin_fee') {
+        reason = "Administrative and registration fees are not regulated under NPPA ceiling orders.";
+      } else {
+        reason = `No statutory reference data available for ${item.category.replace(/_/g, ' ')} category.`;
       }
-      return item;
+
+      // Check if this not-checked item has an associated finding
+      const associatedFinding = finalFindings.find(
+        (f) => f.itemId === item.id || (f.itemIds && f.itemIds.includes(item.id))
+      );
+
+      return {
+        ...item,
+        reason,
+        notes: /knee/i.test(item.description)
+          ? item.notes
+            ? `${item.notes} | ${reason}`
+            : reason
+          : item.notes,
+        findingId: associatedFinding ? associatedFinding.ruleId : undefined,
+        findingKey: associatedFinding
+          ? `${associatedFinding.ruleId}-${associatedFinding.itemId}`
+          : undefined,
+        findingTitle: associatedFinding
+          ? associatedFinding.title || associatedFinding.explanation.en
+          : undefined,
+      };
     });
 
   const coverage: ReportCoverage = {
     arithmeticChecked: checkedArithmeticItemIds.size,
     regulatoryChecked: checkedRegulatoryItemIds.size,
+    notCheckedCount: notCheckedItems.length,
     total: bill.items.length,
   };
 

@@ -57,7 +57,7 @@ describe('ClaimKavach End-to-End Workflow in Mock Mode (Sample 1 -> Verify -> Re
       (item) => item.category === 'implant' || item.description.toLowerCase().includes('stent')
     )!;
     expect(stentItem).toBeDefined();
-    expect(stentItem.unitRatePaise).toBe(4500000); // ₹45,000.00 billed
+    expect(stentItem.unitRatePaise).toBe(11000000); // ₹1,10,000.00 billed
 
     // Toggle user checked flag
     useClaimStore.getState().toggleUserEdited(stentItem.id);
@@ -79,13 +79,13 @@ describe('ClaimKavach End-to-End Workflow in Mock Mode (Sample 1 -> Verify -> Re
 
     // Assert the 5 unmerged financial tiers
     // 1. Total Billed
-    expect(report.totals.billed).toBe(4500280); // ₹45,002.80
+    expect(report.totals.billed).toBe(34200000); // ₹3,42,000.00
     // 2. Confirmed Overcharge: 0 (because reference data is verified: false, so it is in likely tier)
     expect(report.totals.confirmed).toBe(0);
-    // 3. Likely Issues: includes stent overcharge (> 0)
+    // 3. Likely Issues: includes duplicate CBC (> 0)
     expect(report.totals.likely).toBeGreaterThan(0);
-    // 4. Needs Review: integer paise
-    expect(Number.isInteger(report.totals.needsReview)).toBe(true);
+    // 4. Needs Review: includes stent finding prior to 1 April 2026 (> 0)
+    expect(report.totals.needsReview).toBeGreaterThan(0);
     // 5. Fair Amount: Billed - Confirmed ONLY (never auto-subtracts unverified likely issues)
     expect(report.totals.fair).toBe(report.totals.billed);
     // Adjusted fair amount if likely upheld
@@ -98,7 +98,7 @@ describe('ClaimKavach End-to-End Workflow in Mock Mode (Sample 1 -> Verify -> Re
     expect(metricCardsHtml).toContain('Likely Issues');
     expect(metricCardsHtml).toContain('Needs Review');
     expect(metricCardsHtml).toContain('Fair Amount');
-    expect(metricCardsHtml).toContain('₹45,002.80');
+    expect(metricCardsHtml).toContain('₹3,42,000.00');
 
     // -------------------------------------------------------------
     // Step 5: Coverage Breakdown Meters
@@ -137,9 +137,16 @@ describe('ClaimKavach End-to-End Workflow in Mock Mode (Sample 1 -> Verify -> Re
     expect(disputePackHtml).toContain('Print Dispute Draft');
     expect(disputePackHtml).toContain('print:hidden');
 
-    // Assert draft text contains statutory stent findings
-    expect(disputeDrafts[0].text).toContain('Billed Rate: ₹45,000.00');
-    expect(disputeDrafts[0].text).toContain('Notified Reference Ceiling:');
-    expect(disputeDrafts[0].text).toContain('Questioned Difference:');
+    // For sample 1 (March), stent is in needsReview (date rule), so draft requests general benchmark review and questions ₹450 duplicate CBC
+    expect(disputeDrafts[0].text).toContain('Total Billed Amount: ₹3,42,000.00');
+    expect(disputeDrafts[0].text).toContain('450.00');
+
+    // For sample 1b (May, post-April 2026), stent is LIKELY_ISSUE and appears itemized in the draft
+    useClaimStore.getState().loadSample('sample1b');
+    const report1b = useClaimStore.getState().executeAudit()!;
+    const drafts1b = generateAllDisputeDrafts(useClaimStore.getState().bill!, report1b);
+    expect(drafts1b[0].text).toContain('Billed Rate: ₹1,10,000.00');
+    expect(drafts1b[0].text).toContain('Notified Reference Ceiling: ₹39,186.03');
+    expect(drafts1b[0].text).toContain('Questioned Difference: ₹70,813.97');
   });
 });

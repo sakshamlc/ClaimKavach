@@ -6,6 +6,7 @@ import {
 import { ExtractedMedicalDocumentSchema } from '@/lib/extract/medicalBillSchema';
 
 import sample1Stent from '@/data/samples/sample1-stent.json';
+import sample1bStent from '@/data/samples/sample1b-stent-post-april.json';
 import sample2Bundling from '@/data/samples/sample2-bundling-tpa.json';
 import sample3Clean from '@/data/samples/sample3-clean.json';
 
@@ -18,6 +19,10 @@ const medicalSampleMap: Record<string, any> = {
   'sample1': sample1Stent,
   'sample1-stent': sample1Stent,
   'stent': sample1Stent,
+  '1b': sample1bStent,
+  'sample1b': sample1bStent,
+  'sample1b-stent': sample1bStent,
+  'post-april': sample1bStent,
   '2': sample2Bundling,
   'sample2': sample2Bundling,
   'sample2-bundling': sample2Bundling,

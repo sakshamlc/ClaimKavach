@@ -24,8 +24,8 @@ ClaimKavach is designed around strict data minimization and patient confidential
   There is no backend database, no user accounts, no session cookies, and no persistent server storage. Hospital bills and patient records are never stored to disk.
 - **In-Memory Volatile Processing:**  
   All active bill state, line items, and audit reports reside in volatile client memory (Zustand store). Closing the browser tab or clicking **Clear Data** permanently erases all in-memory records.
-- **Upstream Gemini Processing:**  
-  When a user uploads a document, the image/PDF is transmitted over TLS to Google Gemini solely to perform OCR and structured data extraction. This transmission is governed by Google Cloud / Gemini API data protection terms (no training on paid API inputs). Users may optionally provide their own Gemini API key via client headers.
+- **Upstream Gemini Processing & Key Path:**  
+  When a user uploads a document, the image/PDF is transmitted over TLS to Google Gemini solely to perform OCR and structured data extraction. This transmission is governed by Google Cloud / Gemini API data protection terms (no training on paid API inputs). A Gemini key you type passes through the ClaimKavach server to Google and isn't stored or logged (Hindi: आपके द्वारा दर्ज की गई Gemini कुंजी ClaimKavach सर्वर के माध्यम से Google को भेजी जाती है और इसे संग्रहीत या लॉग नहीं किया जाता है).
 - **Strict HTTP Headers:**  
   All responses emit `Cache-Control: no-store, no-cache, must-revalidate`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, and `Content-Security-Policy` with `frame-ancestors 'none'`.
 - **Zero LocalStorage Leakage:**  

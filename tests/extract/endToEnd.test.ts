@@ -38,15 +38,15 @@ describe('Phase 4: End-to-End Extraction -> Mapper -> Audit Engine Flow', () => 
     // 2. Map to MedicalBill domain model
     const medicalBill = toMedicalBill(parsed);
     expect(medicalBill.isSynthetic).toBe(true);
-    expect(medicalBill.items).toHaveLength(2);
-    expect(medicalBill.totalBilledPaise).toBe(4500280); // 45002.80 in paise
+    expect(medicalBill.items).toHaveLength(16);
+    expect(medicalBill.totalBilledPaise).toBe(34200000); // 342000.00 in paise
     expect(medicalBill.billedPriceIncludesGst).toBe(false);
 
     // 3. Execute Trust Zone audit engine using default production dataset
     const report = runAudit(medicalBill);
     expect(report).toBeDefined();
     expect(report.billId).toBe(medicalBill.id);
-    expect(report.totals.billed).toBe(4500280);
+    expect(report.totals.billed).toBe(34200000);
 
     // Stent item audited against coronary stent ceiling data (S.O. 1587(E))
     const stentFinding = report.findings.find(
@@ -144,7 +144,7 @@ describe('Phase 4: End-to-End Extraction -> Mapper -> Audit Engine Flow', () => 
 
     const json = await response.json();
     expect(json.documentType).toBe('hospital_bill');
-    expect(json.bill.hospitalName).toBe('Synthetic Metro Heart Institute');
+    expect(json.bill.hospitalName).toBe('Sample Metro Care Hospital (Synthetic Demo)');
   });
 
   it('EXTRACT_MOCK is disabled in production (NODE_ENV === "production")', async () => {

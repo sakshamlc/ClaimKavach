@@ -83,9 +83,19 @@ export function mapRawLineItem(
   const qty = safeParseQuantity(rawItem.quantity);
   const category = mapItemCategory(rawItem.category, rawItem.name);
 
+  let description = rawItem.name;
+  if (
+    category === 'implant' &&
+    (/drug\s*eluting/i.test(rawItem.name) || /\bdes\b/i.test(rawItem.name)) &&
+    /stent/i.test(rawItem.name)
+  ) {
+    description =
+      'Drug Eluting Stents (DES) including metallic DES and Bioresorbable Vascular Scaffold (BVS)/ Biodegradable Stents';
+  }
+
   const item: LineItem = {
     id: `item-${index + 1}`,
-    description: rawItem.name,
+    description,
     category,
     quantity: qty,
     unitRatePaise: unitRateResult.paise,

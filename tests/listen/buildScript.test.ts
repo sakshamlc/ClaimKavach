@@ -64,6 +64,7 @@ function createMockReport(findingsCount: number, notCheckedCount: number = 3): A
     coverage: {
       arithmeticChecked: findingsCount,
       regulatoryChecked: findingsCount,
+      notCheckedCount,
       total: findingsCount + notCheckedCount,
     },
     dataVersions: {

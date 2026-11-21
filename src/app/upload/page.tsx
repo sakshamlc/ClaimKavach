@@ -133,7 +133,7 @@ export default function UploadPage() {
     return 'Extraction failed. Please verify your document is an itemized hospital bill or try one of the synthetic sample bills.';
   };
 
-  const handleSelectSample = (key: 'sample1' | 'sample2' | 'sample3') => {
+  const handleSelectSample = (key: 'sample1' | 'sample1b' | 'sample2' | 'sample3') => {
     loadSample(key);
     setUploadError(null);
     setPartialWarnings(null);
@@ -252,8 +252,8 @@ export default function UploadPage() {
             {t.samplesDesc}
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Sample 1: Stent */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Sample 1: Stent (March, Before April 2026) */}
             <button
               type="button"
               onClick={() => handleSelectSample('sample1')}
@@ -265,7 +265,7 @@ export default function UploadPage() {
             >
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <Badge variant="synthetic" size="sm">Sample 1</Badge>
+                  <Badge variant="synthetic" size="sm">Sample 1 (SYNTHETIC)</Badge>
                   {selectedSampleKey === 'sample1' && (
                     <CheckCircle2 className="w-4 h-4 text-primary" />
                   )}
@@ -276,7 +276,34 @@ export default function UploadPage() {
                 </p>
               </div>
               <span className="text-[11px] font-mono text-text-subtle pt-2 border-t border-border-subtle block">
-                Tests: R-NPPA-01 Ceiling Rule
+                Tests: Date Rule Downgrade
+              </span>
+            </button>
+
+            {/* Sample 1b: Stent (May, After April 2026) */}
+            <button
+              type="button"
+              onClick={() => handleSelectSample('sample1b')}
+              className={`p-4 rounded-card border text-left transition-all duration-150 cursor-pointer flex flex-col justify-between space-y-3 min-h-[44px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-hidden ${
+                selectedSampleKey === 'sample1b'
+                  ? 'border-primary bg-primary-subtle/50 shadow-card ring-2 ring-primary/20'
+                  : 'border-border bg-surface hover:bg-surface-subtle shadow-card'
+              }`}
+            >
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <Badge variant="synthetic" size="sm">Sample 1b (SYNTHETIC)</Badge>
+                  {selectedSampleKey === 'sample1b' && (
+                    <CheckCircle2 className="w-4 h-4 text-primary" />
+                  )}
+                </div>
+                <h3 className="text-small font-bold text-text">{t.sample1bTitle}</h3>
+                <p className="text-caption text-text-muted mt-1 leading-relaxed">
+                  {t.sample1bDesc}
+                </p>
+              </div>
+              <span className="text-[11px] font-mono text-text-subtle pt-2 border-t border-border-subtle block">
+                Tests: Unverified Cap
               </span>
             </button>
 
@@ -292,7 +319,7 @@ export default function UploadPage() {
             >
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <Badge variant="primary" size="sm">Sample 2</Badge>
+                  <Badge variant="primary" size="sm">Sample 2 (SYNTHETIC)</Badge>
                   {selectedSampleKey === 'sample2' && (
                     <CheckCircle2 className="w-4 h-4 text-primary" />
                   )}
@@ -319,7 +346,7 @@ export default function UploadPage() {
             >
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <Badge variant="valid-exclusion" size="sm">Sample 3</Badge>
+                  <Badge variant="valid-exclusion" size="sm">Sample 3 (SYNTHETIC)</Badge>
                   {selectedSampleKey === 'sample3' && (
                     <CheckCircle2 className="w-4 h-4 text-primary" />
                   )}
@@ -449,7 +476,7 @@ export default function UploadPage() {
                       {t.uploadBillBoxSub}
                     </span>
                     <span className="text-[11px] font-semibold text-teal-800 bg-white/80 px-2.5 py-0.5 rounded-chip border border-teal/20">
-                      PDF, JPG, PNG up to 4MB (max 20 pages)
+                      PDF (up to 20 pages) or image up to 4MB (photos compressed automatically)
                     </span>
                   </label>
 
@@ -592,7 +619,7 @@ export default function UploadPage() {
                       {t.uploadTpaBoxSub}
                     </span>
                     <span className="text-[11px] font-semibold text-teal-800 bg-white/80 px-2.5 py-0.5 rounded-chip border border-teal/20">
-                      PDF, JPG, PNG up to 4MB (max 20 pages)
+                      PDF (up to 20 pages) or image up to 4MB (photos compressed automatically)
                     </span>
                   </label>
                 </div>

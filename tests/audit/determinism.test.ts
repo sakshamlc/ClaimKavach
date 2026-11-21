@@ -63,6 +63,7 @@ describe('Trust Zone Pure Determinism Verification', () => {
     const coverage: ReportCoverage = {
       arithmeticChecked: 10,
       regulatoryChecked: 8,
+      notCheckedCount: 4,
       total: 12,
     };
 
