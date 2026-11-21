@@ -36,10 +36,12 @@ describe('Final Fix Pass 2 - Section E: Honest Wording Scanner', () => {
   it('2. verifies ClaimKavach strings conform to honest wording requirements', () => {
     // EN
     expect(claimTranslations.en.consentText).toContain('consumer awareness, not legal or insurance advice');
-    expect(claimTranslations.en.bannerMemory).toContain('runs purely in browser memory');
+    expect(claimTranslations.en.bannerMemory).toContain("ClaimKavach doesn't store your bill");
+    expect(claimTranslations.en.bannerMemory).toContain('sent to Google Gemini for reading');
 
     // HI
     expect(claimTranslations.hi.consentText).toContain('उपभोक्ता जागरूकता');
-    expect(claimTranslations.hi.bannerMemory).toContain('पूरी तरह से ब्राउज़र मेमोरी में चलता है');
+    expect(claimTranslations.hi.bannerMemory).toContain('क्लेमकवच आपके बिल को संग्रहीत नहीं करता है');
+    expect(claimTranslations.hi.bannerMemory).toContain('फ़ाइल पढ़ने के लिए Google Gemini को भेजी जाती है');
   });
 });

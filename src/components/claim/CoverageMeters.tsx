@@ -18,8 +18,8 @@ export function CoverageMeters({ coverage }: CoverageMetersProps) {
         checkedCount={coverage.arithmeticChecked}
         totalCount={coverage.total}
         description="Line items verified for quantity × unit price multiplication and grand total summation."
-        variant="success"
-        icon={<Calculator className="w-4 h-4 text-tier-valid-exclusion-fg" aria-hidden="true" />}
+        variant="primary"
+        icon={<Calculator className="w-4 h-4 text-teal-700" aria-hidden="true" />}
       />
 
       {/* 2. Regulatory Reference Coverage Meter */}

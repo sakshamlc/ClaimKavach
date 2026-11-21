@@ -133,10 +133,10 @@ export function FindingsTable({
                     onClick={() => setSelectedFindingIndex(idx)}
                     className={`p-4 rounded-card border transition-all duration-150 cursor-pointer text-left select-none ${
                       isActivePlaying
-                        ? 'border-accent-teal bg-accent-teal-subtle/40 shadow-popover ring-2 ring-accent-teal'
+                        ? 'border-teal-700 bg-soft-teal/50 shadow-popover ring-2 ring-teal-700'
                         : isSelected
-                        ? 'border-primary bg-primary-soft shadow-card ring-2 ring-primary/20'
-                        : 'border-border bg-surface hover:bg-surface-subtle shadow-card'
+                        ? 'border-teal-700 bg-soft-teal/30 shadow-card ring-2 ring-teal-700/20'
+                        : 'border-border bg-card hover:bg-bg-secondary shadow-card'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-2">
@@ -150,14 +150,14 @@ export function FindingsTable({
                             e.stopPropagation();
                             onPlayFinding?.(idx);
                           }}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-bold text-accent-teal bg-accent-teal-subtle hover:bg-accent-teal hover:text-white rounded-chip border border-accent-teal/30 transition-colors cursor-pointer min-h-[28px]"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-bold text-teal-800 bg-soft-teal hover:bg-teal-700 hover:text-white rounded-chip border border-teal/30 transition-colors cursor-pointer min-h-[28px] focus-visible:ring-2 focus-visible:ring-teal-700"
                           title="Listen to this finding"
                           aria-label="Listen to this finding"
                         >
                           <Volume2 className="w-3 h-3" />
                           <span>{language === 'hi' ? 'सुनें' : 'Listen'}</span>
                         </button>
-                        <span className="font-mono text-caption text-text-subtle font-semibold">
+                        <span className="font-mono text-caption text-text-muted font-semibold">
                           {finding.ruleId}
                         </span>
                       </div>
@@ -225,7 +225,7 @@ export function FindingsTable({
                       </div>
                       <div className="p-3 bg-surface rounded-chip border border-border space-y-1">
                         <span className="text-caption text-text-muted block">Reference Benchmark / Ceiling</span>
-                        <span className="text-h3 font-bold text-tier-valid-exclusion-fg font-mono">
+                        <span className="text-h3 font-bold text-navy font-mono">
                           {activeFinding.expected !== undefined ? formatINR(activeFinding.expected) : '0'}
                         </span>
                       </div>
@@ -291,7 +291,7 @@ export function FindingsTable({
                   id={`finding-row-${findingKey}`}
                   className={`p-4 space-y-3 transition-all ${
                     isActivePlaying
-                      ? 'border-accent-teal bg-accent-teal-subtle/30 shadow-popover ring-2 ring-accent-teal'
+                      ? 'border-teal-700 bg-soft-teal/50 shadow-popover ring-2 ring-teal-700'
                       : ''
                   }`}
                 >
@@ -310,14 +310,14 @@ export function FindingsTable({
                             e.stopPropagation();
                             onPlayFinding?.(idx);
                           }}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-bold text-accent-teal bg-accent-teal-subtle hover:bg-accent-teal hover:text-white rounded-chip border border-accent-teal/30 transition-colors cursor-pointer min-h-[28px]"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-bold text-teal-800 bg-soft-teal hover:bg-teal-700 hover:text-white rounded-chip border border-teal/30 transition-colors cursor-pointer min-h-[28px] focus-visible:ring-2 focus-visible:ring-teal-700"
                           title="Listen to this finding"
                           aria-label="Listen to this finding"
                         >
                           <Volume2 className="w-3 h-3" />
                           <span>{language === 'hi' ? 'सुनें' : 'Listen'}</span>
                         </button>
-                        <span className="font-mono text-caption text-text-subtle font-semibold">
+                        <span className="font-mono text-caption text-text-muted font-semibold">
                           {finding.ruleId}
                         </span>
                       </div>
@@ -360,7 +360,7 @@ export function FindingsTable({
                         </div>
                         <div className="flex justify-between text-caption">
                           <span className="text-text-muted">Benchmark / Ceiling:</span>
-                          <span className="font-bold font-mono text-tier-valid-exclusion-fg">
+                          <span className="font-bold font-mono text-navy">
                             {finding.expected !== undefined ? formatINR(finding.expected) : '0'}
                           </span>
                         </div>

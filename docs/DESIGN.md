@@ -39,30 +39,44 @@ Base font: `Noto Sans` (Latin) and `Noto Sans Devanagari` (Devanagari). Line hei
 | **Small** | 14px / 22px (`text-small`) | Regular (400) / Medium (500) | 13px / 20px | — |
 | **Caption / Mono** | 12px / 18px (`text-caption`) | Medium (500) / Semibold (600) | 11px / 16px | — |
 
-### 1.4 Semantic Colour Tokens & WCAG AA Contrast
+### 1.4 Official Brand Palette & WCAG AA Contrast Tokens
 
-All tokens maintain &ge; 4.5:1 contrast against their respective backgrounds (&ge; 3:1 for UI boundaries and large text):
+All tokens maintain &ge; 4.5:1 contrast against their respective backgrounds (&ge; 3:1 for UI boundaries, focus rings, and disabled text):
 
 | Semantic Token | Hex Code | Background Hex | Contrast Ratio | Usage |
 |---|---|---|---|---|
-| `primary` | `#1B4B82` | `#FFFFFF` | 8.84:1 (Pass AAA) | Brand, primary CTAs, interactive highlights |
-| `primary-soft` | `#EEF4FB` | `#1B4B82` (text) | 7.99:1 (Pass AAA) | Soft card tint, stepper backgrounds |
-| `primary-contrast` | `#FFFFFF` | `#1B4B82` | 8.84:1 (Pass AAA) | Text on primary button |
-| `accent-teal` | `#0F766E` | `#FFFFFF` | 5.47:1 (Pass AA) | Audio player controls & secondary actions |
-| `ink` (`text`) | `#0F1B2D` | `#FFFFFF` | 17.28:1 (Pass AAA) | Primary headlines and high-contrast body text |
-| `text-muted` | `#475569` | `#FFFFFF` | 7.58:1 (Pass AAA) | Subtitles, labels, timestamps |
-| `surface` | `#FFFFFF` | — | — | White surface card background |
-| `surface-muted` | `#F5F7FA` | — | — | App background & alternating section bands |
-| `border` | `#D8DEE8` | `#FFFFFF` | 1.4:1 (Non-text) | Card borders and table grid lines |
-| `tier-confirmed` | `#B42318` | `#FEF3F2` | 6.05:1 (Pass AA) | Confirmed overcharge chip & border |
-| `tier-likely` | `#B54708` | `#FFF6ED` | 5.08:1 (Pass AA) | Likely issue chip & border |
-| `tier-needs-review` | `#175CD3` | `#EFF8FF` | 5.57:1 (Pass AA) | Needs review chip & border |
-| `tier-valid-exclusion`| `#067647` | `#ECFDF3` | 5.40:1 (Pass AA) | Valid insurer deduction chip & border |
-| `tier-not-checked` | `#475467` | `#F2F4F7` | 6.98:1 (Pass AAA) | Not checked item chip & border |
-| `unverified-data` | `#92400E` | `#FFFBEB` | 6.84:1 (Pass AAA) | Amber badge for unverified regulatory data |
-| `disabled-text` | `#475569` | `#F2F4F7` | 6.88:1 (Pass AAA) | Disabled button text & accessible reason |
-| `placeholder` | `#475569` | `#FFFFFF` | 7.58:1 (Pass AAA) | Form input placeholder text |
-| `focus-ring` | `#1B4B82` | `#FFFFFF` | 8.84:1 (Pass AAA) | Global 2px focus ring with 2px offset |
+| `navy` (brand text & headers) | `#102A43` | `#FFFFFF` (card) | 14.64:1 (Pass AAA) | Headings, key figures, header background |
+| `navy` on `bg` | `#102A43` | `#F8FAFC` (bg) | 13.99:1 (Pass AAA) | Primary text on application background |
+| `navy` on `bg-secondary` | `#102A43` | `#F1F5F9` (bg-sec) | 13.37:1 (Pass AAA) | Primary text on zebra rows |
+| `white` on `navy` | `#FFFFFF` | `#102A43` (navy) | 14.64:1 (Pass AAA) | Header text and branding on navy |
+| `soft-teal` on `navy` | `#E0F2F1` | `#102A43` (navy) | 12.65:1 (Pass AAA) | Header pill and focus ring on navy header |
+| `teal-700` (primary button fill) | `#0F766E` | `#FFFFFF` (card) | 5.47:1 (Pass AA) | Primary CTAs, active links, audio controls |
+| `white` on `teal-700` | `#FFFFFF` | `#0F766E` (teal-700) | 5.47:1 (Pass AA) | Button label text on primary button fill |
+| `white` on `teal-800` | `#FFFFFF` | `#115E59` (teal-800) | 7.58:1 (Pass AAA) | Button label text on primary button hover |
+| `text-secondary` | `#334155` | `#FFFFFF` (card) | 10.35:1 (Pass AAA) | Secondary labels, descriptions, table body |
+| `text-secondary` on `bg` | `#334155` | `#F8FAFC` (bg) | 9.90:1 (Pass AAA) | Secondary text on base background |
+| `text-secondary` on `bg-sec` | `#334155` | `#F1F5F9` (bg-sec) | 9.45:1 (Pass AAA) | Secondary text on zebra rows |
+| `text-secondary` on `soft-teal` | `#334155` | `#E0F2F1` (soft-teal) | 8.94:1 (Pass AAA) | Secondary text on soft-teal cards |
+| `text-muted` | `#57687C` | `#FFFFFF` (card) | 5.71:1 (Pass AA) | Timestamps, column subtitles, placeholders |
+| `text-muted` on `bg` | `#57687C` | `#F8FAFC` (bg) | 5.46:1 (Pass AA) | Section descriptions on gray background |
+| `text-muted` on `bg-sec` (Zebra) | `#57687C` | `#F1F5F9` (bg-sec) | 5.21:1 (Pass AA) | Muted text on table zebra rows |
+| `text-muted` on `soft-teal` | `#57687C` | `#E0F2F1` (soft-teal) | 4.93:1 (Pass AA) | Muted text in dropzones and audio player |
+| `confirmed` (Red-700) on tint | `#B91C1C` | `#FEF2F2` (red-50) | 5.91:1 (Pass AA) | Confirmed overcharges chip text |
+| `confirmed` (Red-700) on card | `#B91C1C` | `#FFFFFF` (card) | 6.47:1 (Pass AA) | Confirmed overcharges on white card |
+| `likely` (Amber-700) on tint | `#B45309` | `#FFFBEB` (amber-50) | 4.84:1 (Pass AA) | Likely issues chip text |
+| `likely` (Amber-700) on card | `#B45309` | `#FFFFFF` (card) | 5.02:1 (Pass AA) | Likely issues on white card |
+| `needs-review` (Sky-700) on tint | `#0369A1` | `#F0F9FF` (sky-50) | 5.57:1 (Pass AA) | Needs review informational tier |
+| `needs-review` (Sky-700) on card | `#0369A1` | `#FFFFFF` (card) | 5.93:1 (Pass AA) | Needs review on white card |
+| `valid-exclusion` (Emerald-700) | `#047857` | `#ECFDF5` (emerald-50) | 5.21:1 (Pass AA) | Valid insurer deductions chip text |
+| `valid-exclusion` on card | `#047857` | `#FFFFFF` (card) | 5.48:1 (Pass AA) | Valid exclusion on white card |
+| `not-checked` (Slate) | `#334155` | `#F1F5F9` (slate-100) | 9.45:1 (Pass AAA) | Unchecked line items |
+| `link` (Teal-700 on card) | `#0F766E` | `#FFFFFF` (card) | 5.47:1 (Pass AA) | Interactive links on white surface |
+| `link` (Teal-700 on bg-sec) | `#0F766E` | `#F1F5F9` (bg-sec) | 5.00:1 (Pass AA) | Interactive links on zebra rows |
+| `link` (Soft-teal on navy) | `#E0F2F1` | `#102A43` (navy) | 12.65:1 (Pass AAA) | Interactive links on navy header |
+| `disabled-text` on `bg-sec` | `#758699` | `#F1F5F9` (bg-sec) | 3.41:1 (Pass UI) | Disabled buttons on secondary bg |
+| `disabled-text` on `card` | `#758699` | `#FFFFFF` (card) | 3.73:1 (Pass UI) | Disabled inputs/buttons on card |
+| `focus-ring` (Teal on light) | `#0D9488` | `#FFFFFF` (card) | 3.74:1 (Pass UI) | 2px focus ring on light surfaces |
+| `focus-ring` (Soft-teal on navy) | `#E0F2F1` | `#102A43` (navy) | 12.65:1 (Pass AAA) | 2px focus ring on navy header elements |
 
 ### 1.5 Elevation (3 Discrete Levels)
 1. **`shadow-none`:** Flat inputs, nested table rows, sub-elements.

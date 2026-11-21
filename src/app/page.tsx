@@ -112,10 +112,15 @@ export default function LandingPage() {
                     type="button"
                     onClick={handleStart}
                     disabled={!consentAccepted}
-                    className={`w-full sm:w-auto flex-1 flex items-center justify-center gap-2 px-6 py-3.5 text-body font-bold rounded-chip shadow-card transition-all duration-150 min-h-[48px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-hidden ${
+                    title={
+                      !consentAccepted
+                        ? 'Please review and accept the informed consent terms above to begin bill audit'
+                        : undefined
+                    }
+                    className={`w-full sm:w-auto flex-1 flex items-center justify-center gap-2 px-6 py-3.5 text-body font-bold rounded-chip shadow-card transition-all duration-150 min-h-[48px] focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2 focus-visible:outline-hidden ${
                       consentAccepted
-                        ? 'bg-primary hover:bg-primary-hover text-primary-contrast cursor-pointer active:scale-[0.99]'
-                        : 'bg-surface-subtle text-text-subtle cursor-not-allowed border border-border'
+                        ? 'bg-teal-700 hover:bg-teal-800 text-white cursor-pointer active:scale-[0.99]'
+                        : 'bg-bg-secondary text-text-disabled cursor-not-allowed border border-border'
                     }`}
                   >
                     <span>{t.startAuditBtn}</span>
@@ -125,7 +130,7 @@ export default function LandingPage() {
                   <button
                     type="button"
                     onClick={handleTryDemo}
-                    className="w-full sm:w-auto flex-1 flex items-center justify-center gap-2 px-6 py-3.5 bg-surface hover:bg-surface-subtle text-text border border-border text-body font-bold rounded-chip shadow-card transition-all duration-150 min-h-[48px] cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-hidden active:scale-[0.99]"
+                    className="w-full sm:w-auto flex-1 flex items-center justify-center gap-2 px-6 py-3.5 bg-card hover:bg-bg-secondary text-navy border border-border text-body font-bold rounded-chip shadow-card transition-all duration-150 min-h-[48px] cursor-pointer focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2 focus-visible:outline-hidden active:scale-[0.99]"
                   >
                     <Sparkles className="w-4 h-4 text-amber-700 shrink-0" />
                     <span>{t.tryDemoBtn}</span>
@@ -150,19 +155,19 @@ export default function LandingPage() {
 
                   {/* 3 Metric Preview Grid */}
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="p-3 bg-surface-muted rounded-card border border-border-subtle">
+                    <div className="p-3 bg-card rounded-card border border-border">
                       <span className="text-[11px] font-semibold text-text-muted block uppercase">
                         Total Billed
                       </span>
-                      <span className="text-h3 font-bold text-text block mt-0.5">
+                      <span className="text-h3 font-bold text-navy block mt-0.5 font-mono">
                         ₹1,85,000
                       </span>
                     </div>
-                    <div className="p-3 bg-tier-valid-exclusion-bg/40 rounded-card border border-tier-valid-exclusion-border">
-                      <span className="text-[11px] font-semibold text-tier-valid-exclusion-fg block uppercase">
+                    <div className="p-3 bg-card rounded-card border border-border">
+                      <span className="text-[11px] font-semibold text-text-muted block uppercase">
                         Fair Amount
                       </span>
-                      <span className="text-h3 font-bold text-tier-valid-exclusion-fg block mt-0.5">
+                      <span className="text-h3 font-bold text-navy block mt-0.5 font-mono">
                         ₹1,85,000
                       </span>
                     </div>
@@ -190,7 +195,7 @@ export default function LandingPage() {
 
                   <div className="flex items-center justify-between text-caption text-text-muted pt-1">
                     <span>Coverage: 100% Arithmetic</span>
-                    <span>100% In-Browser Memory</span>
+                    <span>On-Device Statutory Audit</span>
                   </div>
                 </div>
               </div>
@@ -213,7 +218,7 @@ export default function LandingPage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
               {/* Step 1 */}
               <div className="bg-surface p-6 rounded-card border border-border shadow-card space-y-3">
-                <div className="w-10 h-10 rounded-card bg-primary-subtle text-primary font-bold flex items-center justify-center text-body">
+                <div className="w-10 h-10 rounded-card bg-soft-teal text-teal-800 font-bold flex items-center justify-center text-body">
                   1
                 </div>
                 <h3 className="text-h3 font-bold text-text">{t.step1Title}</h3>
@@ -224,7 +229,7 @@ export default function LandingPage() {
 
               {/* Step 2 */}
               <div className="bg-surface p-6 rounded-card border border-border shadow-card space-y-3">
-                <div className="w-10 h-10 rounded-card bg-primary-subtle text-primary font-bold flex items-center justify-center text-body">
+                <div className="w-10 h-10 rounded-card bg-soft-teal text-teal-800 font-bold flex items-center justify-center text-body">
                   2
                 </div>
                 <h3 className="text-h3 font-bold text-text">{t.step2Title}</h3>
@@ -235,7 +240,7 @@ export default function LandingPage() {
 
               {/* Step 3 */}
               <div className="bg-surface p-6 rounded-card border border-border shadow-card space-y-3">
-                <div className="w-10 h-10 rounded-card bg-primary-subtle text-primary font-bold flex items-center justify-center text-body">
+                <div className="w-10 h-10 rounded-card bg-soft-teal text-teal-800 font-bold flex items-center justify-center text-body">
                   3
                 </div>
                 <h3 className="text-h3 font-bold text-text">{t.step3Title}</h3>
@@ -354,7 +359,7 @@ export default function LandingPage() {
                     <Cpu className="w-5 h-5 text-primary" />
                   </div>
                   <h3 className="text-h3 font-bold text-text">
-                    In-Browser Memory & Deterministic Rules
+                    On-Device Deterministic Audit Rules
                   </h3>
                   <p className="text-small text-text-muted leading-relaxed">
                     Runs 100% inside your browser runtime. The mathematical audit engine uses exact integer paise arithmetic. No data is stored, cached, or written to disk.

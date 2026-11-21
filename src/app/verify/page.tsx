@@ -202,18 +202,18 @@ export default function VerifyPage() {
         <div
           className={`p-4 rounded-card border flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-small transition-all shadow-card ${
             isGrandTotalMatched
-              ? 'bg-tier-valid-exclusion-bg/40 border-tier-valid-exclusion-border text-tier-valid-exclusion-fg'
-              : 'bg-tier-likely-bg/40 border-tier-likely-border text-tier-likely-fg'
+              ? 'bg-card border-border text-navy'
+              : 'bg-tier-likely-bg border-tier-likely-border text-tier-likely-fg'
           }`}
         >
           <div className="flex items-center gap-3">
             {isGrandTotalMatched ? (
-              <CheckCircle2 className="w-5 h-5 text-tier-valid-exclusion-fg shrink-0" />
+              <CheckCircle2 className="w-5 h-5 text-teal-700 shrink-0" />
             ) : (
               <AlertTriangle className="w-5 h-5 text-tier-likely-fg shrink-0" />
             )}
             <div>
-              <span className="font-bold text-body block text-text">
+              <span className="font-bold text-body block text-navy">
                 {isGrandTotalMatched ? t.reconciledTitle : t.reconcileDiffTitle}
               </span>
               <span className="text-caption text-text-muted block">
@@ -237,7 +237,7 @@ export default function VerifyPage() {
               <span className="text-caption uppercase text-text-muted block font-sans">
                 {language === 'hi' ? 'गणना योग' : 'Calculated Sum'}
               </span>
-              <span className="font-bold text-text text-body">
+              <span className="font-bold text-navy text-body">
                 {formatINR(calculatedSumPaise)}
               </span>
             </div>
@@ -245,11 +245,15 @@ export default function VerifyPage() {
         </div>
 
         {/* Items Table Header Action Bar */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h2 className="text-h3 font-bold text-text">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <h2 className="text-h3 font-bold text-navy">
               {t.lineItemsTitle} ({bill.items.length})
             </h2>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-chip text-caption font-semibold bg-soft-teal text-teal-800 border border-teal/20">
+              <Sparkles className="w-3.5 h-3.5 text-teal-700" />
+              Read by AI, please check
+            </span>
             <span className="text-caption text-text-muted hidden sm:inline">
               &bull; Review descriptions, rates, quantities, and verify matching formulations
             </span>
@@ -267,38 +271,38 @@ export default function VerifyPage() {
 
         {/* DESKTOP TABLE VIEW: Sticky header, sticky first column, zebra rows, min 44px height */}
         <div className="hidden sm:block">
-          <div className="bg-surface rounded-card border border-border shadow-card overflow-hidden">
+          <div className="bg-card rounded-card border border-border shadow-card overflow-hidden">
             <div className="overflow-x-auto max-h-[640px]">
               <table className="w-full text-small text-left border-collapse">
-                <thead className="bg-surface-subtle text-text font-bold border-b border-border sticky top-0 z-20 shadow-none">
+                <thead className="bg-navy text-white font-bold sticky top-0 z-20 shadow-none">
                   <tr>
-                    <th scope="col" className="py-3 px-3 w-12 text-center bg-surface-subtle sticky left-0 z-20 border-r border-border">
+                    <th scope="col" className="py-3 px-3 w-12 text-center bg-navy text-white sticky left-0 z-20 border-r border-navy-light">
                       {t.colIndex}
                     </th>
-                    <th scope="col" className="py-3 px-3 min-w-[280px] bg-surface-subtle">
+                    <th scope="col" className="py-3 px-3 min-w-[280px] bg-navy text-white">
                       {t.colDesc}
                     </th>
-                    <th scope="col" className="py-3 px-3 w-40 bg-surface-subtle">
+                    <th scope="col" className="py-3 px-3 w-40 bg-navy text-white">
                       {t.colCategory}
                     </th>
-                    <th scope="col" className="py-3 px-3 w-24 text-right bg-surface-subtle">
+                    <th scope="col" className="py-3 px-3 w-24 text-right bg-navy text-white">
                       {t.colQty}
                     </th>
-                    <th scope="col" className="py-3 px-3 w-32 text-right bg-surface-subtle">
+                    <th scope="col" className="py-3 px-3 w-32 text-right bg-navy text-white">
                       {t.colRate}
                     </th>
-                    <th scope="col" className="py-3 px-3 w-32 text-right bg-surface-subtle">
+                    <th scope="col" className="py-3 px-3 w-32 text-right bg-navy text-white">
                       {t.colTotal}
                     </th>
-                    <th scope="col" className="py-3 px-3 w-32 text-center bg-surface-subtle">
+                    <th scope="col" className="py-3 px-3 w-32 text-center bg-navy text-white">
                       {t.colChecked}
                     </th>
-                    <th scope="col" className="py-3 px-3 w-16 text-center bg-surface-subtle">
+                    <th scope="col" className="py-3 px-3 w-16 text-center bg-navy text-white">
                       {t.colAction}
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border text-text">
+                <tbody className="divide-y divide-border text-navy">
                   {bill.items.map((item, idx) => {
                     const isLowConfidence =
                       (item.confidence !== null && item.confidence !== undefined && item.confidence < 0.85) ||
@@ -308,12 +312,12 @@ export default function VerifyPage() {
                     return (
                       <tr
                         key={item.id}
-                        className={`min-h-[44px] transition-colors duration-150 odd:bg-surface even:bg-surface-subtle/40 hover:bg-surface-subtle ${
-                          isLowConfidence ? 'bg-amber-50/50' : ''
+                        className={`min-h-[44px] transition-colors duration-150 odd:bg-card even:bg-bg-secondary hover:bg-bg-secondary/70 ${
+                          isLowConfidence ? 'bg-amber-50/70 border-l-2 border-l-amber-500' : ''
                         }`}
                       >
                         {/* Sticky Column: Row Index */}
-                        <td className="py-3 px-3 font-mono text-text-subtle text-caption text-center align-top sticky left-0 z-10 bg-inherit border-r border-border">
+                        <td className="py-3 px-3 font-mono text-text-muted text-caption text-center align-top sticky left-0 z-10 bg-inherit border-r border-border">
                           {idx + 1}
                         </td>
 
@@ -323,7 +327,7 @@ export default function VerifyPage() {
                             type="text"
                             value={item.description}
                             onChange={(e) => updateLineItem(item.id, { description: e.target.value })}
-                            className="w-full px-2.5 py-1.5 border border-border rounded-input text-text font-medium focus-visible:ring-2 focus-visible:ring-primary min-h-[44px]"
+                            className="w-full px-2.5 py-1.5 border border-border rounded-input text-navy font-medium focus-visible:ring-2 focus-visible:ring-teal-700 min-h-[44px]"
                             placeholder="Item Description"
                           />
 
@@ -334,7 +338,7 @@ export default function VerifyPage() {
                               placeholder="Brand (optional)"
                               value={item.brand || ''}
                               onChange={(e) => updateLineItem(item.id, { brand: e.target.value || null })}
-                              className="px-2 py-1 border border-border rounded-input text-text placeholder:text-text-subtle"
+                              className="px-2 py-1 border border-border rounded-input text-navy placeholder:text-text-muted"
                               title="Brand name printed on bill/packaging"
                             />
                             <input
@@ -342,7 +346,7 @@ export default function VerifyPage() {
                               placeholder="Manufacturer"
                               value={item.manufacturer || ''}
                               onChange={(e) => updateLineItem(item.id, { manufacturer: e.target.value || null })}
-                              className="px-2 py-1 border border-border rounded-input text-text placeholder:text-text-subtle"
+                              className="px-2 py-1 border border-border rounded-input text-navy placeholder:text-text-muted"
                               title="Manufacturer for retail formulation match"
                             />
                             <input
@@ -350,14 +354,17 @@ export default function VerifyPage() {
                               placeholder="Marketer"
                               value={item.marketer || ''}
                               onChange={(e) => updateLineItem(item.id, { marketer: e.target.value || null })}
-                              className="px-2 py-1 border border-border rounded-input text-text placeholder:text-text-subtle"
+                              className="px-2 py-1 border border-border rounded-input text-navy placeholder:text-text-muted"
                               title="Marketer for retail formulation match"
                             />
                           </div>
 
                           {/* Low Confidence Indicator with Text + Icon (not color alone) */}
                           {isLowConfidence && (
-                            <div className="flex items-center gap-1.5 text-caption font-semibold text-unverified-fg bg-unverified-bg px-2 py-0.5 rounded-chip border border-unverified-border w-fit">
+                            <div
+                              className="flex items-center gap-1.5 text-caption font-semibold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-chip border border-amber-300 w-fit"
+                              title="Low OCR confidence: please check description, quantity, and rate"
+                            >
                               <AlertTriangle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
                               <span>Low confidence; verify on printed invoice</span>
                             </div>

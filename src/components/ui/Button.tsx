@@ -29,7 +29,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const baseStyles =
-      'inline-flex items-center justify-center font-semibold rounded-chip transition-all duration-150 ease-out focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-hidden disabled:bg-surface-muted disabled:text-text-muted disabled:border-border disabled:shadow-none disabled:cursor-not-allowed select-none';
+      'inline-flex items-center justify-center font-semibold rounded-chip transition-all duration-150 ease-out focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2 focus-visible:outline-hidden disabled:bg-bg-secondary disabled:text-text-muted disabled:border-border disabled:shadow-none disabled:cursor-not-allowed select-none';
 
     const sizeStyles = {
       sm: 'text-caption px-3 py-1.5 min-h-[44px] min-w-[44px] gap-1.5',
@@ -38,13 +38,13 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     };
 
     const variantStyles = {
-      primary: 'bg-primary text-primary-contrast hover:bg-primary-hover shadow-card active:scale-[0.99]',
+      primary: 'bg-teal-700 text-white hover:bg-teal-800 shadow-card active:scale-[0.99] focus-visible:ring-teal-700',
       secondary:
-        'bg-surface text-text hover:bg-surface-subtle border border-border shadow-card active:scale-[0.99]',
-      ghost: 'bg-transparent text-text hover:bg-surface-subtle border border-transparent',
+        'bg-card text-navy hover:bg-bg-secondary border border-border shadow-card active:scale-[0.99] focus-visible:ring-teal-700',
+      ghost: 'bg-transparent text-navy hover:bg-bg-secondary border border-transparent focus-visible:ring-teal-700',
       destructive:
-        'bg-tier-confirmed-bg text-tier-confirmed-fg border border-tier-confirmed-border hover:bg-red-100 shadow-card',
-      teal: 'bg-accent-teal text-white hover:bg-accent-teal-hover shadow-card active:scale-[0.99]',
+        'bg-tier-confirmed-bg text-tier-confirmed-fg border border-tier-confirmed-border hover:bg-red-100 shadow-card focus-visible:ring-red-600',
+      teal: 'bg-teal-700 text-white hover:bg-teal-800 shadow-card active:scale-[0.99] focus-visible:ring-teal-700',
     };
 
     const effectiveTitle = disabled && disabledReason ? disabledReason : title;

@@ -1,8 +1,11 @@
 /**
  * scripts/check-contrast.mjs
- * Computes WCAG 2.1 relative luminance and contrast ratios for ClaimKavach design tokens.
- * Validates normal text >= 4.5:1 and UI boundaries/large text >= 3.0:1.
+ * Computes WCAG 2.1 relative luminance and contrast ratios for ClaimKavach brand & semantic design tokens.
+ * Imports colors directly from the shared design token module (src/tokens/palette.mjs).
+ * Validates normal text >= 4.5:1, UI components / focus boundaries / disabled text >= 3.0:1.
  */
+
+import { PALETTE } from '../src/tokens/palette.mjs';
 
 export function sRgbToLinear(c) {
   const norm = c / 255;
@@ -30,57 +33,93 @@ export function computeContrast(hex1, hex2) {
   return (lighter + 0.05) / (darker + 0.05);
 }
 
-export const TOKENS = {
-  primary: '#1B4B82',
-  primarySoft: '#EEF4FB',
-  primaryContrast: '#FFFFFF',
-  accentTeal: '#0F766E',
-  ink: '#0F1B2D',
-  textMuted: '#475569',
-  surface: '#FFFFFF',
-  surfaceMuted: '#F5F7FA',
-  border: '#D8DEE8',
+export const BRAND_TOKENS = {
+  navy: PALETTE.navy.DEFAULT,
+  teal: PALETTE.teal.DEFAULT,
+  emerald: PALETTE.emerald.DEFAULT,
+  softTeal: PALETTE.softTeal,
+  bg: PALETTE.bg.DEFAULT,
+  card: PALETTE.card,
+  bgSecondary: PALETTE.bg.secondary,
+  text: PALETTE.text.DEFAULT,
+  textSecondary: PALETTE.text.secondary,
+  textMuted: PALETTE.text.muted,
+  textDisabled: PALETTE.text.disabled,
+  border: PALETTE.border.DEFAULT,
+  borderLight: PALETTE.border.light,
+  success: PALETTE.success,
+  error: PALETTE.error,
+  warning: PALETTE.warning,
+  info: PALETTE.info,
 
-  // Verdict Tiers
-  confirmedFg: '#B42318',
-  confirmedBg: '#FEF3F2',
-  likelyFg: '#B54708',
-  likelyBg: '#FFF6ED',
-  needsReviewFg: '#175CD3',
-  needsReviewBg: '#EFF8FF',
-  validExclusionFg: '#067647',
-  validExclusionBg: '#ECFDF3',
-  notCheckedFg: '#475467',
-  notCheckedBg: '#F2F4F7',
-  unverifiedDataFg: '#92400E',
-  unverifiedDataBg: '#FFFBEB',
+  teal700: PALETTE.teal700,
+  teal800: PALETTE.teal800,
+  emerald700: PALETTE.emerald700,
+  amber700: PALETTE.amber700,
+  sky700: PALETTE.sky700,
+  info700: PALETTE.sky700,
+  red700: PALETTE.red700,
 
-  // Form Controls & States
-  disabledText: '#475569',
-  disabledBg: '#F2F4F7',
-  placeholderText: '#475569',
-  focusRing: '#1B4B82',
+  teal50: PALETTE.teal['50'],
+  red50: PALETTE.tier.confirmed.bg,
+  amber50: PALETTE.tier.likely.bg,
+  sky50: PALETTE.tier.needsReview.bg,
+  emerald50: PALETTE.tier.validExclusion.bg,
+  slate100: PALETTE.tier.notChecked.bg,
 };
 
 export const PAIRS = [
-  { name: 'Primary on Surface', fg: TOKENS.primary, bg: TOKENS.surface, minRatio: 4.5, type: 'Normal Text' },
-  { name: 'Primary on Primary-Soft', fg: TOKENS.primary, bg: TOKENS.primarySoft, minRatio: 4.5, type: 'Normal Text' },
-  { name: 'Primary Contrast on Primary', fg: TOKENS.primaryContrast, bg: TOKENS.primary, minRatio: 4.5, type: 'Normal Text' },
-  { name: 'Accent Teal on Surface', fg: TOKENS.accentTeal, bg: TOKENS.surface, minRatio: 4.5, type: 'Normal Text' },
-  { name: 'Accent Teal on Primary-Soft', fg: TOKENS.accentTeal, bg: TOKENS.primarySoft, minRatio: 4.5, type: 'Normal Text' },
-  { name: 'Ink (Main Text) on Surface', fg: TOKENS.ink, bg: TOKENS.surface, minRatio: 4.5, type: 'Normal Text' },
-  { name: 'Ink (Main Text) on Surface Muted', fg: TOKENS.ink, bg: TOKENS.surfaceMuted, minRatio: 4.5, type: 'Normal Text' },
-  { name: 'Text Muted on Surface', fg: TOKENS.textMuted, bg: TOKENS.surface, minRatio: 4.5, type: 'Normal Text' },
-  { name: 'Text Muted on Surface Muted', fg: TOKENS.textMuted, bg: TOKENS.surfaceMuted, minRatio: 4.5, type: 'Normal Text' },
-  { name: 'Confirmed Tier Chip', fg: TOKENS.confirmedFg, bg: TOKENS.confirmedBg, minRatio: 4.5, type: 'Chip Text' },
-  { name: 'Likely Tier Chip', fg: TOKENS.likelyFg, bg: TOKENS.likelyBg, minRatio: 4.5, type: 'Chip Text' },
-  { name: 'Needs Review Tier Chip', fg: TOKENS.needsReviewFg, bg: TOKENS.needsReviewBg, minRatio: 4.5, type: 'Chip Text' },
-  { name: 'Valid Exclusion Tier Chip', fg: TOKENS.validExclusionFg, bg: TOKENS.validExclusionBg, minRatio: 4.5, type: 'Chip Text' },
-  { name: 'Not Checked Tier Chip', fg: TOKENS.notCheckedFg, bg: TOKENS.notCheckedBg, minRatio: 4.5, type: 'Chip Text' },
-  { name: 'Unverified Data Amber Chip', fg: TOKENS.unverifiedDataFg, bg: TOKENS.unverifiedDataBg, minRatio: 4.5, type: 'Chip Text' },
-  { name: 'Disabled Button Text on Disabled Bg', fg: TOKENS.disabledText, bg: TOKENS.disabledBg, minRatio: 4.5, type: 'State Text' },
-  { name: 'Placeholder Text on Surface', fg: TOKENS.placeholderText, bg: TOKENS.surface, minRatio: 4.5, type: 'Input Placeholder' },
-  { name: 'Focus Ring against Surface', fg: TOKENS.focusRing, bg: TOKENS.surface, minRatio: 3.0, type: 'UI Component / Focus' },
+  // Primary Text on Surfaces
+  { name: 'Navy on Card', fg: PALETTE.navy.DEFAULT, bg: PALETTE.card, minRatio: 4.5, type: 'Normal Text' },
+  { name: 'Navy on Bg', fg: PALETTE.navy.DEFAULT, bg: PALETTE.bg.DEFAULT, minRatio: 4.5, type: 'Normal Text' },
+  { name: 'Navy on Bg-Secondary', fg: PALETTE.navy.DEFAULT, bg: PALETTE.bg.secondary, minRatio: 4.5, type: 'Normal Text' },
+
+  // Text-Secondary on All Surfaces
+  { name: 'Text-Secondary on Card', fg: PALETTE.text.secondary, bg: PALETTE.card, minRatio: 4.5, type: 'Normal Text' },
+  { name: 'Text-Secondary on Bg', fg: PALETTE.text.secondary, bg: PALETTE.bg.DEFAULT, minRatio: 4.5, type: 'Normal Text' },
+  { name: 'Text-Secondary on Bg-Secondary', fg: PALETTE.text.secondary, bg: PALETTE.bg.secondary, minRatio: 4.5, type: 'Normal Text' },
+  { name: 'Text-Secondary on Soft-Teal', fg: PALETTE.text.secondary, bg: PALETTE.softTeal, minRatio: 4.5, type: 'Normal Text' },
+
+  // Text-Muted on All Surfaces (including zebra rows and soft-teal)
+  { name: 'Text-Muted on Card', fg: PALETTE.text.muted, bg: PALETTE.card, minRatio: 4.5, type: 'Normal Text' },
+  { name: 'Text-Muted on Bg', fg: PALETTE.text.muted, bg: PALETTE.bg.DEFAULT, minRatio: 4.5, type: 'Normal Text' },
+  { name: 'Text-Muted on Bg-Secondary (Zebra)', fg: PALETTE.text.muted, bg: PALETTE.bg.secondary, minRatio: 4.5, type: 'Normal Text' },
+  { name: 'Text-Muted on Soft-Teal', fg: PALETTE.text.muted, bg: PALETTE.softTeal, minRatio: 4.5, type: 'Normal Text' },
+
+  // Placeholder Text on Input Card Surface
+  { name: 'Placeholder Text on Card', fg: PALETTE.text.muted, bg: PALETTE.card, minRatio: 4.5, type: 'Placeholder Text' },
+
+  // Tier 700 Text on Tints and on Card
+  { name: 'Confirmed (Red-700 on Red-50)', fg: PALETTE.tier.confirmed.fg, bg: PALETTE.tier.confirmed.bg, minRatio: 4.5, type: 'Chip Text' },
+  { name: 'Confirmed (Red-700 on Card)', fg: PALETTE.tier.confirmed.fg, bg: PALETTE.card, minRatio: 4.5, type: 'Chip Text' },
+  { name: 'Likely (Amber-700 on Amber-50)', fg: PALETTE.tier.likely.fg, bg: PALETTE.tier.likely.bg, minRatio: 4.5, type: 'Chip Text' },
+  { name: 'Likely (Amber-700 on Card)', fg: PALETTE.tier.likely.fg, bg: PALETTE.card, minRatio: 4.5, type: 'Chip Text' },
+  { name: 'Needs Review (Sky-700 on Sky-50)', fg: PALETTE.tier.needsReview.fg, bg: PALETTE.tier.needsReview.bg, minRatio: 4.5, type: 'Chip Text' },
+  { name: 'Needs Review (Sky-700 on Card)', fg: PALETTE.tier.needsReview.fg, bg: PALETTE.card, minRatio: 4.5, type: 'Chip Text' },
+  { name: 'Valid Exclusion (Emerald-700 on Emerald-50)', fg: PALETTE.tier.validExclusion.fg, bg: PALETTE.tier.validExclusion.bg, minRatio: 4.5, type: 'Chip Text' },
+  { name: 'Valid Exclusion (Emerald-700 on Card)', fg: PALETTE.tier.validExclusion.fg, bg: PALETTE.card, minRatio: 4.5, type: 'Chip Text' },
+  { name: 'Not Checked (Text-Secondary on Slate-100)', fg: PALETTE.tier.notChecked.fg, bg: PALETTE.tier.notChecked.bg, minRatio: 4.5, type: 'Chip Text' },
+
+  // Links on All Surfaces
+  { name: 'Link (Teal-700 on Card)', fg: PALETTE.teal700, bg: PALETTE.card, minRatio: 4.5, type: 'Link Text' },
+  { name: 'Link (Teal-700 on Bg)', fg: PALETTE.teal700, bg: PALETTE.bg.DEFAULT, minRatio: 4.5, type: 'Link Text' },
+  { name: 'Link (Teal-700 on Bg-Secondary)', fg: PALETTE.teal700, bg: PALETTE.bg.secondary, minRatio: 4.5, type: 'Link Text' },
+  { name: 'Link (Teal-700 on Soft-Teal)', fg: PALETTE.teal700, bg: PALETTE.softTeal, minRatio: 4.5, type: 'Link Text' },
+  { name: 'Link (Soft-Teal on Navy Header)', fg: PALETTE.softTeal, bg: PALETTE.navy.DEFAULT, minRatio: 4.5, type: 'Header Link' },
+
+  // Header & Buttons
+  { name: 'White on Navy (Header Text)', fg: '#FFFFFF', bg: PALETTE.navy.DEFAULT, minRatio: 4.5, type: 'Header Text' },
+  { name: 'White on Teal-700 (Button Fill)', fg: '#FFFFFF', bg: PALETTE.teal700, minRatio: 4.5, type: 'Button Text' },
+  { name: 'White on Teal-800 (Button Hover)', fg: '#FFFFFF', bg: PALETTE.teal800, minRatio: 4.5, type: 'Button Text' },
+
+  // Disabled States (Raised to >= 3.0:1)
+  { name: 'Disabled Text on Bg-Secondary', fg: PALETTE.text.disabled, bg: PALETTE.bg.secondary, minRatio: 3.0, type: 'Disabled State' },
+  { name: 'Disabled Text on Card', fg: PALETTE.text.disabled, bg: PALETTE.card, minRatio: 3.0, type: 'Disabled State' },
+
+  // Focus Rings (UI boundary >= 3.0:1)
+  { name: 'Focus Ring (Teal on Card)', fg: PALETTE.teal.DEFAULT, bg: PALETTE.card, minRatio: 3.0, type: 'Focus Ring' },
+  { name: 'Focus Ring (Soft-Teal on Navy)', fg: PALETTE.softTeal, bg: PALETTE.navy.DEFAULT, minRatio: 3.0, type: 'Focus Ring' },
+  { name: 'Focus Ring (White on Navy)', fg: '#FFFFFF', bg: PALETTE.navy.DEFAULT, minRatio: 3.0, type: 'Focus Ring' },
 ];
 
 export function runContrastCheck() {

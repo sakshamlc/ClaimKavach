@@ -302,22 +302,22 @@ export function AudioPlayer({
   return (
     <Card
       variant="outline"
-      className={`p-4 bg-primary-soft/50 border-primary/20 space-y-3 shadow-card ${className}`}
+      className={`p-4 bg-soft-teal/40 border border-teal/20 space-y-3 shadow-card ${className}`}
       data-testid="audio-player"
     >
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-chip bg-accent-teal text-white flex items-center justify-center shrink-0 shadow-card">
+          <div className="w-10 h-10 rounded-chip bg-teal-700 text-white flex items-center justify-center shrink-0 shadow-card">
             <Volume2 className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-small font-bold text-text leading-tight">{t.audioTitle}</h3>
+            <h3 className="text-small font-bold text-navy leading-tight">{t.audioTitle}</h3>
             <p className="text-caption text-text-muted mt-0.5">{t.audioSubtitle}</p>
           </div>
         </div>
 
         {/* Speed Controls */}
-        <div className="flex items-center gap-1.5 self-start sm:self-auto bg-surface p-1 rounded-chip border border-border">
+        <div className="flex items-center gap-1.5 self-start sm:self-auto bg-card p-1 rounded-chip border border-border">
           <span className="text-[11px] font-semibold text-text-muted px-1.5 select-none">
             {t.audioSpeedLabel}
           </span>
@@ -328,14 +328,22 @@ export function AudioPlayer({
               onClick={() => handleSpeedChange(speed)}
               className={`px-2.5 py-1 text-[11px] font-bold rounded-chip transition-colors min-h-[32px] cursor-pointer ${
                 playbackRate === speed
-                  ? 'bg-accent-teal text-white shadow-xs'
-                  : 'text-text hover:bg-surface-subtle'
+                  ? 'bg-teal-700 text-white shadow-xs'
+                  : 'text-navy hover:bg-bg-secondary'
               }`}
             >
               {`${speed}x`}
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Teal Progress Bar */}
+      <div className="w-full bg-border-light h-1.5 rounded-full overflow-hidden">
+        <div
+          className="bg-teal-700 h-full rounded-full transition-all duration-200 ease-out"
+          style={{ width: `${Math.round(((currentSectionIndex + 1) / spokenScript.sections.length) * 100)}%` }}
+        />
       </div>
 
       {/* Missing Hindi Voice Notice */}
@@ -426,7 +434,7 @@ export function AudioPlayer({
           <span
             className={`w-2 h-2 rounded-full ${
               isPlaying
-                ? 'bg-accent-teal animate-pulse'
+                ? 'bg-teal-700 animate-pulse'
                 : isPaused
                 ? 'bg-tier-likely-fg'
                 : 'bg-text-muted'

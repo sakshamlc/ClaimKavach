@@ -29,10 +29,10 @@ export function Header() {
   };
 
   return (
-    <header className="border-b border-border bg-surface/95 backdrop-blur-xs sticky top-0 z-40 shadow-card">
+    <header className="border-b border-navy-dark bg-navy text-white sticky top-0 z-40 shadow-card">
       {/* Top Disclaimer Banner */}
-      <div className="bg-primary-subtle text-primary text-caption px-4 py-1.5 text-center font-medium border-b border-border-subtle flex items-center justify-center gap-2">
-        <span className="inline-block w-2 h-2 rounded-full bg-tier-valid-exclusion-fg animate-pulse" />
+      <div className="bg-navy-dark/80 text-soft-teal text-caption px-4 py-1.5 text-center font-medium border-b border-white/10 flex items-center justify-center gap-2">
+        <span className="inline-block w-2 h-2 rounded-full bg-soft-teal animate-pulse" />
         <span>{t.bannerMemory}</span>
       </div>
 
@@ -40,27 +40,27 @@ export function Header() {
         {/* Brand */}
         <Link
           href="/"
-          className="flex items-center gap-2.5 group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-chip"
+          className="flex items-center gap-2.5 group focus-visible:ring-2 focus-visible:ring-soft-teal focus-visible:ring-offset-2 focus-visible:ring-offset-navy rounded-chip"
         >
-          <div className="w-10 h-10 rounded-card bg-primary flex items-center justify-center text-primary-contrast shadow-card shrink-0">
-            <ShieldAlert className="w-6 h-6 text-primary-contrast" />
+          <div className="w-10 h-10 rounded-card bg-teal-700 flex items-center justify-center text-white shadow-card shrink-0">
+            <ShieldAlert className="w-6 h-6 text-white" />
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-bold text-h3 text-primary leading-tight font-sans tracking-tight">
+              <span className="font-bold text-h3 text-white leading-tight font-sans tracking-tight">
                 ClaimKavach
               </span>
-              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-chip bg-surface-subtle text-text-muted border border-border">
+              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-chip bg-white/10 text-soft-teal border border-white/20">
                 {t.badgeStatutory}
               </span>
               {(selectedSampleKey || bill?.isSynthetic) && (
-                <span className="bg-amber-50 text-amber-900 border border-amber-200 text-[10px] font-bold px-2 py-0.5 rounded-chip flex items-center gap-1">
-                  <Sparkles className="w-2.5 h-2.5 text-amber-700" />
+                <span className="bg-amber-400/20 text-amber-200 border border-amber-400/30 text-[10px] font-bold px-2 py-0.5 rounded-chip flex items-center gap-1">
+                  <Sparkles className="w-2.5 h-2.5 text-amber-300" />
                   {t.badgeSynthetic}
                 </span>
               )}
             </div>
-            <p className="text-text-muted text-caption hidden sm:block leading-tight mt-0.5">
+            <p className="text-soft-teal/80 text-caption hidden sm:block leading-tight mt-0.5">
               {t.appTagline}
             </p>
           </div>
@@ -72,11 +72,11 @@ export function Header() {
           <button
             type="button"
             onClick={toggleLanguage}
-            className="flex items-center justify-center gap-1.5 px-3 py-2 text-small font-semibold bg-surface-subtle hover:bg-surface text-text rounded-chip border border-border shadow-card transition-all duration-150 ease-out min-h-[44px] min-w-[44px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-hidden cursor-pointer"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 text-small font-semibold bg-white/10 hover:bg-white/20 text-white rounded-chip border border-white/20 shadow-card transition-all duration-150 ease-out min-h-[44px] min-w-[44px] focus-visible:ring-2 focus-visible:ring-soft-teal focus-visible:ring-offset-2 focus-visible:ring-offset-navy focus-visible:outline-hidden cursor-pointer"
             title="Toggle English / हिंदी"
             aria-label="Toggle language between English and Hindi"
           >
-            <Languages className="w-4 h-4 text-text-muted" />
+            <Languages className="w-4 h-4 text-soft-teal" />
             <span>{language === 'en' ? 'हिंदी' : 'English'}</span>
           </button>
 
@@ -85,7 +85,7 @@ export function Header() {
             <button
               type="button"
               onClick={handleClear}
-              className="flex items-center justify-center gap-1.5 px-3 py-2 text-small font-semibold text-tier-confirmed-fg hover:bg-tier-confirmed-bg bg-tier-confirmed-bg/50 border border-tier-confirmed-border rounded-chip transition-all duration-150 ease-out min-h-[44px] min-w-[44px] focus-visible:ring-2 focus-visible:ring-tier-confirmed-fg focus-visible:ring-offset-2 focus-visible:outline-hidden cursor-pointer"
+              className="flex items-center justify-center gap-1.5 px-3 py-2 text-small font-semibold text-red-200 hover:bg-red-900/40 bg-red-900/20 border border-red-400/30 rounded-chip transition-all duration-150 ease-out min-h-[44px] min-w-[44px] focus-visible:ring-2 focus-visible:ring-soft-teal focus-visible:ring-offset-2 focus-visible:ring-offset-navy focus-visible:outline-hidden cursor-pointer"
               title="Wipe in-memory bill data immediately"
               aria-label="Clear all bill data from memory"
             >

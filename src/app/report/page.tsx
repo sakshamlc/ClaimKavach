@@ -237,7 +237,7 @@ export default function ReportPage() {
             </Card>
 
             {/* Bottom Call to Action for Dispute Pack */}
-            <div className="bg-tier-valid-exclusion-bg/30 border border-tier-valid-exclusion-border rounded-card p-6 flex flex-col sm:flex-row items-center justify-between gap-4 print:hidden">
+            <div className="bg-soft-teal/40 border border-teal/20 rounded-card p-6 flex flex-col sm:flex-row items-center justify-between gap-4 print:hidden">
               <div className="space-y-1">
                 <span className="font-bold text-body text-text block">
                   {t.readyToDisputeTitle}

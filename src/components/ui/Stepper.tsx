@@ -47,10 +47,10 @@ export function Stepper({ currentStep }: StepperProps) {
         {/* Mobile View: Compact "Step X of 3" */}
         <div className="flex sm:hidden items-center justify-between text-small">
           <div className="flex items-center gap-2">
-            <span className="w-6 h-6 rounded-full bg-primary text-primary-contrast flex items-center justify-center text-caption font-bold">
+            <span className="w-6 h-6 rounded-full bg-teal-700 text-white flex items-center justify-center text-caption font-bold">
               {currentStep}
             </span>
-            <span className="font-bold text-text">
+            <span className="font-bold text-navy">
               {steps[currentStep - 1].title}
             </span>
           </div>
@@ -71,10 +71,10 @@ export function Stepper({ currentStep }: StepperProps) {
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-150 ${
                     isCompleted
-                      ? 'bg-tier-valid-exclusion-bg text-tier-valid-exclusion-fg border border-tier-valid-exclusion-border'
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                       : isCurrent
-                      ? 'bg-primary text-primary-contrast font-bold shadow-card ring-2 ring-primary/20'
-                      : 'bg-surface-subtle text-text-subtle border border-border'
+                      ? 'bg-teal-700 text-white font-bold shadow-card ring-2 ring-teal-500/20'
+                      : 'bg-bg-secondary text-text-muted border border-border'
                   }`}
                 >
                   {isCompleted ? (
@@ -87,10 +87,10 @@ export function Stepper({ currentStep }: StepperProps) {
                   <span
                     className={`text-caption uppercase tracking-wider ${
                       isCurrent
-                        ? 'font-bold text-primary'
+                        ? 'font-bold text-teal-700'
                         : isCompleted
                         ? 'font-medium text-text-muted'
-                        : 'text-text-subtle'
+                        : 'text-text-muted'
                     }`}
                   >
                     {language === 'hi' ? `चरण ${step.id}` : `Step ${step.id}`}
@@ -98,9 +98,9 @@ export function Stepper({ currentStep }: StepperProps) {
                   <span
                     className={`text-small leading-tight ${
                       isCurrent
-                        ? 'font-bold text-text'
+                        ? 'font-bold text-navy'
                         : isCompleted
-                        ? 'font-semibold text-text hover:text-primary'
+                        ? 'font-semibold text-text hover:text-teal-700'
                         : 'text-text-muted'
                     }`}
                   >
@@ -115,7 +115,7 @@ export function Stepper({ currentStep }: StepperProps) {
                 {step.isAccessible && !isCurrent ? (
                   <Link
                     href={step.href}
-                    className="focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-chip"
+                    className="focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2 rounded-chip"
                   >
                     {content}
                   </Link>
@@ -126,7 +126,7 @@ export function Stepper({ currentStep }: StepperProps) {
                 {idx < steps.length - 1 && (
                   <div
                     className={`h-0.5 flex-1 transition-colors ${
-                      step.id < currentStep ? 'bg-primary/40' : 'bg-border'
+                      step.id < currentStep ? 'bg-teal-700/40' : 'bg-border'
                     }`}
                     aria-hidden="true"
                   />

@@ -18,7 +18,8 @@ const notoSansDevanagari = Noto_Sans_Devanagari({
 
 export const metadata: Metadata = {
   title: 'ClaimKavach — Hospital Bill & Insurance Audit',
-  description: 'Audit your hospital bill and insurance deductions. Free, private, stateless.',
+  description:
+    "Audit your hospital bill and insurance deductions. ClaimKavach doesn't store your bill; the file is sent to Google Gemini for reading; the audit runs on your device.",
 };
 
 export default function RootLayout({

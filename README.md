@@ -1,7 +1,7 @@
 # ClaimKavach (क्लेमकवच)
 
 > **Independent Patient Hospital Bill & Health Insurance Deduction Audit System**  
-> A private, stateless, client-side web application designed to help patients and policyholders in India detect statutory price ceiling violations (NPPA DPCO), arithmetic billing discrepancies, and arbitrary insurance claim deductions (IRDAI Annexure-I / proportionate room rent capping) before paying hospital bills or accepting claim settlement letters.
+> An independent open-source patient advocacy tool designed to help patients and policyholders in India detect statutory price ceiling violations (NPPA DPCO), arithmetic billing discrepancies, and arbitrary insurance claim deductions (IRDAI Annexure-I / proportionate room rent capping) before paying hospital bills or accepting claim settlement letters. ClaimKavach doesn't store your bill; the file is sent to Google Gemini for reading; the audit runs on your device.
 
 ---
 
@@ -12,7 +12,7 @@
 2. **User Verifies:**  
    Every extracted item is reviewed in an interactive verification table with a live arithmetic grand-total reconciliation bar. Users can edit descriptions, categories, quantities, rates, brands, manufacturers, and marketers, and mark rows with *"I checked this"*.
 3. **Deterministic Code Audits:**  
-   The audit engine (`src/lib/audit/`) is 100% deterministic TypeScript running entirely in browser memory. Every calculation uses **integer paise arithmetic** to eliminate floating-point rounding errors.
+   The audit engine (`src/lib/audit/`) is 100% deterministic TypeScript running on your device. Every calculation uses **integer paise arithmetic** to eliminate floating-point rounding errors.
 
 ---
 

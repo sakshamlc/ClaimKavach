@@ -65,6 +65,8 @@ export default function UploadPage() {
   const [tpaError, setTpaError] = useState<string | null>(null);
   const [isProcessingBill, setIsProcessingBill] = useState(false);
   const [isProcessingTpa, setIsProcessingTpa] = useState(false);
+  const [isDragOverBill, setIsDragOverBill] = useState(false);
+  const [isDragOverTpa, setIsDragOverTpa] = useState(false);
   const [progressStatus, setProgressStatus] = useState<string | null>(null);
   const [partialWarnings, setPartialWarnings] = useState<string[] | null>(null);
 
@@ -137,14 +139,11 @@ export default function UploadPage() {
     setPartialWarnings(null);
   };
 
-  const handleBillUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const processBillFile = async (file: File) => {
     setIsProcessingBill(true);
     setUploadError(null);
     setPartialWarnings(null);
-    setProgressStatus('Reading document...');
+    setProgressStatus('Reading pages and OCR...');
 
     try {
       const extractedData = await processPdfOrImage(file, {
@@ -169,10 +168,14 @@ export default function UploadPage() {
     }
   };
 
-  const handleTpaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBillUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (file) {
+      await processBillFile(file);
+    }
+  };
 
+  const processTpaFile = async (file: File) => {
     setIsProcessingTpa(true);
     setTpaError(null);
 
@@ -188,6 +191,13 @@ export default function UploadPage() {
       setTpaError(formatUserFacingError(err));
     } finally {
       setIsProcessingTpa(false);
+    }
+  };
+
+  const handleTpaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      await processTpaFile(file);
     }
   };
 
@@ -211,8 +221,12 @@ export default function UploadPage() {
           description={t.uploadSubtitle}
           action={
             <Button
+              variant="secondary"
               onClick={handleProceed}
               disabled={!bill}
+              disabledReason={
+                !bill ? 'Please upload a hospital bill or pick a sample scenario to proceed' : undefined
+              }
               rightIcon={<ArrowRight className="w-4 h-4" />}
             >
               Proceed to Verify
@@ -340,26 +354,26 @@ export default function UploadPage() {
                 </span>
               </div>
 
-              {/* Bill Loaded Filled State */}
+              {/* Bill Loaded Filled State (Success State) */}
               {bill && !selectedSampleKey ? (
-                <div className="p-4 rounded-card bg-surface-subtle border border-border flex items-center justify-between gap-3">
+                <div className="p-4 rounded-card bg-emerald-50/70 border border-emerald-200 flex items-center justify-between gap-3 shadow-card">
                   <div className="flex items-center gap-3 truncate">
-                    <div className="w-10 h-10 rounded-chip bg-primary-subtle text-primary flex items-center justify-center shrink-0">
-                      <FileText className="w-5 h-5" />
+                    <div className="w-10 h-10 rounded-chip bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-700" />
                     </div>
                     <div className="truncate">
-                      <span className="font-bold text-small text-text block truncate">
+                      <span className="font-bold text-small text-navy block truncate">
                         {bill.hospital.name || 'Hospital Bill'}
                       </span>
-                      <span className="text-caption text-text-muted block">
-                        {bill.items.length} line items extracted
+                      <span className="text-caption text-emerald-800 font-medium block">
+                        {bill.items.length} {t.uploadBillSuccessMsg || 'lines read, please check'}
                       </span>
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => clearAllData()}
-                    className="p-2 text-text-muted hover:text-tier-confirmed-fg rounded-chip transition-colors focus-visible:ring-2 focus-visible:ring-primary min-h-[44px] min-w-[44px] flex items-center justify-center"
+                    className="p-2 text-text-muted hover:text-red-700 rounded-chip transition-colors focus-visible:ring-2 focus-visible:ring-teal-700 min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer"
                     title="Remove bill and clear memory"
                     aria-label="Remove uploaded hospital bill"
                   >
@@ -367,8 +381,28 @@ export default function UploadPage() {
                   </button>
                 </div>
               ) : (
-                /* Empty Dropzone State */
-                <div className="border-2 border-dashed border-border rounded-card p-6 text-center hover:bg-surface-subtle/50 transition-colors focus-within:ring-2 focus-within:ring-primary">
+                /* Empty Dropzone State with Drag-over / Processing / Error styling */
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setIsDragOverBill(true);
+                  }}
+                  onDragLeave={() => setIsDragOverBill(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setIsDragOverBill(false);
+                    if (e.dataTransfer.files?.[0]) {
+                      processBillFile(e.dataTransfer.files[0]);
+                    }
+                  }}
+                  className={`border-2 border-dashed rounded-card p-6 text-center transition-colors focus-within:ring-2 focus-within:ring-teal-700 ${
+                    uploadError
+                      ? 'border-red-400 bg-red-50/40'
+                      : isDragOverBill
+                      ? 'border-teal-700 bg-soft-teal/70'
+                      : 'border-teal/40 bg-soft-teal/30 hover:bg-soft-teal/60'
+                  }`}
+                >
                   <input
                     type="file"
                     id="bill-upload"
@@ -391,14 +425,31 @@ export default function UploadPage() {
                     htmlFor="bill-upload"
                     className="cursor-pointer flex flex-col items-center justify-center space-y-2 select-none"
                   >
-                    <div className="w-12 h-12 rounded-full bg-primary-subtle text-primary flex items-center justify-center">
-                      <FileText className="w-6 h-6" />
+                    <div
+                      className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
+                        uploadError
+                          ? 'bg-red-100 text-red-700'
+                          : isDragOverBill
+                          ? 'bg-teal-700 text-white'
+                          : 'bg-soft-teal text-teal-700'
+                      }`}
+                    >
+                      {uploadError ? (
+                        <AlertCircle className="w-6 h-6 text-red-600" />
+                      ) : (
+                        <FileText className="w-6 h-6" />
+                      )}
                     </div>
-                    <span className="text-body font-bold text-primary">
-                      {isProcessingBill ? progressStatus || 'Processing document...' : t.uploadBillBoxLabel}
+                    <span className="text-body font-bold text-navy">
+                      {isProcessingBill
+                        ? progressStatus || 'Reading pages and OCR...'
+                        : t.uploadBillBoxLabel}
                     </span>
                     <span className="text-caption text-text-muted max-w-xs">
                       {t.uploadBillBoxSub}
+                    </span>
+                    <span className="text-[11px] font-semibold text-teal-800 bg-white/80 px-2.5 py-0.5 rounded-chip border border-teal/20">
+                      PDF, JPG, PNG up to 4MB (max 20 pages)
                     </span>
                   </label>
 
@@ -406,9 +457,9 @@ export default function UploadPage() {
                   <div className="pt-4 sm:hidden">
                     <label
                       htmlFor="bill-camera-upload"
-                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-surface text-text font-semibold text-small rounded-chip border border-border shadow-card cursor-pointer min-h-[44px]"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-card text-navy font-semibold text-small rounded-chip border border-border shadow-card cursor-pointer min-h-[44px]"
                     >
-                      <Camera className="w-4 h-4 text-primary" />
+                      <Camera className="w-4 h-4 text-teal-700" />
                       <span>Take Photo / Camera</span>
                     </label>
                   </div>
@@ -417,13 +468,13 @@ export default function UploadPage() {
 
               {/* Progress Area for Multi-page processing */}
               {isProcessingBill && (
-                <div className="p-3 bg-primary-subtle/50 border border-primary/20 rounded-chip space-y-1.5 animate-pulse">
-                  <div className="flex justify-between text-caption font-semibold text-primary">
-                    <span>{progressStatus || 'Extracting document...'}</span>
-                    <span>Working</span>
+                <div className="p-3.5 bg-soft-teal/50 border border-teal/30 rounded-chip space-y-1.5 animate-pulse">
+                  <div className="flex justify-between text-caption font-semibold text-teal-800">
+                    <span>{progressStatus || 'Reading pages, OCR, structuring line items...'}</span>
+                    <span>Processing</span>
                   </div>
                   <div className="w-full bg-border h-2 rounded-full overflow-hidden">
-                    <div className="bg-primary h-full w-2/3 rounded-full animate-pulse" />
+                    <div className="bg-teal-700 h-full w-2/3 rounded-full animate-pulse" />
                   </div>
                 </div>
               )}
@@ -461,24 +512,24 @@ export default function UploadPage() {
               </div>
 
               {tpaFileName ? (
-                <div className="p-4 rounded-card bg-surface-subtle border border-border flex items-center justify-between gap-3">
+                <div className="p-4 rounded-card bg-emerald-50/70 border border-emerald-200 flex items-center justify-between gap-3 shadow-card">
                   <div className="flex items-center gap-3 truncate">
-                    <div className="w-10 h-10 rounded-chip bg-primary-subtle text-primary flex items-center justify-center shrink-0">
-                      <FileCheck className="w-5 h-5" />
+                    <div className="w-10 h-10 rounded-chip bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-700" />
                     </div>
                     <div className="truncate">
-                      <span className="font-bold text-small text-text block truncate">
+                      <span className="font-bold text-small text-navy block truncate">
                         {tpaFileName}
                       </span>
-                      <span className="text-caption text-text-muted block">
-                        TPA deduction schedule loaded
+                      <span className="text-caption text-emerald-800 font-medium block">
+                        {t.uploadTpaSuccessMsg || 'TPA settlement sheet read, please check'}
                       </span>
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => setTpaSettlement(null, undefined)}
-                    className="p-2 text-text-muted hover:text-tier-confirmed-fg rounded-chip transition-colors focus-visible:ring-2 focus-visible:ring-primary min-h-[44px] min-w-[44px] flex items-center justify-center"
+                    className="p-2 text-text-muted hover:text-red-700 rounded-chip transition-colors focus-visible:ring-2 focus-visible:ring-teal-700 min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer"
                     title="Remove TPA settlement"
                     aria-label="Remove TPA settlement"
                   >
@@ -486,7 +537,27 @@ export default function UploadPage() {
                   </button>
                 </div>
               ) : (
-                <div className="border-2 border-dashed border-border rounded-card p-5 text-center hover:bg-surface-subtle/50 transition-colors focus-within:ring-2 focus-within:ring-primary">
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setIsDragOverTpa(true);
+                  }}
+                  onDragLeave={() => setIsDragOverTpa(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setIsDragOverTpa(false);
+                    if (e.dataTransfer.files?.[0]) {
+                      processTpaFile(e.dataTransfer.files[0]);
+                    }
+                  }}
+                  className={`border-2 border-dashed rounded-card p-5 text-center transition-colors focus-within:ring-2 focus-within:ring-teal-700 ${
+                    tpaError
+                      ? 'border-red-400 bg-red-50/40'
+                      : isDragOverTpa
+                      ? 'border-teal-700 bg-soft-teal/70'
+                      : 'border-teal/40 bg-soft-teal/30 hover:bg-soft-teal/60'
+                  }`}
+                >
                   <input
                     type="file"
                     id="tpa-upload"
@@ -499,14 +570,29 @@ export default function UploadPage() {
                     htmlFor="tpa-upload"
                     className="cursor-pointer flex flex-col items-center justify-center space-y-2 select-none"
                   >
-                    <div className="w-10 h-10 rounded-full bg-primary-subtle text-primary flex items-center justify-center">
-                      <FileCheck className="w-5 h-5" />
+                    <div
+                      className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+                        tpaError
+                          ? 'bg-red-100 text-red-700'
+                          : isDragOverTpa
+                          ? 'bg-teal-700 text-white'
+                          : 'bg-soft-teal text-teal-700'
+                      }`}
+                    >
+                      {tpaError ? (
+                        <AlertCircle className="w-5 h-5 text-red-600" />
+                      ) : (
+                        <FileCheck className="w-5 h-5" />
+                      )}
                     </div>
-                    <span className="text-small font-bold text-primary">
+                    <span className="text-small font-bold text-navy">
                       {isProcessingTpa ? 'Reading TPA settlement...' : t.uploadTpaBoxLabel}
                     </span>
                     <span className="text-caption text-text-muted max-w-xs">
                       {t.uploadTpaBoxSub}
+                    </span>
+                    <span className="text-[11px] font-semibold text-teal-800 bg-white/80 px-2.5 py-0.5 rounded-chip border border-teal/20">
+                      PDF, JPG, PNG up to 4MB (max 20 pages)
                     </span>
                   </label>
                 </div>
@@ -792,12 +878,20 @@ export default function UploadPage() {
               <Button
                 onClick={handleProceed}
                 disabled={!bill}
+                disabledReason={
+                  !bill ? 'Please upload a hospital bill or select a synthetic sample bill to proceed' : undefined
+                }
                 size="lg"
                 className="w-full"
                 rightIcon={<ArrowRight className="w-5 h-5" />}
               >
                 Proceed to Verify
               </Button>
+              {!bill && (
+                <p className="text-caption text-text-muted text-center pt-2">
+                  Upload a hospital bill or pick a sample scenario above to enable verification.
+                </p>
+              )}
             </div>
           </div>
         </div>

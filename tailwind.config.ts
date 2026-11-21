@@ -1,4 +1,5 @@
 import type { Config } from 'tailwindcss';
+import { PALETTE } from './src/tokens/palette.mjs';
 
 const config: Config = {
   content: [
@@ -47,85 +48,51 @@ const config: Config = {
         'popover': '0 10px 15px -3px rgba(16, 24, 40, 0.1), 0 4px 6px -4px rgba(16, 24, 40, 0.06)',
       },
       colors: {
-        // Semantic Color Tokens (WCAG AA Compliant)
-        surface: {
-          DEFAULT: '#FFFFFF',
-          muted: '#F5F7FA',
-          subtle: '#EEF2F6',
-        },
-        border: {
-          DEFAULT: '#D8DEE8',
-          subtle: '#E8EEF5',
-          strong: '#B4BFCC',
-        },
-        text: {
-          DEFAULT: '#0F1B2D', // ink
-          muted: '#475569',
-          subtle: '#64748B',
-        },
+        // Official Brand Palette from shared tokens module
+        navy: PALETTE.navy,
+        teal: PALETTE.teal,
+        emerald: PALETTE.emerald,
+        'soft-teal': PALETTE.softTeal,
+        bg: PALETTE.bg,
+        card: PALETTE.card,
+        text: PALETTE.text,
+        border: PALETTE.border,
+
+        // Feedback / Alerts
+        success: PALETTE.success,
+        error: PALETTE.error,
+        warning: PALETTE.warning,
+        info: PALETTE.info,
+
+        // Primary & Accent Aliases (Teal-700 primary, Teal-800 hover)
         primary: {
-          DEFAULT: '#1B4B82',
-          hover: '#143862',
+          DEFAULT: PALETTE.teal700,
+          hover: PALETTE.teal800,
           contrast: '#FFFFFF',
-          soft: '#EEF4FB',
-          subtle: '#EEF4FB',
+          soft: PALETTE.softTeal,
+          subtle: PALETTE.softTeal,
         },
         accent: {
-          teal: '#0F766E',
-          'teal-hover': '#115E59',
-          'teal-subtle': '#F0FDFA',
+          teal: PALETTE.teal700,
+          'teal-hover': PALETTE.teal800,
+          'teal-subtle': PALETTE.softTeal,
         },
+        surface: {
+          DEFAULT: PALETTE.card,
+          muted: PALETTE.bg.DEFAULT,
+          subtle: PALETTE.bg.secondary,
+        },
+
         // Verdict Tier Tokens (Color-blind safe & WCAG AA Compliant)
         tier: {
-          confirmed: {
-            fg: '#B42318',
-            bg: '#FEF3F2',
-            border: '#FECDCA',
-          },
-          likely: {
-            fg: '#B54708',
-            bg: '#FFF6ED',
-            border: '#FEDF89',
-          },
-          'needs-review': {
-            fg: '#175CD3',
-            bg: '#EFF8FF',
-            border: '#B2DDFF',
-          },
-          'valid-exclusion': {
-            fg: '#067647',
-            bg: '#ECFDF3',
-            border: '#A6F4C5',
-          },
-          'not-checked': {
-            fg: '#475467',
-            bg: '#F2F4F7',
-            border: '#EAECF0',
-          },
+          confirmed: PALETTE.tier.confirmed,
+          likely: PALETTE.tier.likely,
+          'needs-review': PALETTE.tier.needsReview,
+          'valid-exclusion': PALETTE.tier.validExclusion,
+          'not-checked': PALETTE.tier.notChecked,
         },
-        // Unverified Reference Data Amber Token
-        unverified: {
-          fg: '#92400E',
-          bg: '#FFFBEB',
-          border: '#FDE68A',
-        },
-        // Legacy palette mappings for backwards compatibility with tests
-        success: {
-          fg: '#067647',
-          bg: '#ECFDF3',
-        },
-        warning: {
-          fg: '#B54708',
-          bg: '#FFF6ED',
-        },
-        danger: {
-          fg: '#B42318',
-          bg: '#FEF3F2',
-        },
-        info: {
-          fg: '#175CD3',
-          bg: '#EFF8FF',
-        },
+        // Unverified Reference Data Amber Outline Token
+        unverified: PALETTE.unverified,
       },
       minHeight: {
         tap: '44px',

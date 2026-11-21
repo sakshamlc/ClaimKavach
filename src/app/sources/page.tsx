@@ -109,13 +109,13 @@ export default function SourcesPage() {
         <div className="hidden md:block">
           <Card variant="outline" className="p-0 overflow-hidden">
             <table className="w-full text-left border-collapse text-small">
-              <thead className="bg-surface-muted border-b border-border text-text-muted text-caption uppercase tracking-wider font-semibold">
+              <thead className="bg-navy text-white text-caption uppercase tracking-wider font-bold">
                 <tr>
-                  <th scope="col" className="p-4">{t.sourcesFilename}</th>
-                  <th scope="col" className="p-4">{t.sourcesInstrument}</th>
-                  <th scope="col" className="p-4">{t.sourcesRecords}</th>
-                  <th scope="col" className="p-4">{t.sourcesSha}</th>
-                  <th scope="col" className="p-4 text-right">{t.sourcesReviewStatus}</th>
+                  <th scope="col" className="p-4 bg-navy text-white">{t.sourcesFilename}</th>
+                  <th scope="col" className="p-4 bg-navy text-white">{t.sourcesInstrument}</th>
+                  <th scope="col" className="p-4 bg-navy text-white">{t.sourcesRecords}</th>
+                  <th scope="col" className="p-4 bg-navy text-white">{t.sourcesSha}</th>
+                  <th scope="col" className="p-4 text-right bg-navy text-white">{t.sourcesReviewStatus}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
